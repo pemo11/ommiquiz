@@ -3,8 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import yaml
 import os
+import re
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 app = FastAPI(title="Ommiquiz API", version="1.0.0")
 
@@ -22,6 +23,43 @@ if Path("/app/flashcards").exists():
     FLASHCARDS_DIR = Path("/app/flashcards")
 else:
     FLASHCARDS_DIR = Path(__file__).parent.parent / "flashcards"
+
+# Compile regex pattern once for performance
+VALID_ID_PATTERN = re.compile(r'^[a-zA-Z0-9_-]+$')
+
+
+def get_safe_flashcard_path(flashcard_id: str) -> Optional[Path]:
+    """
+    Safely construct and validate a flashcard file path.
+    Returns None if the flashcard doesn't exist or validation fails.
+    """
+    # Validate ID format to prevent path traversal
+    if not VALID_ID_PATTERN.match(flashcard_id):
+        return None
+    
+    # Construct paths with validated ID
+    yaml_path = FLASHCARDS_DIR / f"{flashcard_id}.yaml"
+    yml_path = FLASHCARDS_DIR / f"{flashcard_id}.yml"
+    
+    # Check which file exists
+    candidate_path = None
+    if yaml_path.exists():
+        candidate_path = yaml_path
+    elif yml_path.exists():
+        candidate_path = yml_path
+    else:
+        return None
+    
+    # Ensure resolved path is within FLASHCARDS_DIR
+    try:
+        resolved_path = candidate_path.resolve()
+        resolved_base = FLASHCARDS_DIR.resolve()
+        if not str(resolved_path).startswith(str(resolved_base)):
+            return None
+    except Exception:
+        return None
+    
+    return resolved_path
 
 
 @app.get("/")
@@ -55,16 +93,10 @@ async def list_flashcards():
 @app.get("/flashcards/{flashcard_id}")
 async def get_flashcard(flashcard_id: str) -> Dict[str, Any]:
     """Get a specific flashcard file by ID"""
-    # Try both .yaml and .yml extensions
-    yaml_file = FLASHCARDS_DIR / f"{flashcard_id}.yaml"
-    yml_file = FLASHCARDS_DIR / f"{flashcard_id}.yml"
+    # Get safe path using validation function
+    file_path = get_safe_flashcard_path(flashcard_id)
     
-    file_path = None
-    if yaml_file.exists():
-        file_path = yaml_file
-    elif yml_file.exists():
-        file_path = yml_file
-    else:
+    if file_path is None:
         raise HTTPException(status_code=404, detail=f"Flashcard '{flashcard_id}' not found")
     
     try:

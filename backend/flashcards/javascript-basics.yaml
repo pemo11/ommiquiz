@@ -29,7 +29,7 @@ cards:
     type: multiple
   
   - question: What is the difference between 'let' and 'const'?
-    answer: 'let' allows reassignment of the variable, while 'const' creates a constant that cannot be reassigned after initialization.
+    answer: "'let' allows reassignment of the variable, while 'const' creates a constant that cannot be reassigned after initialization."
     type: single
   
   - question: What are JavaScript frameworks?
