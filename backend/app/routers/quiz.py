@@ -2,12 +2,20 @@ from fastapi import APIRouter, HTTPException
 from typing import List, Dict, Any
 import yaml
 import os
+import re
 from pathlib import Path
 
 router = APIRouter()
 
 # Directory for storing quiz YAML files
 QUIZ_DIR = Path(__file__).parent.parent.parent / "quizzes"
+
+def sanitize_quiz_name(quiz_name: str) -> str:
+    """Sanitize quiz name to prevent path traversal attacks"""
+    # Only allow alphanumeric characters, hyphens, and underscores
+    if not re.match(r'^[a-zA-Z0-9_-]+$', quiz_name):
+        raise HTTPException(status_code=400, detail="Invalid quiz name format")
+    return quiz_name
 
 @router.get("/list")
 async def list_quizzes() -> List[str]:
@@ -21,7 +29,16 @@ async def list_quizzes() -> List[str]:
 @router.get("/{quiz_name}")
 async def get_quiz(quiz_name: str) -> Dict[str, Any]:
     """Get a specific quiz by name"""
+    quiz_name = sanitize_quiz_name(quiz_name)
     quiz_path = QUIZ_DIR / f"{quiz_name}.yaml"
+    
+    # Ensure the resolved path is within QUIZ_DIR
+    try:
+        quiz_path = quiz_path.resolve()
+        QUIZ_DIR.resolve().relative_to(QUIZ_DIR.resolve())
+        quiz_path.relative_to(QUIZ_DIR.resolve())
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid quiz path")
     
     if not quiz_path.exists():
         raise HTTPException(status_code=404, detail=f"Quiz '{quiz_name}' not found")
@@ -43,8 +60,19 @@ async def validate_answer(data: Dict[str, Any]) -> Dict[str, Any]:
     if not all([quiz_name, question_id, answer is not None]):
         raise HTTPException(status_code=400, detail="Missing required fields")
     
+    # Sanitize quiz name
+    quiz_name = sanitize_quiz_name(quiz_name)
+    
     # Load the quiz
     quiz_path = QUIZ_DIR / f"{quiz_name}.yaml"
+    
+    # Ensure the resolved path is within QUIZ_DIR
+    try:
+        quiz_path = quiz_path.resolve()
+        quiz_path.relative_to(QUIZ_DIR.resolve())
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid quiz path")
+    
     if not quiz_path.exists():
         raise HTTPException(status_code=404, detail=f"Quiz '{quiz_name}' not found")
     
