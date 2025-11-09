@@ -1,0 +1,29 @@
+title: Sample Programming Quiz
+description: A simple quiz about programming concepts
+questions:
+  - id: q1
+    text: What does HTML stand for?
+    options:
+      - Hyper Text Markup Language
+      - High Tech Modern Language
+      - Home Tool Markup Language
+      - Hyperlinks and Text Markup Language
+    correct_answer: 0
+    
+  - id: q2
+    text: Which programming language is known for its use in web development?
+    options:
+      - Python
+      - JavaScript
+      - Java
+      - C++
+    correct_answer: 1
+    
+  - id: q3
+    text: What is the purpose of CSS?
+    options:
+      - To structure web content
+      - To add interactivity to web pages
+      - To style and layout web pages
+      - To manage databases
+    correct_answer: 2

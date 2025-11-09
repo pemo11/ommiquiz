@@ -1,0 +1,28 @@
+.App {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.App-header {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 2rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+.App-header h1 {
+  color: #333;
+  margin: 0;
+  font-size: 2.5rem;
+}
+
+.App-header p {
+  color: #666;
+  margin: 0.5rem 0 0 0;
+  font-size: 1.1rem;
+}
+
+.App-main {
+  padding: 2rem 1rem;
+}
+
