@@ -17,7 +17,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-FLASHCARDS_DIR = Path("/app/flashcards")
+# Support both Docker and local development paths
+if Path("/app/flashcards").exists():
+    FLASHCARDS_DIR = Path("/app/flashcards")
+else:
+    FLASHCARDS_DIR = Path(__file__).parent.parent / "flashcards"
 
 
 @app.get("/")
