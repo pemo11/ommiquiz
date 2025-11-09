@@ -1,0 +1,46 @@
+id: python-basics
+author: Quiz Master
+createDate: 2025-11-09
+language: en
+level: beginner
+topics:
+  - programming
+  - python
+keywords:
+  - python
+  - syntax
+  - basics
+
+cards:
+  - question: What is Python?
+    answer: Python is a high-level, interpreted programming language known for its simple syntax and readability.
+    type: single
+  
+  - question: What are Python's main features?
+    answers:
+      - Easy to learn and read
+      - Interpreted language
+      - Dynamically typed
+      - Large standard library
+      - Cross-platform
+    type: multiple
+  
+  - question: How do you declare a variable in Python?
+    answer: You simply assign a value to a name, e.g., x = 10. No explicit type declaration is needed.
+    type: single
+  
+  - question: What are Python's built-in data types?
+    answers:
+      - int (integers)
+      - float (floating point numbers)
+      - str (strings)
+      - list (ordered, mutable sequences)
+      - tuple (ordered, immutable sequences)
+      - dict (key-value pairs)
+      - set (unordered collections)
+      - bool (True/False)
+    type: multiple
+  
+  - question: What does the 'def' keyword do in Python?
+    answer: The 'def' keyword is used to define a function in Python.
+    type: single
