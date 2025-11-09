@@ -1,0 +1,42 @@
+id: javascript-basics
+author: JS Guru
+createDate: 2025-11-09
+language: en
+level: beginner
+topics:
+  - programming
+  - javascript
+  - web development
+keywords:
+  - javascript
+  - js
+  - web
+
+cards:
+  - question: What is JavaScript?
+    answer: JavaScript is a high-level, interpreted programming language primarily used for web development to create interactive web pages.
+    type: single
+  
+  - question: What are the primitive data types in JavaScript?
+    answers:
+      - String
+      - Number
+      - Boolean
+      - Undefined
+      - Null
+      - Symbol
+      - BigInt
+    type: multiple
+  
+  - question: What is the difference between 'let' and 'const'?
+    answer: "'let' allows reassignment of the variable, while 'const' creates a constant that cannot be reassigned after initialization."
+    type: single
+  
+  - question: What are JavaScript frameworks?
+    answers:
+      - React
+      - Angular
+      - Vue.js
+      - Svelte
+      - Next.js
+    type: multiple
