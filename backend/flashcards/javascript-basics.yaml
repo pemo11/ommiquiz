@@ -1,11 +1,11 @@
-id: javascript-basics
+id: jst-basics1
 author: Peter Monadjemi
 title: JavaScripts Basics 1
 description: Simple facts about JavaScript
 createDate: 2025-11-09
 language: en
 level: beginner
-topics:[programming, JavaSript]
+topics: [programming, JavaSript]
 keywords: [data types, let, const, JavaScript frameworks]
 
 flashcards:
@@ -25,7 +25,7 @@ flashcards:
     type: multiple
   
   - question: What is the difference between 'let' and 'const'?
-    answer: "'let' allows reassignment of the variable, while 'const' creates a constant that cannot be reassigned after initialization."
+    answer: 'let' allows reassignment of the variable, while 'const' creates a constant that cannot be reassigned after initialization.
     type: single
   
   - question: What are JavaScript frameworks?
