@@ -35,14 +35,27 @@ function App() {
   const handleSelectFlashcard = async (flashcardId) => {
     try {
       setLoading(true);
+      console.log('Fetching flashcard:', flashcardId);
       const response = await fetch(`${API_URL}/flashcards/${flashcardId}`);
       if (!response.ok) {
         throw new Error('Failed to fetch flashcard');
       }
       const data = await response.json();
-      setSelectedFlashcard(data);
+      console.log('Raw data from API:', data);
+      
+      // Transform YAML data to match FlashcardViewer expectations
+      const transformedFlashcard = {
+        ...data,
+        cards: data.flashcards || [] // Map 'flashcards' array to 'cards'
+      };
+      
+      console.log('Transformed flashcard:', transformedFlashcard);
+      console.log('Number of cards:', transformedFlashcard.cards.length);
+      
+      setSelectedFlashcard(transformedFlashcard);
       setError(null);
     } catch (err) {
+      console.error('Error loading flashcard:', err);
       setError(err.message);
     } finally {
       setLoading(false);

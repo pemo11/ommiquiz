@@ -7,7 +7,12 @@ function FlashcardViewer({ flashcard, onBack }) {
   const [startTime] = useState(Date.now());
   const [elapsedTime, setElapsedTime] = useState(0);
 
+  console.log('FlashcardViewer received flashcard:', flashcard);
+  
   const cards = flashcard.cards || [];
+  console.log('Cards array:', cards);
+  console.log('Cards length:', cards.length);
+  
   const currentCard = cards[currentCardIndex];
 
   // Timer effect

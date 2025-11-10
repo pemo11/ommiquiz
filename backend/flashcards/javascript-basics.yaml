@@ -1,11 +1,11 @@
 id: js-basics1
 author: Peter Monadjemi
-title: JavaScripts Basics 1
+title: JavaScript Basics 1
 description: Simple facts about JavaScript
 createDate: 2025-11-09
 language: en
 level: beginner
-topics: [programming, JavaSript]
+topics: [programming, JavaScript]
 keywords: [data types, let, const, JavaScript frameworks]
 
 flashcards:
@@ -19,7 +19,7 @@ flashcards:
       - Number
       - Boolean
       - Undefined
-      - Null
+      - "Null"
       - Symbol
       - BigInt
     type: multiple
