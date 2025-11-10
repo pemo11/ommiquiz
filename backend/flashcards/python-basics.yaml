@@ -1,17 +1,14 @@
 id: python-basics
-author: Quiz Master
+author: Peter Monadjemi
+title: JavaScripts Basics 1
+description: Simple facts about JavaScript
 createDate: 2025-11-09
 language: en
 level: beginner
-topics:
-  - programming
-  - python
-keywords:
-  - python
-  - syntax
-  - basics
+topics:[programming, Python]
+keywords: [main features, variable declaration, built-in data types, def keyword]
 
-cards:
+flashcards:
   - question: What is Python?
     answer: Python is a high-level, interpreted programming language known for its simple syntax and readability.
     type: single
