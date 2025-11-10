@@ -7,6 +7,7 @@ language: en
 level: beginner
 topics:[quantencomputer]
 keywords: [quantencomputer, qubit, superposition, verschränkung, quantengatter, hadamard, pauli-x, pauli-z, cnot, bell-zustände]
+
 flashcards:
   - question: "Was ist ein Qubit?"
     answer: "Ein Qubit (Quantum Bit) ist die grundlegende Informationseinheit in der Quanteninformatik. Anders als ein klassisches Bit kann es sich durch Superposition gleichzeitig im Zustand |0⟩ und |1⟩ befinden."
