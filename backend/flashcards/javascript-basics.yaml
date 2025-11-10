@@ -1,17 +1,14 @@
 id: javascript-basics
-author: JS Guru
+author: Peter Monadjemi
+title: JavaScripts Basics 1
+description: Simple facts about JavaScript
 createDate: 2025-11-09
 language: en
 level: beginner
-topics:
-  - programming
-  - javascript
-  - web development
-keywords:
-  - javascript
-  - js
-  - web
+topics:[programming, JavaSript]
+keywords: [data types, let, const, JavaScript frameworks]
 
+flashcards:
 cards:
   - question: What is JavaScript?
     answer: JavaScript is a high-level, interpreted programming language primarily used for web development to create interactive web pages.
