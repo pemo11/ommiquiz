@@ -1,11 +1,11 @@
 id: python-basics
 author: Peter Monadjemi
-title: JavaScripts Basics 1
-description: Simple facts about JavaScript
+title: Python Basics 1
+description: Simple facts about Python
 createDate: 2025-11-09
 language: en
 level: beginner
-topics:[programming, Python]
+topics: [programming, Python]
 keywords: [main features, variable declaration, built-in data types, def keyword]
 
 flashcards:
