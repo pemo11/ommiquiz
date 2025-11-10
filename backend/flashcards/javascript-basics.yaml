@@ -9,7 +9,6 @@ topics:[programming, JavaSript]
 keywords: [data types, let, const, JavaScript frameworks]
 
 flashcards:
-cards:
   - question: What is JavaScript?
     answer: JavaScript is a high-level, interpreted programming language primarily used for web development to create interactive web pages.
     type: single
