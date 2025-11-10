@@ -1,9 +1,11 @@
-title: "Allgemeine Grundlagen der Quantencomputer"
+id: python-basics
 author: "Claude & Peter Monadjemi"
-createDate: 2025-10-28
-lang: de
-level: beginner
+title: "Allgemeine Grundlagen der Quantencomputer"
 description: "Fragen und Antworten zu allgemeinen Grundlagen der Quantencomputer, einschließlich Qubits, Superposition, Verschränkung und wichtigen Quantengattern."
+createDate: 2025-11-09
+language: en
+level: beginner
+topics:[quantencomputer]
 keywords: [quantencomputer, qubit, superposition, verschränkung, quantengatter, hadamard, pauli-x, pauli-z, cnot, bell-zustände]
 flashcards:
   - question: "Was ist ein Qubit?"
