@@ -1,0 +1,35 @@
+name: ommiquiz-app
+
+services:
+  - name: backend
+    source_dir: backend
+    github:
+      repo: pemo11/ommiquiz
+      branch: main
+    run_command: uvicorn app.main:app --host 0.0.0.0 --port 8080
+    environment_slug: python
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    http_port: 8080
+    health_check:
+      http_path: /health
+    envs:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+    routes:
+      - path: /api
+
+static_sites:
+  - name: frontend
+    source_dir: frontend
+    github:
+      repo: pemo11/ommiquiz
+      branch: main
+    build_command: npm run build
+    environment_slug: node-js
+    output_dir: build
+    envs:
+      - key: REACT_APP_API_URL
+        value: "https://${APP_DOMAIN}/api"
+    routes:
+      - path: /
