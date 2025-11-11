@@ -1,0 +1,13 @@
+name: ommiquiz-frontend
+
+static_sites:
+  - name: frontend
+    source_dir: /
+    build_command: npm install && npm run build
+    environment_slug: node-js
+    output_dir: build
+    envs:
+      - key: REACT_APP_API_URL
+        value: "https://ommiquiz-backend-[ihre-backend-url].ondigitalocean.app"
+    routes:
+      - path: /
