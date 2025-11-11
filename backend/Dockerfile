@@ -9,8 +9,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY app/ ./app/
 
-# Create flashcards directory
-RUN mkdir -p /app/flashcards
+# Copy flashcards YAML files
+COPY flashcards/ ./flashcards/
 
 # Expose port
 EXPOSE 8000

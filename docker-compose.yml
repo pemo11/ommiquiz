@@ -1,4 +1,3 @@
-
 services:
   backend:
     build:
@@ -7,8 +6,6 @@ services:
     container_name: ommiquiz-backend
     ports:
       - "8000:8000"
-    volumes:
-      - ./backend/flashcards:/app/flashcards
     environment:
       - PYTHONUNBUFFERED=1
     networks:

@@ -7,8 +7,6 @@ services:
     restart: unless-stopped
     ports:
       - "8000:8000"
-    volumes:
-      - ./backend/flashcards:/app/flashcards
     environment:
       - PYTHONUNBUFFERED=1
     networks:
