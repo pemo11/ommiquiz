@@ -1,10 +1,10 @@
-
 services:
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: ommiquiz-backend
+    container_name: ommiquiz-backend-prod
+    restart: unless-stopped
     ports:
       - "8000:8000"
     volumes:
@@ -24,13 +24,14 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: ommiquiz-frontend
+    container_name: ommiquiz-frontend-prod
+    restart: unless-stopped
     ports:
       - "3000:80"
     depends_on:
       - backend
     environment:
-      - REACT_APP_API_URL=http://localhost:8000
+      - REACT_APP_API_URL=${REACT_APP_API_URL:-https://your-domain.com/api}
     networks:
       - ommiquiz-network
 
