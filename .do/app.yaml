@@ -15,7 +15,10 @@ services:
     envs:
       - key: PYTHONUNBUFFERED
         value: "1"
+    routes:
+      - path: /api
 
+static_sites:
   - name: frontend
     source_dir: /frontend
     github:
@@ -23,9 +26,7 @@ services:
       branch: main
     build_command: npm run build
     environment_slug: node-js
-    instance_count: 1
-    instance_size_slug: basic-xxs
-    http_port: 80
+    output_dir: /build
     envs:
       - key: REACT_APP_API_URL
         value: "${backend.PUBLIC_URL}"

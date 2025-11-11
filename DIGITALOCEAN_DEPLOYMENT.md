@@ -1,4 +1,94 @@
-# DigitalOcean App Platform Deployment
+# DigitalOcean App Platform Deployment - Konfigurationsübersicht
+
+## Szenario 1: Separate Backend und Frontend Apps
+
+### Backend App Konfiguration
+```yaml
+name: ommiquiz-backend
+services:
+  - name: api
+    source_dir: /backend
+    github:
+      repo: pemo11/ommiquiz
+      branch: main
+    run_command: uvicorn app.main:app --host 0.0.0.0 --port 8080
+    environment_slug: python
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    http_port: 8080
+    health_check:
+      http_path: /health
+    envs:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+    cors:
+      allow_origins:
+        - regex: .*\.ondigitalocean\.app
+        - exact: "https://ommiquiz-frontend.ondigitalocean.app"
+```
+
+### Frontend App Konfiguration
+```yaml
+name: ommiquiz-frontend
+static_sites:
+  - name: frontend
+    source_dir: /frontend
+    github:
+      repo: pemo11/ommiquiz
+      branch: main
+    build_command: npm run build
+    environment_slug: node-js
+    output_dir: /build
+    envs:
+      - key: REACT_APP_API_URL
+        value: "https://ommiquiz-backend.ondigitalocean.app"
+    routes:
+      - path: /
+```
+
+## Szenario 2: Eine App mit zwei Services
+
+### Kombinierte App Konfiguration
+```yaml
+name: ommiquiz-app
+services:
+  - name: backend
+    source_dir: /backend
+    github:
+      repo: pemo11/ommiquiz
+      branch: main
+    run_command: uvicorn app.main:app --host 0.0.0.0 --port 8080
+    environment_slug: python
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    http_port: 8080
+    health_check:
+      http_path: /health
+    envs:
+      - key: PYTHONUNBUFFERED
+        value: "1"
+    routes:
+      - path: /api
+        
+static_sites:
+  - name: frontend
+    source_dir: /frontend
+    github:
+      repo: pemo11/ommiquiz
+      branch: main
+    build_command: npm run build
+    environment_slug: node-js
+    output_dir: /build
+    envs:
+      - key: REACT_APP_API_URL
+        value: "${_self.BACKEND_URL}/api"
+    routes:
+      - path: /
+```
+
+## Frontend Build-Optimierungen für DigitalOcean
+
+Da DigitalOcean den Build-Prozess übernimmt, sollten wir sicherstellen, dass das Frontend korrekt konfiguriert ist.
 
 ## Option 1: DigitalOcean App Platform (Empfohlen)
 
