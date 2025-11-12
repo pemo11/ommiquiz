@@ -11,6 +11,18 @@
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header-main {
+  flex: 1;
+}
+
 .App-header h1 {
   color: #667eea;
   margin-bottom: 0.5rem;
@@ -20,6 +32,38 @@
 .App-header p {
   color: #666;
   font-size: 1.1rem;
+  margin: 0;
+}
+
+.admin-toggle-button {
+  background-color: #667eea;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: 600;
+  min-width: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.admin-toggle-button:hover {
+  background-color: #5568d3;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.admin-toggle-button.active {
+  background-color: #28a745;
+}
+
+.admin-toggle-button.active:hover {
+  background-color: #218838;
 }
 
 .App-main {
@@ -63,4 +107,25 @@
   color: white;
   font-size: 1.5rem;
   text-align: center;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .App-header {
+    padding: 1.5rem;
+  }
+  
+  .App-header h1 {
+    font-size: 2rem;
+  }
+  
+  .admin-toggle-button {
+    min-width: auto;
+    padding: 0.5rem 1rem;
+  }
 }

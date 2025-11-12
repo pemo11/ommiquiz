@@ -2,14 +2,16 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import FlashcardViewer from './components/FlashcardViewer';
 import FlashcardSelector from './components/FlashcardSelector';
+import AdminPanel from './components/AdminPanel';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
 function App() {
   const [selectedFlashcard, setSelectedFlashcard] = useState(null);
   const [flashcards, setFlashcards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showAdmin, setShowAdmin] = useState(false);
 
   useEffect(() => {
     fetchFlashcardList();
@@ -66,37 +68,64 @@ function App() {
     setSelectedFlashcard(null);
   };
 
+  const handleAdminToggle = () => {
+    setShowAdmin(!showAdmin);
+    setSelectedFlashcard(null); // Reset flashcard selection when switching modes
+  };
+
+  const handleAdminBack = () => {
+    setShowAdmin(false);
+    fetchFlashcardList(); // Refresh the list in case changes were made
+  };
+
   return (
     <div className="App">
       <header className="App-header">
-        <h1>🎓 Ommiquiz</h1>
-        <p>Learn with flashcards</p>
+        <div className="header-content">
+          <div className="header-main">
+            <h1>🎓 Ommiquiz</h1>
+            <p>Learn with flashcards</p>
+          </div>
+          <button 
+            onClick={handleAdminToggle} 
+            className={`admin-toggle-button ${showAdmin ? 'active' : ''}`}
+            title={showAdmin ? 'Switch to Quiz Mode' : 'Switch to Admin Mode'}
+          >
+            {showAdmin ? '🎯 Quiz' : '🔧 Admin'}
+          </button>
+        </div>
       </header>
       
       <main className="App-main">
-        {error && (
+        {error && !showAdmin && (
           <div className="error-message">
             <p>Error: {error}</p>
             <button onClick={() => window.location.reload()}>Retry</button>
           </div>
         )}
-        
-        {loading && !selectedFlashcard && (
-          <div className="loading">Loading...</div>
-        )}
-        
-        {!loading && !selectedFlashcard && !error && (
-          <FlashcardSelector
-            flashcards={flashcards}
-            onSelect={handleSelectFlashcard}
-          />
-        )}
-        
-        {selectedFlashcard && (
-          <FlashcardViewer
-            flashcard={selectedFlashcard}
-            onBack={handleBack}
-          />
+
+        {showAdmin ? (
+          <AdminPanel onBack={handleAdminBack} />
+        ) : (
+          <>
+            {loading && !selectedFlashcard && (
+              <div className="loading">Loading...</div>
+            )}
+            
+            {!loading && !selectedFlashcard && !error && (
+              <FlashcardSelector
+                flashcards={flashcards}
+                onSelect={handleSelectFlashcard}
+              />
+            )}
+            
+            {selectedFlashcard && (
+              <FlashcardViewer
+                flashcard={selectedFlashcard}
+                onBack={handleBack}
+              />
+            )}
+          </>
         )}
       </main>
     </div>

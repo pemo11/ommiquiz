@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import yaml
@@ -9,7 +9,7 @@ import shutil
 from pathlib import Path
 from typing import Dict, Any, Optional
 
-app = FastAPI(title="Ommiquiz API", version="1.0.0", root_path="/api")
+app = FastAPI(title="Ommiquiz API", version="1.0.0")
 
 # Configure CORS
 app.add_middleware(
@@ -19,6 +19,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Create API router with /api prefix
+api_router = APIRouter(prefix="/api")
 
 # Support both Docker and local development paths
 if Path("/app/flashcards").exists():
@@ -64,13 +67,13 @@ def get_safe_flashcard_path(flashcard_id: str) -> Optional[Path]:
     return resolved_path
 
 
-@app.get("/")
-async def root():
-    """Root endpoint"""
+@api_router.get("/")
+async def api_root():
+    """API root endpoint"""
     return {"message": "Welcome to Ommiquiz API"}
 
 
-@app.get("/flashcards")
+@api_router.get("/flashcards")
 async def list_flashcards():
     """List all available flashcard files"""
     if not FLASHCARDS_DIR.exists():
@@ -92,7 +95,7 @@ async def list_flashcards():
     return {"flashcards": flashcard_files}
 
 
-@app.get("/flashcards/{flashcard_id}")
+@api_router.get("/flashcards/{flashcard_id}")
 async def get_flashcard(flashcard_id: str) -> Dict[str, Any]:
     """Get a specific flashcard file by ID"""
     # Get safe path using validation function
@@ -111,7 +114,7 @@ async def get_flashcard(flashcard_id: str) -> Dict[str, Any]:
         raise HTTPException(status_code=500, detail=f"Error reading file: {str(e)}")
 
 
-@app.get("/health")
+@api_router.get("/health")
 async def health_check():
     """Health check endpoint"""
     return {"status": "healthy"}
@@ -186,7 +189,7 @@ def validate_flashcard_yaml(data: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-@app.post("/flashcards/upload")
+@api_router.post("/flashcards/upload")
 async def upload_flashcard(file: UploadFile = File(...)):
     """Upload and validate a new flashcard YAML file"""
     
@@ -279,7 +282,7 @@ async def upload_flashcard(file: UploadFile = File(...)):
         )
 
 
-@app.delete("/flashcards/{flashcard_id}")
+@api_router.delete("/flashcards/{flashcard_id}")
 async def delete_flashcard(flashcard_id: str):
     """Delete a flashcard file"""
     
@@ -305,7 +308,7 @@ async def delete_flashcard(flashcard_id: str):
         )
 
 
-@app.post("/flashcards/validate")
+@api_router.post("/flashcards/validate")
 async def validate_flashcard_file(file: UploadFile = File(...)):
     """Validate a flashcard YAML file without saving it"""
     
@@ -347,3 +350,12 @@ async def validate_flashcard_file(file: UploadFile = File(...)):
             "topics": data.get("topics", [])
         } if validation["valid"] else None
     }
+
+# Include the API router with all endpoints
+app.include_router(api_router)
+
+# Keep the original root endpoint for backward compatibility
+@app.get("/")
+async def root():
+    """Root endpoint"""
+    return {"message": "Welcome to Ommiquiz API", "api": "/api"}
