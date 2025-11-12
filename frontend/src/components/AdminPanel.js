@@ -15,9 +15,10 @@ function AdminPanel({ onBack }) {
   const [showYamlImport, setShowYamlImport] = useState(false);
   const [yamlInput, setYamlInput] = useState('');
   const [yamlParseError, setYamlParseError] = useState(null);
-  // Add state for storing raw string values during typing
   const [topicsInput, setTopicsInput] = useState('');
   const [keywordsInput, setKeywordsInput] = useState('');
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [pendingSaveData, setPendingSaveData] = useState(null);
 
   useEffect(() => {
     fetchFlashcardList();
@@ -49,7 +50,7 @@ function AdminPanel({ onBack }) {
       }
       const data = await response.json();
       setSelectedFlashcard(data);
-      setEditingFlashcard({ ...data }); // Create a copy for editing
+      setEditingFlashcard({ ...data });
       setError(null);
     } catch (err) {
       setError(err.message);
@@ -64,7 +65,7 @@ function AdminPanel({ onBack }) {
       author: '',
       title: '',
       description: '',
-      createDate: new Date().toISOString().split('T')[0], // YYYY-MM-DD format
+      createDate: new Date().toISOString().split('T')[0],
       language: 'en',
       level: 'beginner',
       topics: [],
@@ -98,7 +99,6 @@ function AdminPanel({ onBack }) {
     }
 
     try {
-      // Simple YAML parser for our flashcard format
       const lines = yamlInput.split('\n');
       const flashcardData = {
         id: '',
@@ -124,7 +124,6 @@ function AdminPanel({ onBack }) {
         
         if (!trimmedLine || trimmedLine.startsWith('#')) continue;
 
-        // Detect sections
         if (trimmedLine === 'flashcards:') {
           currentSection = 'flashcards';
           continue;
@@ -140,7 +139,6 @@ function AdminPanel({ onBack }) {
               if (value === '[]') {
                 flashcardData[key] = [];
               } else {
-                // Handle array items on following lines
                 const items = [];
                 for (let j = i + 1; j < lines.length; j++) {
                   const nextLine = lines[j];
@@ -161,7 +159,6 @@ function AdminPanel({ onBack }) {
 
         if (currentSection === 'flashcards') {
           if (trimmedLine.startsWith('- question:')) {
-            // Save previous card if exists
             if (currentCard) {
               if (currentAnswers.length > 0) {
                 currentCard.answers = currentAnswers;
@@ -170,7 +167,6 @@ function AdminPanel({ onBack }) {
               flashcardData.flashcards.push(currentCard);
             }
             
-            // Start new card
             currentCard = {
               question: trimmedLine.substring(trimmedLine.indexOf(':') + 1).trim().replace(/^"(.*)"$/, '$1'),
               type: 'single'
@@ -182,15 +178,20 @@ function AdminPanel({ onBack }) {
           } else if (trimmedLine === 'answers:' && currentCard) {
             currentCard.type = 'multiple';
             currentAnswers = [];
+          } else if (trimmedLine === 'correctAnswers:' && currentCard) {
+            currentCard.correctAnswers = [];
           } else if (trimmedLine.startsWith('- "') && currentCard && currentCard.type === 'multiple') {
             currentAnswers.push(trimmedLine.substring(2).trim().replace(/^"(.*)"$/, '$1'));
+          } else if (trimmedLine.startsWith('- true') || trimmedLine.startsWith('- false')) {
+            if (currentCard && currentCard.correctAnswers) {
+              currentCard.correctAnswers.push(trimmedLine.substring(2).trim() === 'true');
+            }
           } else if (trimmedLine.startsWith('type:') && currentCard) {
             currentCard.type = trimmedLine.substring(trimmedLine.indexOf(':') + 1).trim();
           }
         }
       }
 
-      // Save last card
       if (currentCard) {
         if (currentAnswers.length > 0) {
           currentCard.answers = currentAnswers;
@@ -198,7 +199,6 @@ function AdminPanel({ onBack }) {
         flashcardData.flashcards.push(currentCard);
       }
 
-      // Validate required fields
       if (!flashcardData.id) {
         throw new Error('Missing required field: id');
       }
@@ -212,12 +212,10 @@ function AdminPanel({ onBack }) {
         throw new Error('No flashcards found in YAML');
       }
 
-      // Set default createDate if not provided
       if (!flashcardData.createDate) {
         flashcardData.createDate = new Date().toISOString().split('T')[0];
       }
 
-      // Load into editor
       setSelectedFlashcard(flashcardData);
       setEditingFlashcard({ ...flashcardData });
       setIsCreatingNew(true);
@@ -236,70 +234,83 @@ function AdminPanel({ onBack }) {
     setYamlParseError(null);
   };
 
-  const saveFlashcard = async () => {
+  const saveFlashcard = async (forceOverwrite = false) => {
     if (!editingFlashcard) return;
 
-    // Validation for new flashcards
-    if (isCreatingNew) {
-      if (!editingFlashcard.id.trim()) {
-        setError('Flashcard ID is required');
+    if (!editingFlashcard.id.trim()) {
+      setError('Flashcard ID is required');
+      return;
+    }
+    if (!editingFlashcard.title.trim()) {
+      setError('Flashcard title is required');
+      return;
+    }
+    if (!editingFlashcard.author.trim()) {
+      setError('Flashcard author is required');
+      return;
+    }
+    if (editingFlashcard.flashcards.length === 0) {
+      setError('At least one flashcard is required');
+      return;
+    }
+    
+    for (let i = 0; i < editingFlashcard.flashcards.length; i++) {
+      const card = editingFlashcard.flashcards[i];
+      if (!card.question.trim()) {
+        setError(`Question for card ${i + 1} is required`);
         return;
       }
-      if (!editingFlashcard.title.trim()) {
-        setError('Flashcard title is required');
+      if (card.type === 'single' && !card.answer?.trim()) {
+        setError(`Answer for card ${i + 1} is required`);
         return;
       }
-      if (!editingFlashcard.author.trim()) {
-        setError('Flashcard author is required');
+      if (card.type === 'multiple' && (!card.answers || card.answers.length === 0 || card.answers.every(a => !a.trim()))) {
+        setError(`At least one answer for card ${i + 1} is required`);
         return;
       }
-      if (editingFlashcard.flashcards.length === 0) {
-        setError('At least one flashcard is required');
-        return;
-      }
-      
-      // Check if any flashcard has empty question or answer
-      for (let i = 0; i < editingFlashcard.flashcards.length; i++) {
-        const card = editingFlashcard.flashcards[i];
-        if (!card.question.trim()) {
-          setError(`Question for card ${i + 1} is required`);
-          return;
-        }
-        if (card.type === 'single' && !card.answer?.trim()) {
-          setError(`Answer for card ${i + 1} is required`);
-          return;
-        }
-        if (card.type === 'multiple' && (!card.answers || card.answers.length === 0 || card.answers.every(a => !a.trim()))) {
-          setError(`At least one answer for card ${i + 1} is required`);
-          return;
-        }
-      }
+    }
+
+    const isUpdatingExisting = selectedFlashcard && selectedFlashcard.id === editingFlashcard.id;
+    const isNewButExists = isCreatingNew && flashcards.some(fc => fc.id === editingFlashcard.id);
+
+    if (isNewButExists && !forceOverwrite) {
+      setPendingSaveData({ ...editingFlashcard });
+      setShowConfirmDialog(true);
+      return;
     }
 
     try {
       setSaving(true);
       setError(null);
 
-      // Convert the flashcard data to YAML format
       const yamlData = convertToYAML(editingFlashcard);
       
-      // Create a blob and form data
-      const blob = new Blob([yamlData], { type: 'text/yaml' });
-      const formData = new FormData();
-      formData.append('file', blob, `${editingFlashcard.id}.yaml`);
+      let response;
+      if (isUpdatingExisting) {
+        response = await fetch(`${API_URL}/flashcards/${editingFlashcard.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            content: yamlData,
+            filename: `${editingFlashcard.id}.yaml`
+          })
+        });
+      } else {
+        const blob = new Blob([yamlData], { type: 'text/yaml' });
+        const formData = new FormData();
+        formData.append('file', blob, `${editingFlashcard.id}.yaml`);
+        
+        if (forceOverwrite) {
+          formData.append('overwrite', 'true');
+        }
 
-      // For existing flashcards, delete the old one if ID changed
-      if (!isCreatingNew && selectedFlashcard.id !== editingFlashcard.id) {
-        await fetch(`${API_URL}/flashcards/${selectedFlashcard.id}`, {
-          method: 'DELETE'
+        response = await fetch(`${API_URL}/flashcards/upload`, {
+          method: 'POST',
+          body: formData
         });
       }
-
-      // Upload the flashcard
-      const response = await fetch(`${API_URL}/flashcards/upload`, {
-        method: 'POST',
-        body: formData
-      });
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -307,21 +318,75 @@ function AdminPanel({ onBack }) {
       }
 
       const result = await response.json();
-      const actionText = isCreatingNew ? 'created' : 'saved';
+      const actionText = isUpdatingExisting ? 'updated' : (isNewButExists ? 'overwritten' : 'created');
       setMessage(`Flashcard ${actionText} successfully!`);
       setSelectedFlashcard({ ...editingFlashcard });
       setIsCreatingNew(false);
       
-      // Refresh the flashcard list
       await fetchFlashcardList();
       
-      // Clear message after 3 seconds
       setTimeout(() => setMessage(null), 3000);
       
     } catch (err) {
       setError(err.message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleConfirmOverwrite = async () => {
+    setShowConfirmDialog(false);
+    if (pendingSaveData) {
+      await saveFlashcard(true);
+      setPendingSaveData(null);
+    }
+  };
+
+  const handleCancelOverwrite = () => {
+    setShowConfirmDialog(false);
+    setPendingSaveData(null);
+  };
+
+  const exportFlashcard = (flashcardData = null) => {
+    try {
+      const dataToExport = flashcardData || editingFlashcard;
+      
+      if (!dataToExport) {
+        setError('No flashcard data to export');
+        return;
+      }
+
+      const yamlContent = convertToYAML(dataToExport);
+      
+      const blob = new Blob([yamlContent], { type: 'text/yaml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${dataToExport.id || 'flashcard'}.yaml`;
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      setMessage(`Flashcard "${dataToExport.title || dataToExport.id}" exported successfully!`);
+      setTimeout(() => setMessage(null), 3000);
+      
+    } catch (err) {
+      setError(`Failed to export flashcard: ${err.message}`);
+    }
+  };
+
+  const exportFlashcardById = async (flashcardId) => {
+    try {
+      const response = await fetch(`${API_URL}/flashcards/${flashcardId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch flashcard for export');
+      }
+      const data = await response.json();
+      exportFlashcard(data);
+    } catch (err) {
+      setError(`Failed to export flashcard: ${err.message}`);
     }
   };
 
@@ -365,6 +430,12 @@ function AdminPanel({ onBack }) {
         card.answers.forEach(answer => {
           yamlLines.push(`      - "${answer.replace(/"/g, '\\"')}"`);
         });
+        if (card.correctAnswers && card.correctAnswers.some(isCorrect => isCorrect)) {
+          yamlLines.push('    correctAnswers:');
+          card.correctAnswers.forEach(isCorrect => {
+            yamlLines.push(`      - ${isCorrect}`);
+          });
+        }
       }
       yamlLines.push(`    type: ${card.type}`);
       yamlLines.push('');
@@ -380,17 +451,14 @@ function AdminPanel({ onBack }) {
     }));
   };
 
-  // Helper function to convert string to array
   const stringToArray = (str) => {
     return str ? str.split(',').map(item => item.trim()).filter(item => item) : [];
   };
 
-  // Helper function to convert array to string
   const arrayToString = (arr) => {
     return arr ? arr.join(', ') : '';
   };
 
-  // Handle topics input changes
   const handleTopicsChange = (e) => {
     setTopicsInput(e.target.value);
   };
@@ -400,7 +468,6 @@ function AdminPanel({ onBack }) {
     updateFlashcardField('topics', topicsArray);
   };
 
-  // Handle keywords input changes
   const handleKeywordsChange = (e) => {
     setKeywordsInput(e.target.value);
   };
@@ -410,13 +477,12 @@ function AdminPanel({ onBack }) {
     updateFlashcardField('keywords', keywordsArray);
   };
 
-  // Update input states when flashcard changes
   useEffect(() => {
     if (editingFlashcard) {
       setTopicsInput(arrayToString(editingFlashcard.topics));
       setKeywordsInput(arrayToString(editingFlashcard.keywords));
     }
-  }, [editingFlashcard?.id]); // Only update when flashcard ID changes (new flashcard loaded)
+  }, [editingFlashcard?.id]);
 
   const updateCardField = (cardIndex, field, value) => {
     setEditingFlashcard(prev => {
@@ -459,7 +525,11 @@ function AdminPanel({ onBack }) {
       if (!newFlashcards[cardIndex].answers) {
         newFlashcards[cardIndex].answers = [];
       }
+      if (!newFlashcards[cardIndex].correctAnswers) {
+        newFlashcards[cardIndex].correctAnswers = [];
+      }
       newFlashcards[cardIndex].answers.push('');
+      newFlashcards[cardIndex].correctAnswers.push(false);
       return {
         ...prev,
         flashcards: newFlashcards
@@ -478,10 +548,27 @@ function AdminPanel({ onBack }) {
     });
   };
 
+  const updateCorrectAnswer = (cardIndex, answerIndex, isCorrect) => {
+    setEditingFlashcard(prev => {
+      const newFlashcards = [...prev.flashcards];
+      if (!newFlashcards[cardIndex].correctAnswers) {
+        newFlashcards[cardIndex].correctAnswers = new Array(newFlashcards[cardIndex].answers.length).fill(false);
+      }
+      newFlashcards[cardIndex].correctAnswers[answerIndex] = isCorrect;
+      return {
+        ...prev,
+        flashcards: newFlashcards
+      };
+    });
+  };
+
   const deleteAnswer = (cardIndex, answerIndex) => {
     setEditingFlashcard(prev => {
       const newFlashcards = [...prev.flashcards];
       newFlashcards[cardIndex].answers = newFlashcards[cardIndex].answers.filter((_, index) => index !== answerIndex);
+      if (newFlashcards[cardIndex].correctAnswers) {
+        newFlashcards[cardIndex].correctAnswers = newFlashcards[cardIndex].correctAnswers.filter((_, index) => index !== answerIndex);
+      }
       return {
         ...prev,
         flashcards: newFlashcards
@@ -626,13 +713,21 @@ flashcards:
             <h3>
               {isCreatingNew ? 'Creating New Flashcard' : `Editing: ${selectedFlashcard.id}`}
             </h3>
-            <button
-              onClick={saveFlashcard}
-              disabled={saving}
-              className="save-button"
-            >
-              {saving ? 'Saving...' : (isCreatingNew ? 'Create Flashcard' : 'Save Changes')}
-            </button>
+            <div className="header-buttons">
+              <button
+                onClick={saveFlashcard}
+                disabled={saving}
+                className="update-yaml-button"
+              >
+                {saving ? '🔄 Updating...' : (isCreatingNew ? '📝 Create Flashcard' : '📝 Update YAML File')}
+              </button>
+              <button
+                onClick={() => exportFlashcard()}
+                className="export-button"
+              >
+                📤 Export Yaml File
+              </button>
+            </div>
           </div>
 
           {editingFlashcard && (
@@ -770,6 +865,7 @@ flashcards:
                           } else {
                             updateCardField(cardIndex, 'type', newType);
                             updateCardField(cardIndex, 'answers', card.answer ? [card.answer] : ['']);
+                            updateCardField(cardIndex, 'correctAnswers', card.answer ? [false] : [false]);
                             updateCardField(cardIndex, 'answer', undefined);
                           }
                         }}
@@ -806,7 +902,16 @@ flashcards:
                               value={answer}
                               onChange={(e) => updateAnswer(cardIndex, answerIndex, e.target.value)}
                               placeholder={`Answer ${answerIndex + 1}`}
+                              className="answer-input"
                             />
+                            <label className="correct-answer-checkbox">
+                              <input
+                                type="checkbox"
+                                checked={card.correctAnswers && card.correctAnswers[answerIndex]}
+                                onChange={(e) => updateCorrectAnswer(cardIndex, answerIndex, e.target.checked)}
+                              />
+                              <span>Correct</span>
+                            </label>
                             <button
                               onClick={() => deleteAnswer(cardIndex, answerIndex)}
                               className="delete-answer-button"
@@ -822,6 +927,18 @@ flashcards:
               </div>
             </div>
           )}
+        </div>
+      )}
+      {showConfirmDialog && (
+        <div className="confirm-dialog">
+          <div className="confirm-dialog-content">
+            <h4>Confirm Overwrite</h4>
+            <p>A flashcard with the same ID already exists. Do you want to overwrite it?</p>
+            <div className="confirm-dialog-buttons">
+              <button onClick={handleConfirmOverwrite} className="confirm-button">Yes, Overwrite</button>
+              <button onClick={handleCancelOverwrite} className="cancel-button">Cancel</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

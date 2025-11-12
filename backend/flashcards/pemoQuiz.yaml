@@ -1,0 +1,30 @@
+id: pemoQuiz
+author: Pemo
+title: The great Pemo quiz
+description: Trivia and fun facts about Pemo
+createDate: 2025-11-12
+language: en
+level: beginner
+topics:
+- pemo;aurich;Ostfriesland
+keywords:
+- Tee;Kluntjes
+flashcards:
+- question: What is the birthplace of the famous Pemo?
+  answer: Aurich
+  type: single
+- question: What was the favorite TV show of the famous Pemo in the 70s?
+  answers:
+  - Raumschiff Enterprise
+  - Sesamstraße
+  - Aktenzeichen XY
+  - Bonanza
+  correctAnswers:
+  - true
+  - false
+  - false
+  - false
+  type: multiple
+- question: What was Pemos favorite dish?
+  answer: Pfannekuchen mit Apfelmus
+  type: single

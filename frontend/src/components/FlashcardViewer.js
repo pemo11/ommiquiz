@@ -4,6 +4,8 @@ import './FlashcardViewer.css';
 function FlashcardViewer({ flashcard, onBack }) {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [selectedAnswers, setSelectedAnswers] = useState([]);
+  const [showCorrectAnswers, setShowCorrectAnswers] = useState(false);
   const [startTime] = useState(Date.now());
   const [elapsedTime, setElapsedTime] = useState(0);
 
@@ -14,6 +16,12 @@ function FlashcardViewer({ flashcard, onBack }) {
   console.log('Cards length:', cards.length);
   
   const currentCard = cards[currentCardIndex];
+
+  // Reset selections when card changes
+  useEffect(() => {
+    setSelectedAnswers([]);
+    setShowCorrectAnswers(false);
+  }, [currentCardIndex]);
 
   // Timer effect
   useEffect(() => {
@@ -31,7 +39,27 @@ function FlashcardViewer({ flashcard, onBack }) {
   };
 
   const handleCardClick = () => {
-    setIsFlipped(!isFlipped);
+    if (currentCard.type === 'single') {
+      setIsFlipped(!isFlipped);
+    }
+  };
+
+  const handleAnswerSelect = (answerIndex) => {
+    if (currentCard.type === 'multiple') {
+      setSelectedAnswers(prev => {
+        if (prev.includes(answerIndex)) {
+          return prev.filter(idx => idx !== answerIndex);
+        } else {
+          return [...prev, answerIndex];
+        }
+      });
+    }
+  };
+
+  const handleShowAnswers = () => {
+    if (currentCard.type === 'multiple') {
+      setShowCorrectAnswers(true);
+    }
   };
 
   const handleNext = () => {
@@ -85,32 +113,75 @@ function FlashcardViewer({ flashcard, onBack }) {
         </div>
       </div>
 
-      <div className="card-container" onClick={handleCardClick}>
-        <div className={`flashcard ${isFlipped ? 'flipped' : ''}`}>
-          <div className="flashcard-face flashcard-front">
+      {currentCard.type === 'single' ? (
+        // Single answer card (flip-style)
+        <div className="card-container" onClick={handleCardClick}>
+          <div className={`flashcard ${isFlipped ? 'flipped' : ''}`}>
+            <div className="flashcard-face flashcard-front">
+              <div className="card-header">Question</div>
+              <div className="card-content">
+                <p>{currentCard.question}</p>
+              </div>
+              <div className="card-hint">Click to flip</div>
+            </div>
+            <div className="flashcard-face flashcard-back">
+              <div className="card-header">Answer</div>
+              <div className="card-content">
+                <p>{currentCard.answer}</p>
+              </div>
+              <div className="card-hint">Click to flip back</div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        // Multiple choice card (interactive)
+        <div className="quiz-container">
+          <div className="question-section">
             <div className="card-header">Question</div>
             <div className="card-content">
               <p>{currentCard.question}</p>
             </div>
-            <div className="card-hint">Click to flip</div>
           </div>
-          <div className="flashcard-face flashcard-back">
-            <div className="card-header">Answer</div>
-            <div className="card-content">
-              {currentCard.type === 'single' ? (
-                <p>{currentCard.answer}</p>
-              ) : (
-                <ul>
-                  {currentCard.answers && currentCard.answers.map((ans, idx) => (
-                    <li key={idx}>{ans}</li>
-                  ))}
-                </ul>
-              )}
+          
+          <div className="answers-section">
+            <div className="card-header">Select all correct answers:</div>
+            <div className="answers-list">
+              {currentCard.answers && currentCard.answers.map((answer, idx) => {
+                const isCorrectAnswer = currentCard.correctAnswers && currentCard.correctAnswers[idx];
+                const isSelectedAnswer = selectedAnswers.includes(idx);
+                
+                return (
+                  <label key={idx} className={`answer-option ${isSelectedAnswer ? 'selected' : ''} ${showCorrectAnswers ? (isCorrectAnswer ? 'correct' : 'incorrect') : ''}`}>
+                    <input
+                      type="checkbox"
+                      checked={isSelectedAnswer}
+                      onChange={() => handleAnswerSelect(idx)}
+                      disabled={showCorrectAnswers}
+                    />
+                    <span className="answer-text">{answer}</span>
+                    {showCorrectAnswers && isCorrectAnswer && (
+                      <span className="answer-indicator correct">✓</span>
+                    )}
+                    {showCorrectAnswers && !isCorrectAnswer && (
+                      <span className="answer-indicator incorrect">✗</span>
+                    )}
+                  </label>
+                );
+              })}
             </div>
-            <div className="card-hint">Click to flip back</div>
+            
+            {!showCorrectAnswers && (
+              <button 
+                onClick={handleShowAnswers}
+                className="show-answers-button"
+                disabled={selectedAnswers.length === 0}
+              >
+                Show Correct Answers
+              </button>
+            )}
           </div>
         </div>
-      </div>
+      )}
 
       <div className="navigation-buttons">
         <button
@@ -129,11 +200,7 @@ function FlashcardViewer({ flashcard, onBack }) {
         </button>
       </div>
 
-      {flashcard.topics && flashcard.topics.length > 0 && (
-        <div className="topics">
-          <strong>Topics:</strong> {flashcard.topics.join(', ')}
-        </div>
-      )}
+      {/* Removed topics display - no longer shown during quiz */}
     </div>
   );
 }

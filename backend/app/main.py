@@ -1,6 +1,7 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File, APIRouter
+from fastapi import FastAPI, HTTPException, UploadFile, File, APIRouter, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 import yaml
 import os
 import re
@@ -189,8 +190,86 @@ def validate_flashcard_yaml(data: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+class FlashcardUpdateRequest(BaseModel):
+    content: str
+    filename: str
+
+@api_router.put("/flashcards/{flashcard_id}")
+async def update_flashcard(flashcard_id: str, request: FlashcardUpdateRequest):
+    """Update an existing flashcard file"""
+    
+    # Validate ID format
+    if not VALID_ID_PATTERN.match(flashcard_id):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid flashcard ID format. Use only letters, numbers, hyphens, and underscores"
+        )
+    
+    # Get the existing file path
+    file_path = get_safe_flashcard_path(flashcard_id)
+    
+    if file_path is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Flashcard '{flashcard_id}' not found"
+        )
+    
+    # Parse YAML content
+    try:
+        data = yaml.safe_load(request.content)
+    except yaml.YAMLError as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid YAML format: {str(e)}"
+        )
+    
+    # Validate flashcard structure
+    validation = validate_flashcard_yaml(data)
+    if not validation["valid"]:
+        return JSONResponse(
+            status_code=400,
+            content={
+                "success": False,
+                "message": "YAML validation failed",
+                "errors": validation["errors"],
+                "warnings": validation["warnings"]
+            }
+        )
+    
+    # Verify that the ID in the content matches the URL parameter
+    if data.get("id") != flashcard_id:
+        raise HTTPException(
+            status_code=400,
+            detail=f"ID mismatch: URL specifies '{flashcard_id}' but content has '{data.get('id')}'"
+        )
+    
+    # Update the file
+    try:
+        with open(file_path, 'w', encoding='utf-8') as f:
+            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+        
+        return {
+            "success": True,
+            "message": f"Flashcard '{flashcard_id}' updated successfully",
+            "filename": file_path.name,
+            "flashcard_id": flashcard_id,
+            "warnings": validation["warnings"],
+            "stats": {
+                "total_cards": len(data.get("flashcards", [])),
+                "language": data.get("language"),
+                "level": data.get("level"),
+                "topics": data.get("topics", [])
+            }
+        }
+    
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to update file: {str(e)}"
+        )
+
 @api_router.post("/flashcards/upload")
-async def upload_flashcard(file: UploadFile = File(...)):
+async def upload_flashcard(file: UploadFile = File(...), overwrite: str = Form(default="false")):
     """Upload and validate a new flashcard YAML file"""
     
     # Validate file extension
@@ -243,13 +322,15 @@ async def upload_flashcard(file: UploadFile = File(...)):
     
     # Check if file already exists
     target_path = FLASHCARDS_DIR / filename
-    if target_path.exists():
+    allow_overwrite = overwrite.lower() == "true"
+    
+    if target_path.exists() and not allow_overwrite:
         return JSONResponse(
             status_code=409,
             content={
                 "success": False,
                 "message": f"Flashcard with ID '{data.get('id', filename)}' already exists",
-                "suggestion": "Use a different ID or delete the existing flashcard first"
+                "suggestion": "Use a different ID or enable overwrite option"
             }
         )
     
@@ -261,9 +342,11 @@ async def upload_flashcard(file: UploadFile = File(...)):
         with open(target_path, 'w', encoding='utf-8') as f:
             yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
         
+        action = "overwritten" if target_path.existed() else "created"
+        
         return {
             "success": True,
-            "message": f"Flashcard '{data.get('id', filename)}' uploaded successfully",
+            "message": f"Flashcard '{data.get('id', filename)}' {action} successfully",
             "filename": filename,
             "flashcard_id": data.get("id"),
             "warnings": validation["warnings"],
