@@ -76,22 +76,63 @@ async def api_root():
 
 @api_router.get("/flashcards")
 async def list_flashcards():
-    """List all available flashcard files"""
+    """List all available flashcard files with metadata"""
     if not FLASHCARDS_DIR.exists():
         return {"flashcards": []}
     
     flashcard_files = []
-    for file_path in FLASHCARDS_DIR.glob("*.yaml"):
-        flashcard_files.append({
-            "id": file_path.stem,
-            "filename": file_path.name
-        })
     
+    # Process .yaml files
+    for file_path in FLASHCARDS_DIR.glob("*.yaml"):
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data = yaml.safe_load(f)
+            flashcard_files.append({
+                "id": file_path.stem,
+                "filename": file_path.name,
+                "title": data.get("title", file_path.stem),
+                "description": data.get("description", ""),
+                "language": data.get("language", ""),
+                "level": data.get("level", ""),
+                "author": data.get("author", "")
+            })
+        except Exception:
+            # If YAML parsing fails, fall back to filename
+            flashcard_files.append({
+                "id": file_path.stem,
+                "filename": file_path.name,
+                "title": file_path.stem,
+                "description": "",
+                "language": "",
+                "level": "",
+                "author": ""
+            })
+    
+    # Process .yml files
     for file_path in FLASHCARDS_DIR.glob("*.yml"):
-        flashcard_files.append({
-            "id": file_path.stem,
-            "filename": file_path.name
-        })
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data = yaml.safe_load(f)
+            flashcard_files.append({
+                "id": file_path.stem,
+                "filename": file_path.name,
+                "title": data.get("title", file_path.stem),
+                "description": data.get("description", ""),
+                "language": data.get("language", ""),
+                "level": data.get("level", ""),
+                "author": data.get("author", "")
+            })
+        except Exception:
+            # If YAML parsing fails, fall back to filename
+            flashcard_files.append({
+                "id": file_path.stem,
+                "filename": file_path.name,
+                "title": file_path.stem,
+                "description": "",
+                "language": "",
+                "level": "",
+                "author": ""
+            })
     
     return {"flashcards": flashcard_files}
 

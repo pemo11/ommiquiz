@@ -1,0 +1,146 @@
+id: vfhdbte_kapitel5_quiz
+author: Pemo
+title: Basiswissen Datenbanksysteme
+description: Lern- und Verständnisfragen zum Kapitel 5 der VFH-Unterlage „Datenbanktechnologien“
+createDate: 2025-11-12
+language: de
+level: intermediate
+topics:
+- relationale_datenbanken
+- normalisierung
+- sql
+- datenmodellierung
+keywords:
+- Codd;Relationale Algebra;SQL;Normalformen;ACID;Trigger;Datenmigration
+flashcards:
+- question: Wer gilt als Begründer des relationalen Datenbankmodells?
+  answer: Edgar F. Codd
+  type: single
+
+- question: Wie viele Regeln nach Codd beschreiben, ob ein System ein echtes DBMS ist?
+  answer: 13
+  type: single
+
+- question: Welche drei Schemaebenen beschreibt das ANSI/SPARC-Modell?
+  answers:
+  - Externes Schema
+  - Konzeptionelles Schema
+  - Internes Schema
+  correctAnswers:
+  - true
+  - true
+  - true
+  type: multiple
+
+- question: Welche Annahme gilt in relationalen Datenbanken bezüglich nicht gespeicherter Fakten?
+  answer: Closed World Assumption – nicht gespeicherte Fakten gelten als falsch.
+  type: single
+
+- question: Wie viele Basisoperationen umfasst die Relationenalgebra?
+  answer: 6
+  type: single
+
+- question: Welche Operation gehört NICHT zu den sechs Basisoperationen der Relationenalgebra?
+  answers:
+  - Selektion
+  - Projektion
+  - Division
+  - Vereinigung
+  correctAnswers:
+  - false
+  - false
+  - true
+  - false
+  type: multiple
+
+- question: Was bedeutet „NULL“ in der dreiwertigen Logik relationaler Systeme?
+  answer: Unbekannt – weder wahr noch falsch.
+  type: single
+
+- question: Nenne drei Aggregatfunktionen in SQL.
+  answers:
+  - SUM
+  - AVG
+  - COUNT
+  - EXISTS
+  correctAnswers:
+  - true
+  - true
+  - true
+  - true
+  type: multiple
+
+- question: Welche SQL-Befehle gehören zur DDL?
+  answers:
+  - CREATE
+  - INSERT
+  - ALTER
+  - DROP
+  correctAnswers:
+  - true
+  - false
+  - true
+  - true
+  type: multiple
+
+- question: Was ist der Unterschied zwischen einem Primärschlüssel und einem Fremdschlüssel?
+  answer: Ein Primärschlüssel identifiziert Datensätze eindeutig, ein Fremdschlüssel verweist auf den Primärschlüssel einer anderen Tabelle.
+  type: single
+
+- question: Was beschreibt die 1. Normalform?
+  answer: Alle Attribute müssen atomar sein und frei von Wiederholungsgruppen.
+  type: single
+
+- question: Welche Normalform fordert, dass kein Nichtschlüsselattribut von einem Teilschlüssel abhängt?
+  answer: 2. Normalform
+  type: single
+
+- question: Wann ist eine Relation in 3. Normalform?
+  answer: Wenn kein Nichtschlüsselattribut transitiv von einem Schlüsselkandidaten abhängt.
+  type: single
+
+- question: Was fügt die Boyce-Codd-Normalform (BCNF) zusätzlich zur 3NF hinzu?
+  answer: Jedes Attribut, von dem andere abhängen, muss ein Schlüsselkandidat sein.
+  type: single
+
+- question: Welche Normalform behandelt mehrwertige Abhängigkeiten?
+  answer: 4. Normalform
+  type: single
+
+- question: Welche Eigenschaften beschreibt das ACID-Konzept?
+  answers:
+  - Atomarität
+  - Konsistenz
+  - Isolation
+  - Dauerhaftigkeit
+  correctAnswers:
+  - true
+  - true
+  - true
+  - true
+  type: multiple
+
+- question: Wofür werden Indizes in Datenbanken verwendet?
+  answer: Zur Beschleunigung von Suchanfragen und Joins.
+  type: single
+
+- question: Was ist ein View in SQL?
+  answer: Eine virtuelle Tabelle, die auf einer Abfrage basiert.
+  type: single
+
+- question: Wie lautet die höchste Isolationsstufe bei Transaktionen?
+  answer: Serializable
+  type: single
+
+- question: Welche drei Arten von Backup/Replikation werden im Kapitel genannt?
+  answers:
+  - Manuelles Backup/Restore
+  - Asynchrone Replikation
+  - Synchrone Replikation
+  - Hash-Replikation
+  correctAnswers:
+  - true
+  - true
+  - true
+  - false
+  type: multiple

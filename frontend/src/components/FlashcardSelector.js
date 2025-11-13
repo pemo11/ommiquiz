@@ -22,9 +22,22 @@ function FlashcardSelector({ flashcards, onSelect }) {
             key={flashcard.id}
             className="flashcard-item"
             onClick={() => onSelect(flashcard.id)}
+            title={flashcard.description || flashcard.title}
           >
-            <span className="flashcard-icon">📚</span>
-            <span className="flashcard-name">{flashcard.id}</span>
+            <div className="flashcard-content">
+              <span className="flashcard-icon">📚</span>
+              <div className="flashcard-info">
+                <span className="flashcard-title">{flashcard.title || flashcard.id}</span>
+                {flashcard.description && (
+                  <span className="flashcard-description">{flashcard.description}</span>
+                )}
+                <div className="flashcard-meta">
+                  {flashcard.level && <span className="level-badge">{flashcard.level}</span>}
+                  {flashcard.language && <span className="language-badge">{flashcard.language}</span>}
+                  {flashcard.author && <span className="author-info">by {flashcard.author}</span>}
+                </div>
+              </div>
+            </div>
           </button>
         ))}
       </div>

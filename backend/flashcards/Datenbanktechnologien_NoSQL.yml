@@ -1,0 +1,212 @@
+id: vfhdbte_kapitel8_quiz
+author: Pemo
+title: NoSQL-Datenbanken
+description: Lern- und Verständnisfragen zu Kapitel 8 der VFH-Unterlage „Datenbanktechnologien“
+createDate: 2025-11-12
+language: de
+level: intermediate
+topics:
+- nosql
+- key_value
+- document_store
+- column_store
+- graph_database
+- polyglot_persistence
+keywords:
+- ACID;BASE;Redis;MongoDB;Cassandra;Neo4j;KeyValue;Document;Column;Graph
+flashcards:
+- question: Wofür steht NoSQL?
+  answer: Not Only SQL – es bezeichnet Datenbanksysteme, die nicht ausschließlich auf SQL basieren.
+  type: single
+
+- question: Was sind die drei V’s im Big-Data-Kontext?
+  answers:
+  - Volume
+  - Velocity
+  - Variety
+  correctAnswers:
+  - true
+  - true
+  - true
+  type: multiple
+
+- question: Was unterscheidet NoSQL-Systeme grundlegend von relationalen Datenbanken?
+  answer: Sie sind oft schemafrei, skalierbar und verzichten auf komplexe Joins zugunsten von Performance und Flexibilität.
+  type: single
+
+- question: Was bedeutet das ACID-Prinzip?
+  answers:
+  - Atomicity
+  - Consistency
+  - Isolation
+  - Durability
+  correctAnswers:
+  - true
+  - true
+  - true
+  - true
+  type: multiple
+
+- question: Wofür steht das BASE-Prinzip als Gegenstück zu ACID?
+  answers:
+  - Basically Available
+  - Soft State
+  - Eventual Consistency
+  correctAnswers:
+  - true
+  - true
+  - true
+  type: multiple
+
+- question: Was bedeutet „eventual consistency“?
+  answer: Das System erreicht nach einer gewissen Zeit wieder einen konsistenten Zustand, auch wenn es zwischenzeitlich Abweichungen gibt.
+  type: single
+
+- question: Welche vier Hauptkategorien von NoSQL-Datenbanken werden unterschieden?
+  answers:
+  - Key-Value-Datenbanken
+  - Document-Stores
+  - Column-Stores
+  - Graph-Datenbanken
+  correctAnswers:
+  - true
+  - true
+  - true
+  - true
+  type: multiple
+
+- question: Was kennzeichnet Key-Value-Datenbanken?
+  answer: Speicherung von Werten unter eindeutigen Schlüsseln ohne interne Strukturinterpretation.
+  type: single
+
+- question: Welche typischen Befehle unterstützen Key-Value-Stores?
+  answers:
+  - put(key, value)
+  - get(key)
+  - remove(key)
+  correctAnswers:
+  - true
+  - true
+  - true
+  type: multiple
+
+- question: Was ist Redis?
+  answer: Ein schneller, in-memory Key-Value-Store mit Unterstützung für verschiedene Datentypen wie Listen, Sets oder Hashes.
+  type: single
+
+- question: Wofür wird Redis häufig eingesetzt?
+  answers:
+  - Caching
+  - Session Management
+  - Zähler und Warteschlangen
+  correctAnswers:
+  - true
+  - true
+  - true
+  type: multiple
+
+- question: Was unterscheidet Document-Stores von K-V-Stores?
+  answer: Sie speichern strukturierte Dokumente (z. B. JSON) statt einfacher Werte und können deren Inhalte teilweise indexieren.
+  type: single
+
+- question: Wie nennt man die Einheiten, in denen MongoDB Dokumente speichert?
+  answer: Collections
+  type: single
+
+- question: In welchem Format speichert MongoDB Dokumente?
+  answer: BSON – eine binäre Form von JSON.
+  type: single
+
+- question: Welche Vorteile bietet eine Dokumentendatenbank?
+  answers:
+  - Flexibles Schema
+  - Speicherung kompletter Objekte
+  - Unterstützung komplexer Strukturen
+  correctAnswers:
+  - true
+  - true
+  - true
+  type: multiple
+
+- question: Was beschreibt die Aggregation-Pipeline in MongoDB?
+  answer: Eine mehrstufige Verarbeitung von Dokumenten zur Filterung, Gruppierung und Berechnung von Ergebnissen.
+  type: single
+
+- question: Was kennzeichnet Column-Stores?
+  answer: Speicherung von Daten spaltenweise mit dynamischen Spaltenstrukturen und hoher Schreibgeschwindigkeit.
+  type: single
+
+- question: Wofür eignen sich Column-Stores besonders gut?
+  answer: Für Zeitreihen- und IoT-Daten mit unregelmäßigen Messintervallen.
+  type: single
+
+- question: Welche NoSQL-Datenbank ist ein Beispiel für einen Column-Store?
+  answer: Apache Cassandra
+  type: single
+
+- question: Was zeichnet Apache Cassandra aus?
+  answers:
+  - Lineare Skalierbarkeit
+  - Dezentralität ohne Master-Knoten
+  - Eventual Consistency
+  correctAnswers:
+  - true
+  - true
+  - true
+  type: multiple
+
+- question: Wie nennt sich die Abfragesprache von Cassandra?
+  answer: CQL – Cassandra Query Language
+  type: single
+
+- question: Wie ist das Datenmodell in Cassandra aufgebaut?
+  answer: Es gibt Keyspaces mit Column Families, die über Row-Keys organisiert sind.
+  type: single
+
+- question: Was ist eine Graphdatenbank?
+  answer: Eine Datenbank, die Daten in Form von Knoten und Kanten speichert und Beziehungen direkt abbildet.
+  type: single
+
+- question: Welche Abfragesprache verwendet Neo4j?
+  answer: Cypher
+  type: single
+
+- question: Für welche Anwendungsbereiche eignen sich Graphdatenbanken besonders?
+  answers:
+  - Soziale Netzwerke
+  - Empfehlungssysteme
+  - Wissensgraphen
+  - Betrugserkennung
+  correctAnswers:
+  - true
+  - true
+  - true
+  - true
+  type: multiple
+
+- question: Was versteht man unter Polyglot Persistence?
+  answer: Die gleichzeitige Verwendung verschiedener Datenbanktechnologien in einer Anwendung.
+  type: single
+
+- question: Welcher Datenbanktyp eignet sich für Sessions und Warenkörbe mit hoher Verfügbarkeit?
+  answer: Key-Value-Datenbanken
+  type: single
+
+- question: Welche fünf Anforderungskategorien helfen bei der Auswahl eines Datenbanksystems?
+  answers:
+  - Daten
+  - Transaktionen
+  - Performanz
+  - Abfragen
+  - Weitere nicht-funktionale Anforderungen
+  correctAnswers:
+  - true
+  - true
+  - true
+  - true
+  - true
+  type: multiple
+
+- question: Was bezeichnet den Begriff „Polyglot Persistence“ in einem Webshop-Beispiel?
+  answer: Unterschiedliche Datenbanktypen (z. B. Key-Value, Document, Graph) werden für verschiedene Aufgaben eingesetzt.
+  type: single

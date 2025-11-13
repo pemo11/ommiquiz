@@ -3,7 +3,7 @@
   padding: 2rem;
   border-radius: 15px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-  max-width: 600px;
+  max-width: 700px;
   width: 100%;
 }
 
@@ -28,9 +28,10 @@
   cursor: pointer;
   transition: all 0.3s;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 1rem;
-  font-size: 1.1rem;
+  font-size: 1rem;
+  text-align: left;
 }
 
 .flashcard-item:hover {
@@ -40,12 +41,76 @@
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
-.flashcard-icon {
-  font-size: 1.5rem;
+.flashcard-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  width: 100%;
 }
 
-.flashcard-name {
+.flashcard-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.flashcard-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex-grow: 1;
+}
+
+.flashcard-title {
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.flashcard-item:hover .flashcard-title {
+  color: white;
+}
+
+.flashcard-description {
+  font-size: 0.9rem;
+  color: #666;
+  line-height: 1.4;
+}
+
+.flashcard-item:hover .flashcard-description {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.flashcard-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.level-badge, .language-badge {
+  background-color: #f0f4ff;
+  color: #667eea;
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
   font-weight: 500;
+}
+
+.flashcard-item:hover .level-badge,
+.flashcard-item:hover .language-badge {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.author-info {
+  font-size: 0.8rem;
+  color: #888;
+  font-style: italic;
+}
+
+.flashcard-item:hover .author-info {
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .no-flashcards {
