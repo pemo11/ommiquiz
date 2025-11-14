@@ -24,6 +24,6 @@ static_sites:
     output_dir: build
     envs:
       - key: REACT_APP_API_URL
-        value: "https://${APP_DOMAIN}/api"
+        value: "/api"
     routes:
       - path: /

@@ -16,8 +16,8 @@ const getApiUrl = () => {
   // Development fallback - use current hostname for local development
   const hostname = window.location.hostname;
   const baseUrl = hostname === 'localhost' ? 'localhost' : hostname;
-  // Use HTTPS if the current page is served over HTTPS
-  const protocol = window.location.protocol === 'https:' ? 'https' : 'http';
+  // Use HTTPS if the current page is served over HTTPS, HTTP for localhost
+  const protocol = hostname === 'localhost' ? 'http' : window.location.protocol.replace(':', '');
   const port = hostname === 'localhost' ? ':8000' : '';
   return `${protocol}://${baseUrl}${port}/api`;
 };
@@ -53,14 +53,36 @@ function AdminPanel({ onBack }) {
   const fetchFlashcardList = async () => {
     try {
       setLoading(true);
+      console.log('AdminPanel - Fetching from URL:', `${API_URL}/flashcards`);
       const response = await fetch(`${API_URL}/flashcards`);
+      
+      // Log response details for debugging
+      console.log('AdminPanel - Response status:', response.status);
+      console.log('AdminPanel - Response headers:', response.headers);
+      console.log('AdminPanel - Response URL:', response.url);
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch flashcard list');
+        // Try to get the error text instead of JSON
+        const errorText = await response.text();
+        console.error('AdminPanel - Error response text:', errorText);
+        throw new Error(`Failed to fetch flashcard list: ${response.status} ${response.statusText}`);
       }
+      
+      // Check if response is actually JSON
+      const contentType = response.headers.get('content-type');
+      console.log('AdminPanel - Content-Type:', contentType);
+      
+      if (!contentType || !contentType.includes('application/json')) {
+        const responseText = await response.text();
+        console.error('AdminPanel - Non-JSON response received:', responseText);
+        throw new Error('Server returned non-JSON response');
+      }
+      
       const data = await response.json();
       setFlashcards(data.flashcards);
       setError(null);
     } catch (err) {
+      console.error('AdminPanel - Fetch error:', err);
       setError(err.message);
     } finally {
       setLoading(false);
