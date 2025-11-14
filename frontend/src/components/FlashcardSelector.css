@@ -14,6 +14,64 @@
   font-size: 1.8rem;
 }
 
+/* Topic Filter Section */
+.topic-filter-section {
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid #f0f4ff;
+}
+
+.topic-filter-section h3 {
+  color: #667eea;
+  margin-bottom: 1rem;
+  font-size: 1.3rem;
+  text-align: center;
+}
+
+.topic-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.topic-button {
+  background-color: #f8f9fa;
+  border: 2px solid #e9ecef;
+  color: #495057;
+  padding: 0.75rem 1.25rem;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.topic-button:hover {
+  background-color: #667eea;
+  border-color: #667eea;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.topic-button.active {
+  background-color: #667eea;
+  border-color: #667eea;
+  color: white;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+}
+
+.topic-button.active:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+}
+
 .flashcard-list {
   display: flex;
   flex-direction: column;
@@ -88,7 +146,7 @@
   margin-top: 0.5rem;
 }
 
-.level-badge, .language-badge {
+.level-badge, .language-badge, .topic-badge {
   background-color: #f0f4ff;
   color: #667eea;
   padding: 0.2rem 0.6rem;
@@ -97,8 +155,14 @@
   font-weight: 500;
 }
 
+.topic-badge {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
 .flashcard-item:hover .level-badge,
-.flashcard-item:hover .language-badge {
+.flashcard-item:hover .language-badge,
+.flashcard-item:hover .topic-badge {
   background-color: rgba(255, 255, 255, 0.2);
   color: white;
 }
@@ -113,13 +177,45 @@
   color: rgba(255, 255, 255, 0.8);
 }
 
-.no-flashcards {
+.no-flashcards, .no-flashcards-filtered {
   text-align: center;
   color: #666;
   padding: 2rem;
 }
 
-.no-flashcards p {
+.no-flashcards p, .no-flashcards-filtered p {
   margin-bottom: 0.5rem;
   font-size: 1.1rem;
+}
+
+.no-flashcards-filtered {
+  background-color: #f8f9fa;
+  border: 2px dashed #dee2e6;
+  border-radius: 10px;
+  margin-top: 1rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .topic-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .topic-button {
+    justify-content: center;
+  }
+  
+  .flashcard-item {
+    padding: 1rem;
+  }
+  
+  .flashcard-content {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .flashcard-icon {
+    align-self: center;
+  }
 }

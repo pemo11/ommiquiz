@@ -94,7 +94,9 @@ async def list_flashcards():
                 "description": data.get("description", ""),
                 "language": data.get("language", ""),
                 "level": data.get("level", ""),
-                "author": data.get("author", "")
+                "author": data.get("author", ""),
+                "topics": data.get("topics", []),
+                "module": data.get("module", "")
             })
         except Exception:
             # If YAML parsing fails, fall back to filename
@@ -105,7 +107,9 @@ async def list_flashcards():
                 "description": "",
                 "language": "",
                 "level": "",
-                "author": ""
+                "author": "",
+                "topics": [],
+                "module": ""
             })
     
     # Process .yml files
@@ -120,7 +124,9 @@ async def list_flashcards():
                 "description": data.get("description", ""),
                 "language": data.get("language", ""),
                 "level": data.get("level", ""),
-                "author": data.get("author", "")
+                "author": data.get("author", ""),
+                "topics": data.get("topics", []),
+                "module": data.get("module", "")
             })
         except Exception:
             # If YAML parsing fails, fall back to filename
@@ -131,7 +137,9 @@ async def list_flashcards():
                 "description": "",
                 "language": "",
                 "level": "",
-                "author": ""
+                "author": "",
+                "topics": [],
+                "module": ""
             })
     
     return {"flashcards": flashcard_files}

@@ -5,11 +5,12 @@ description: Lern- und Verständnisfragen zu Kapitel 6 der VFH-Unterlage „Date
 createDate: 2025-11-12
 language: de
 level: intermediate
+module: Datenbanktechnologien
 topics:
-- data_warehouse
-- olap
-- etl
-- multidimensionale_modelle
+- Data Warehouse
+- OLAP und OLTP
+- ETL
+- Multidimensionale Modelle
 - data_mining
 keywords:
 - OLAP;OLTP;ETL;Cube;Sternschema;Snowflake;Clustering;Assoziation;Neuronale_Netze

@@ -5,6 +5,7 @@ description: Lern- und Verständnisfragen zu Kapitel 9 der VFH-Unterlage „Date
 createDate: 2025-11-12
 language: de
 level: intermediate
+module: Datenbanktechnologien
 topics:
 - vektordatenbanken
 - embeddings

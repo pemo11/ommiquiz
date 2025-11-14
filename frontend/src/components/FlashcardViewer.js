@@ -6,8 +6,12 @@ function FlashcardViewer({ flashcard, onBack }) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [selectedAnswers, setSelectedAnswers] = useState([]);
   const [showCorrectAnswers, setShowCorrectAnswers] = useState(false);
-  const [startTime] = useState(Date.now());
-  const [elapsedTime, setElapsedTime] = useState(0);
+  const [startTime] = useState(Date.now());  const [elapsedTime, setElapsedTime] = useState(0);
+  
+  // New state for quiz tracking
+  const [cardResults, setCardResults] = useState({});
+  const [showSummary, setShowSummary] = useState(false);
+  const [currentCardAnswered, setCurrentCardAnswered] = useState(false);
 
   console.log('FlashcardViewer received flashcard:', flashcard);
   
@@ -21,7 +25,8 @@ function FlashcardViewer({ flashcard, onBack }) {
   useEffect(() => {
     setSelectedAnswers([]);
     setShowCorrectAnswers(false);
-  }, [currentCardIndex]);
+    setCurrentCardAnswered(cardResults[currentCardIndex] !== undefined);
+  }, [currentCardIndex, cardResults]);
 
   // Timer effect
   useEffect(() => {
@@ -39,13 +44,13 @@ function FlashcardViewer({ flashcard, onBack }) {
   };
 
   const handleCardClick = () => {
-    if (currentCard.type === 'single') {
+    if (currentCard.type === 'single' && !currentCardAnswered) {
       setIsFlipped(!isFlipped);
     }
   };
 
   const handleAnswerSelect = (answerIndex) => {
-    if (currentCard.type === 'multiple') {
+    if (currentCard.type === 'multiple' && !currentCardAnswered) {
       setSelectedAnswers(prev => {
         if (prev.includes(answerIndex)) {
           return prev.filter(idx => idx !== answerIndex);
@@ -56,9 +61,113 @@ function FlashcardViewer({ flashcard, onBack }) {
     }
   };
 
+  // New function to handle single-answer card evaluation
+  const handleSingleAnswerEvaluation = (isCorrect) => {
+    setCardResults(prev => ({
+      ...prev,
+      [currentCardIndex]: {
+        type: 'single',
+        correct: isCorrect,
+        question: currentCard.question,
+        answer: currentCard.answer,
+        userAnswer: isCorrect ? 'Correct' : 'Incorrect'
+      }
+    }));
+    setCurrentCardAnswered(true);
+    
+    // Automatically proceed to next card after a short delay
+    setTimeout(() => {
+      if (currentCardIndex < cards.length - 1) {
+        setCurrentCardIndex(currentCardIndex + 1);
+        setIsFlipped(false);
+      } else {
+        setShowSummary(true);
+      }
+    }, 500);
+  };
+
+  // New function to handle skip action
+  const handleSkip = () => {
+    setCardResults(prev => ({
+      ...prev,
+      [currentCardIndex]: {
+        type: currentCard.type,
+        correct: null, // null indicates skipped
+        question: currentCard.question,
+        answer: currentCard.type === 'single' ? currentCard.answer : currentCard.answers.filter((_, idx) => currentCard.correctAnswers[idx]).join(', '),
+        userAnswer: 'Skipped'
+      }
+    }));
+    
+    // Immediately proceed to next card without showing intermediate state
+    if (currentCardIndex < cards.length - 1) {
+      setCurrentCardIndex(currentCardIndex + 1);
+      setIsFlipped(false);
+    } else {
+      setShowSummary(true);
+    }
+  };
+
+  // Enhanced function to handle multiple choice evaluation
   const handleShowAnswers = () => {
-    if (currentCard.type === 'multiple') {
+    if (currentCard.type === 'multiple' && !currentCardAnswered) {
       setShowCorrectAnswers(true);
+      
+      // Calculate if the answer is correct
+      const correctAnswers = currentCard.correctAnswers || [];
+      const userCorrectCount = selectedAnswers.filter(idx => correctAnswers[idx]).length;
+      const userIncorrectCount = selectedAnswers.filter(idx => !correctAnswers[idx]).length;
+      const totalCorrectAnswers = correctAnswers.filter(Boolean).length;
+      
+      // Debug logging
+      console.log('Multiple Choice Evaluation:');
+      console.log('Selected answers:', selectedAnswers);
+      console.log('Correct answers array:', correctAnswers);
+      console.log('User correct count:', userCorrectCount);
+      console.log('User incorrect count:', userIncorrectCount);
+      console.log('Total correct answers:', totalCorrectAnswers);
+      
+      // Determine correctness
+      let isCorrect;
+      let userAnswer;
+      
+      if (selectedAnswers.length === 0) {
+        // No answers selected - treat as "just viewing"
+        isCorrect = null; // null indicates "just viewing/learning"
+        userAnswer = 'No answer selected (viewing only)';
+      } else {
+        // Answer is correct if user selected at least one correct answer and no incorrect ones
+        // OR if user selected all correct answers (perfect score)
+        if (userIncorrectCount === 0 && userCorrectCount > 0) {
+          // No wrong answers selected and at least one correct answer
+          isCorrect = true;
+        } else if (userIncorrectCount > 0) {
+          // Some wrong answers selected
+          isCorrect = false;
+        } else {
+          // This case shouldn't happen, but default to false
+          isCorrect = false;
+        }
+        userAnswer = selectedAnswers.map(idx => currentCard.answers[idx]).join(', ');
+      }
+      
+      console.log('Final evaluation:', isCorrect);
+      
+      setCardResults(prev => ({
+        ...prev,
+        [currentCardIndex]: {
+          type: 'multiple',
+          correct: isCorrect,
+          question: currentCard.question,
+          answer: currentCard.answers.filter((_, idx) => correctAnswers[idx]).join(', '),
+          userAnswer: userAnswer,
+          selectedAnswers,
+          correctAnswers
+        }
+      }));
+      setCurrentCardAnswered(true);
+      
+      // Remove automatic navigation - let user decide when to proceed
     }
   };
 
@@ -66,6 +175,11 @@ function FlashcardViewer({ flashcard, onBack }) {
     if (currentCardIndex < cards.length - 1) {
       setCurrentCardIndex(currentCardIndex + 1);
       setIsFlipped(false);
+    } else {
+      // We're on the last card, show summary if there are any results
+      if (Object.keys(cardResults).length > 0) {
+        setShowSummary(true);
+      }
     }
   };
 
@@ -76,6 +190,86 @@ function FlashcardViewer({ flashcard, onBack }) {
     }
   };
 
+  // Calculate statistics
+  const calculateStats = () => {
+    const results = Object.values(cardResults);
+    const correct = results.filter(r => r.correct).length;
+    const total = results.length;
+    const percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
+    
+    return { correct, total, percentage, results };
+  };
+
+  // Reset quiz function
+  const handleRestartQuiz = () => {
+    setCardResults({});
+    setCurrentCardIndex(0);
+    setIsFlipped(false);
+    setSelectedAnswers([]);
+    setShowCorrectAnswers(false);
+    setShowSummary(false);
+    setCurrentCardAnswered(false);
+  };
+
+  if (showSummary) {
+    const stats = calculateStats();
+    
+    return (
+      <div className="viewer-container">
+        <div className="quiz-summary">
+          <div className="summary-header">
+            <h2>🎉 Quiz Complete!</h2>
+            <div className="summary-stats">
+              <div className="stat-card">
+                <div className="stat-number">{stats.correct}/{stats.total}</div>
+                <div className="stat-label">Correct Answers</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-number">{stats.percentage}%</div>
+                <div className="stat-label">Score</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-number">{formatTime(elapsedTime)}</div>
+                <div className="stat-label">Time Taken</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="detailed-results">
+            <h3>Detailed Results</h3>
+            {stats.results.map((result, index) => (
+              <div key={index} className={`result-item ${result.correct === null ? 'skipped-result' : result.correct ? 'correct-result' : 'incorrect-result'}`}>
+                <div className="result-header">
+                  <span className="result-indicator">
+                    {result.correct === null ? '⏭️' : result.correct ? '✅' : '❌'}
+                  </span>
+                  <span className="result-question">Q{index + 1}: {result.question}</span>
+                </div>
+                <div className="result-details">
+                  <div className="result-row">
+                    <strong>Correct Answer:</strong> {result.answer}
+                  </div>
+                  <div className="result-row">
+                    <strong>Your Answer:</strong> {result.userAnswer}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="summary-actions">
+            <button onClick={handleRestartQuiz} className="restart-button">
+              🔄 Restart Quiz
+            </button>
+            <button onClick={onBack} className="back-button">
+              ← Back to Selection
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!currentCard) {
     return (
       <div className="viewer-container">
@@ -84,6 +278,8 @@ function FlashcardViewer({ flashcard, onBack }) {
       </div>
     );
   }
+
+  const progress = Object.keys(cardResults).length;
 
   return (
     <div className="viewer-container">
@@ -108,6 +304,10 @@ function FlashcardViewer({ flashcard, onBack }) {
           <span className="stat-value">{currentCardIndex + 1} / {cards.length}</span>
         </div>
         <div className="stat">
+          <span className="stat-label">Progress:</span>
+          <span className="stat-value">{progress} / {cards.length} answered</span>
+        </div>
+        <div className="stat">
           <span className="stat-label">Time:</span>
           <span className="stat-value">{formatTime(elapsedTime)}</span>
         </div>
@@ -115,21 +315,53 @@ function FlashcardViewer({ flashcard, onBack }) {
 
       {currentCard.type === 'single' ? (
         // Single answer card (flip-style)
-        <div className="card-container" onClick={handleCardClick}>
-          <div className={`flashcard ${isFlipped ? 'flipped' : ''}`}>
+        <div className="card-container">
+          <div className={`flashcard ${isFlipped ? 'flipped' : ''}`} onClick={handleCardClick}>
             <div className="flashcard-face flashcard-front">
               <div className="card-header">Question</div>
               <div className="card-content">
                 <p>{currentCard.question}</p>
               </div>
-              <div className="card-hint">Click to flip</div>
+              {!currentCardAnswered && <div className="card-hint">Click to flip</div>}
             </div>
             <div className="flashcard-face flashcard-back">
               <div className="card-header">Answer</div>
               <div className="card-content">
                 <p>{currentCard.answer}</p>
               </div>
-              <div className="card-hint">Click to flip back</div>
+              {!currentCardAnswered && (
+                <div className="evaluation-buttons">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); handleSingleAnswerEvaluation(false); }}
+                    className="eval-button incorrect-button"
+                  >
+                    📤 Postpone
+                  </button>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); handleSkip(); }}
+                    className="eval-button skip-button"
+                  >
+                    ⏭️ Skip
+                  </button>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); handleSingleAnswerEvaluation(true); }}
+                    className="eval-button correct-button"
+                  >
+                    ✅ Done
+                  </button>
+                </div>
+              )}
+              {currentCardAnswered && (
+                <div className="answered-indicator">
+                  {cardResults[currentCardIndex]?.correct === null ? (
+                    <span className="skip-indicator">⏭️ Skipped</span>
+                  ) : cardResults[currentCardIndex]?.correct ? (
+                    <span className="correct-indicator">✅ Marked as Done</span>
+                  ) : (
+                    <span className="incorrect-indicator">📤 Postponed</span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -150,8 +382,20 @@ function FlashcardViewer({ flashcard, onBack }) {
                 const isCorrectAnswer = currentCard.correctAnswers && currentCard.correctAnswers[idx];
                 const isSelectedAnswer = selectedAnswers.includes(idx);
                 
+                // Build CSS classes based on state
+                let answerClasses = `answer-option`;
+                if (isSelectedAnswer) answerClasses += ' selected';
+                if (showCorrectAnswers) {
+                  answerClasses += ' revealed';
+                  if (isCorrectAnswer) {
+                    answerClasses += ' correct';
+                  } else {
+                    answerClasses += ' incorrect';
+                  }
+                }
+                
                 return (
-                  <label key={idx} className={`answer-option ${isSelectedAnswer ? 'selected' : ''} ${showCorrectAnswers ? (isCorrectAnswer ? 'correct' : 'incorrect') : ''}`}>
+                  <label key={idx} className={answerClasses}>
                     <input
                       type="checkbox"
                       checked={isSelectedAnswer}
@@ -159,25 +403,51 @@ function FlashcardViewer({ flashcard, onBack }) {
                       disabled={showCorrectAnswers}
                     />
                     <span className="answer-text">{answer}</span>
-                    {showCorrectAnswers && isCorrectAnswer && (
-                      <span className="answer-indicator correct">✓</span>
-                    )}
-                    {showCorrectAnswers && !isCorrectAnswer && (
-                      <span className="answer-indicator incorrect">✗</span>
+                    {showCorrectAnswers && (
+                      <span className={`answer-indicator ${isCorrectAnswer ? 'correct' : 'incorrect'}`}>
+                        {isCorrectAnswer ? '✓' : '✗'}
+                      </span>
                     )}
                   </label>
                 );
               })}
             </div>
             
-            {!showCorrectAnswers && (
-              <button 
-                onClick={handleShowAnswers}
-                className="show-answers-button"
-                disabled={selectedAnswers.length === 0}
-              >
-                Show Correct Answers
-              </button>
+            {!showCorrectAnswers && !currentCardAnswered && (
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', alignItems: 'center' }}>
+                <button 
+                  onClick={handleShowAnswers}
+                  className="show-answers-button"
+                  style={{ margin: 0, maxWidth: 'none', flex: 1 }}
+                >
+                  Show Correct Answers
+                </button>
+                <button 
+                  onClick={handleSkip}
+                  className="eval-button skip-button"
+                  style={{ padding: '1rem 2rem', fontSize: '1rem', borderRadius: '10px' }}
+                >
+                  ⏭️ Skip
+                </button>
+              </div>
+            )}
+            
+            {showCorrectAnswers && (
+              <div className="evaluation-result">
+                {cardResults[currentCardIndex]?.correct === null ? (
+                  <div className="answered-indicator">
+                    <span className="skip-indicator">💡 Viewing answers for learning</span>
+                  </div>
+                ) : cardResults[currentCardIndex]?.correct ? (
+                  <div className="correct-evaluation">✅ Correct! You got it right!</div>
+                ) : cardResults[currentCardIndex]?.correct === false ? (
+                  <div className="incorrect-evaluation">❌ Incorrect. Review the correct answers above.</div>
+                ) : (
+                  <div className="answered-indicator">
+                    <span className="skip-indicator">💡 Viewing answers for learning</span>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -193,14 +463,19 @@ function FlashcardViewer({ flashcard, onBack }) {
         </button>
         <button
           onClick={handleNext}
-          disabled={currentCardIndex === cards.length - 1}
+          disabled={false}
           className="nav-button"
         >
-          Next →
+          {currentCardIndex === cards.length - 1 ? 'Show Results' : 'Next →'}
         </button>
       </div>
 
-      {/* Removed topics display - no longer shown during quiz */}
+      {/* Progress indicator */}
+      <div className="progress-indicator">
+        <div className="progress-text">
+          {progress > 0 && `${Math.round((progress / cards.length) * 100)}% Complete`}
+        </div>
+      </div>
     </div>
   );
 }
