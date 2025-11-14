@@ -51,14 +51,14 @@ function App() {
       
       // Log response details for debugging
       console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
       console.log('Response URL:', response.url);
       
       if (!response.ok) {
         // Try to get the error text instead of JSON
         const errorText = await response.text();
         console.error('Error response text:', errorText);
-        throw new Error(`Failed to fetch flashcard list: ${response.status} ${response.statusText}`);
+        throw new Error(`Failed to fetch flashcard list: ${response.status} ${response.statusText} - ${errorText}`);
       }
       
       // Check if response is actually JSON
@@ -67,8 +67,8 @@ function App() {
       
       if (!contentType || !contentType.includes('application/json')) {
         const responseText = await response.text();
-        console.error('Non-JSON response received:', responseText);
-        throw new Error('Server returned non-JSON response');
+        console.error('Non-JSON response received:', responseText.substring(0, 500) + '...');
+        throw new Error(`Server returned non-JSON response. Content-Type: ${contentType}. Response: ${responseText.substring(0, 200)}...`);
       }
       
       const data = await response.json();
