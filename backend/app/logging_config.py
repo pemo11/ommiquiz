@@ -9,26 +9,74 @@ from pathlib import Path
 import httpx
 from datetime import datetime
 import asyncio
+import threading
+import queue
+import time
 
 
 class BetterstackHandler(logging.Handler):
-    """Custom logging handler for Betterstack (Logtail)"""
+    """Custom logging handler for Betterstack (Logtail) with reliable delivery"""
     
     def __init__(self, source_token: str, timeout: float = 10.0):
         super().__init__()
         self.source_token = source_token
         self.timeout = timeout
-        self.session = None
         self.url = "https://in.logs.betterstack.com/"
         
-    async def _get_session(self) -> httpx.AsyncClient:
-        """Get or create HTTP session"""
-        if self.session is None or self.session.is_closed:
-            self.session = httpx.AsyncClient(timeout=self.timeout)
-        return self.session
+        # Use a queue and background thread for reliable log delivery
+        self.log_queue = queue.Queue()
+        self.worker_thread = None
+        self.should_stop = threading.Event()
+        self.start_worker()
+        
+    def start_worker(self):
+        """Start the background worker thread"""
+        if self.worker_thread is None or not self.worker_thread.is_alive():
+            self.worker_thread = threading.Thread(target=self._worker_loop, daemon=True)
+            self.worker_thread.start()
+            
+    def _worker_loop(self):
+        """Background worker that processes the log queue"""
+        with httpx.Client(timeout=self.timeout) as client:
+            while not self.should_stop.is_set():
+                try:
+                    # Wait for log entries with timeout
+                    log_entry = self.log_queue.get(timeout=1.0)
+                    if log_entry is None:  # Shutdown signal
+                        break
+                        
+                    self._send_log_sync(client, log_entry)
+                    self.log_queue.task_done()
+                    
+                except queue.Empty:
+                    continue
+                except Exception as e:
+                    # Log errors to console (not to avoid recursion)
+                    print(f"Betterstack logging error: {e}", file=sys.stderr)
+                    
+    def _send_log_sync(self, client: httpx.Client, log_entry: Dict[str, Any]):
+        """Send log entry to Betterstack synchronously"""
+        try:
+            headers = {
+                "Authorization": f"Bearer {self.source_token}",
+                "Content-Type": "application/json"
+            }
+            
+            response = client.post(
+                self.url,
+                json=log_entry,
+                headers=headers
+            )
+            
+            # Check for HTTP errors
+            if response.status_code >= 400:
+                print(f"Betterstack API error: {response.status_code} - {response.text}", file=sys.stderr)
+                
+        except Exception as e:
+            print(f"Failed to send log to Betterstack: {e}", file=sys.stderr)
         
     def emit(self, record):
-        """Send log record to Betterstack"""
+        """Send log record to Betterstack via background queue"""
         try:
             # Create log entry
             log_entry = {
@@ -42,38 +90,38 @@ class BetterstackHandler(logging.Handler):
             }
             
             # Add extra fields if available
-            if hasattr(record, 'extra'):
+            if hasattr(record, 'extra') and record.extra:
                 log_entry.update(record.extra)
                 
-            # Send async (fire and forget)
-            asyncio.create_task(self._send_log(log_entry))
+            # Add structured log data if present
+            if hasattr(record, '_context') and record._context:
+                log_entry.update(record._context)
             
-        except Exception:
-            # Don't raise exceptions in logging handler
-            pass
-    
-    async def _send_log(self, log_entry: Dict[str, Any]):
-        """Send log entry to Betterstack asynchronously"""
-        try:
-            session = await self._get_session()
-            headers = {
-                "Authorization": f"Bearer {self.source_token}",
-                "Content-Type": "application/json"
-            }
+            # Queue the log entry for background processing
+            try:
+                self.log_queue.put_nowait(log_entry)
+            except queue.Full:
+                # If queue is full, drop oldest entry and add new one
+                try:
+                    self.log_queue.get_nowait()
+                    self.log_queue.put_nowait(log_entry)
+                except queue.Empty:
+                    pass
             
-            await session.post(
-                self.url,
-                json=log_entry,
-                headers=headers
-            )
-        except Exception:
-            # Silently fail for logging errors
-            pass
+        except Exception as e:
+            # Print to stderr to avoid logging recursion
+            print(f"Error in Betterstack handler: {e}", file=sys.stderr)
     
     def close(self):
-        """Close the handler and HTTP session"""
-        if self.session and not self.session.is_closed:
-            asyncio.create_task(self.session.aclose())
+        """Close the handler and stop background worker"""
+        # Signal worker to stop
+        self.should_stop.set()
+        self.log_queue.put(None)  # Shutdown signal
+        
+        # Wait for worker to finish
+        if self.worker_thread and self.worker_thread.is_alive():
+            self.worker_thread.join(timeout=5.0)
+            
         super().close()
 
 
@@ -222,13 +270,35 @@ class LoggingConfig:
     def _setup_betterstack_handler(self, logger):
         """Setup Betterstack cloud logging"""
         try:
+            # Validate token format
+            if not self.betterstack_token.startswith('bt_'):
+                console_logger = structlog.get_logger("logging.config")
+                console_logger.warning(
+                    "Invalid Betterstack token format", 
+                    token_prefix=self.betterstack_token[:10] + "..." if len(self.betterstack_token) > 10 else self.betterstack_token,
+                    expected_format="bt_xxxxxxxx"
+                )
+                return
+            
             betterstack_handler = BetterstackHandler(self.betterstack_token)
             betterstack_handler.setLevel(getattr(logging, self.log_level))
             logger.addHandler(betterstack_handler)
             
+            # Log successful setup
+            console_logger = structlog.get_logger("logging.config")
+            console_logger.info(
+                "Betterstack logging handler configured successfully",
+                log_level=self.log_level,
+                token_length=len(self.betterstack_token)
+            )
+            
+            # Send a test log to verify connection
+            test_logger = structlog.get_logger("betterstack.test")
+            test_logger.info("Betterstack connection test", test=True, timestamp=datetime.utcnow().isoformat())
+            
         except Exception as e:
             console_logger = structlog.get_logger("logging.config")
-            console_logger.error("Failed to setup Betterstack logging", error=str(e))
+            console_logger.error("Failed to setup Betterstack logging", error=str(e), error_type=type(e).__name__)
     
     def _setup_specific_loggers(self):
         """Setup specific logger configurations"""
