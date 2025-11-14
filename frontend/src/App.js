@@ -3,6 +3,7 @@ import './App.css';
 import FlashcardViewer from './components/FlashcardViewer';
 import FlashcardSelector from './components/FlashcardSelector';
 import AdminPanel from './components/AdminPanel';
+import VersionInfo from './components/VersionInfo';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
 
@@ -85,6 +86,7 @@ function App() {
           <div className="header-main">
             <h1>🎓 Ommiquiz</h1>
             <p>Learn with flashcards</p>
+            <VersionInfo />
           </div>
           <button 
             onClick={handleAdminToggle} 

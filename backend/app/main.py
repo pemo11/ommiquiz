@@ -10,7 +10,19 @@ import shutil
 from pathlib import Path
 from typing import Dict, Any, Optional
 
+# Import logging configuration
+from .logging_config import setup_logging, get_logger, LoggingMiddleware, log_function_call
+
+# Initialize logging before creating the app
+setup_logging()
+
+# Get application logger
+logger = get_logger("ommiquiz.main")
+
 app = FastAPI(title="Ommiquiz API", version="1.0.0")
+
+# Add logging middleware first
+app.add_middleware(LoggingMiddleware)
 
 # Configure CORS
 app.add_middleware(
@@ -30,10 +42,13 @@ if Path("/app/flashcards").exists():
 else:
     FLASHCARDS_DIR = Path(__file__).parent.parent / "flashcards"
 
+logger.info("Application starting", flashcards_dir=str(FLASHCARDS_DIR))
+
 # Compile regex pattern once for performance
 VALID_ID_PATTERN = re.compile(r'^[a-zA-Z0-9_-]+$')
 
 
+@log_function_call("get_safe_flashcard_path")
 def get_safe_flashcard_path(flashcard_id: str) -> Optional[Path]:
     """
     Safely construct and validate a flashcard file path.
@@ -41,6 +56,7 @@ def get_safe_flashcard_path(flashcard_id: str) -> Optional[Path]:
     """
     # Validate ID format to prevent path traversal
     if not VALID_ID_PATTERN.match(flashcard_id):
+        logger.warning("Invalid flashcard ID format", flashcard_id=flashcard_id)
         return None
     
     # Construct paths with validated ID
@@ -54,6 +70,7 @@ def get_safe_flashcard_path(flashcard_id: str) -> Optional[Path]:
     elif yml_path.exists():
         candidate_path = yml_path
     else:
+        logger.info("Flashcard file not found", flashcard_id=flashcard_id)
         return None
     
     # Ensure resolved path is within FLASHCARDS_DIR
@@ -61,23 +78,30 @@ def get_safe_flashcard_path(flashcard_id: str) -> Optional[Path]:
         resolved_path = candidate_path.resolve()
         resolved_base = FLASHCARDS_DIR.resolve()
         if not str(resolved_path).startswith(str(resolved_base)):
+            logger.error("Path traversal attempt detected", flashcard_id=flashcard_id, resolved_path=str(resolved_path))
             return None
-    except Exception:
+    except Exception as e:
+        logger.error("Error resolving flashcard path", flashcard_id=flashcard_id, error=str(e))
         return None
     
+    logger.debug("Flashcard path resolved", flashcard_id=flashcard_id, path=str(candidate_path))
     return resolved_path
 
 
 @api_router.get("/")
 async def api_root():
     """API root endpoint"""
+    logger.info("API root endpoint accessed")
     return {"message": "Welcome to Ommiquiz API"}
 
 
 @api_router.get("/flashcards")
 async def list_flashcards():
     """List all available flashcard files with metadata"""
+    logger.info("Listing flashcards", flashcards_dir=str(FLASHCARDS_DIR))
+    
     if not FLASHCARDS_DIR.exists():
+        logger.warning("Flashcards directory does not exist", flashcards_dir=str(FLASHCARDS_DIR))
         return {"flashcards": []}
     
     flashcard_files = []
@@ -98,7 +122,9 @@ async def list_flashcards():
                 "topics": data.get("topics", []),
                 "module": data.get("module", "")
             })
-        except Exception:
+            logger.debug("Processed flashcard file", filename=file_path.name)
+        except Exception as e:
+            logger.warning("Failed to parse flashcard file", filename=file_path.name, error=str(e))
             # If YAML parsing fails, fall back to filename
             flashcard_files.append({
                 "id": file_path.stem,
@@ -128,7 +154,9 @@ async def list_flashcards():
                 "topics": data.get("topics", []),
                 "module": data.get("module", "")
             })
-        except Exception:
+            logger.debug("Processed flashcard file", filename=file_path.name)
+        except Exception as e:
+            logger.warning("Failed to parse flashcard file", filename=file_path.name, error=str(e))
             # If YAML parsing fails, fall back to filename
             flashcard_files.append({
                 "id": file_path.stem,
@@ -142,34 +170,57 @@ async def list_flashcards():
                 "module": ""
             })
     
+    logger.info("Flashcards listed successfully", count=len(flashcard_files))
     return {"flashcards": flashcard_files}
 
 
 @api_router.get("/flashcards/{flashcard_id}")
 async def get_flashcard(flashcard_id: str) -> Dict[str, Any]:
     """Get a specific flashcard file by ID"""
+    logger.info("Getting flashcard", flashcard_id=flashcard_id)
+    
     # Get safe path using validation function
     file_path = get_safe_flashcard_path(flashcard_id)
     
     if file_path is None:
+        logger.error("Flashcard not found", flashcard_id=flashcard_id)
         raise HTTPException(status_code=404, detail=f"Flashcard '{flashcard_id}' not found")
     
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             data = yaml.safe_load(f)
+        
+        logger.info("Flashcard retrieved successfully", 
+                   flashcard_id=flashcard_id, 
+                   cards_count=len(data.get("flashcards", [])))
         return data
     except yaml.YAMLError as e:
+        logger.error("YAML parsing error", flashcard_id=flashcard_id, error=str(e))
         raise HTTPException(status_code=500, detail=f"Error parsing YAML file: {str(e)}")
     except Exception as e:
+        logger.error("File reading error", flashcard_id=flashcard_id, error=str(e))
         raise HTTPException(status_code=500, detail=f"Error reading file: {str(e)}")
 
 
 @api_router.get("/health")
 async def health_check():
     """Health check endpoint"""
+    logger.debug("Health check requested")
     return {"status": "healthy"}
 
 
+@api_router.get("/version")
+async def get_version():
+    """Get API version and system information"""
+    logger.debug("Version endpoint requested")
+    return {
+        "api_version": "1.0.0",
+        "service_name": "Ommiquiz API",
+        "status": "running"
+    }
+
+
+@log_function_call("validate_flashcard_yaml")
 def validate_flashcard_yaml(data: Dict[str, Any]) -> Dict[str, Any]:
     """
     Validate flashcard YAML structure and content.
@@ -177,6 +228,8 @@ def validate_flashcard_yaml(data: Dict[str, Any]) -> Dict[str, Any]:
     """
     errors = []
     warnings = []
+    
+    logger.debug("Starting flashcard validation")
     
     # Required fields in root
     required_fields = ["id", "author", "title", "description", "createDate", 
@@ -232,8 +285,14 @@ def validate_flashcard_yaml(data: Dict[str, Any]) -> Dict[str, Any]:
                     else:
                         errors.append(f"Flashcard {i+1} has invalid type '{card['type']}'. Must be 'single' or 'multiple'")
     
+    is_valid = len(errors) == 0
+    logger.debug("Flashcard validation completed", 
+                valid=is_valid, 
+                errors_count=len(errors), 
+                warnings_count=len(warnings))
+    
     return {
-        "valid": len(errors) == 0,
+        "valid": is_valid,
         "errors": errors,
         "warnings": warnings
     }
@@ -247,8 +306,11 @@ class FlashcardUpdateRequest(BaseModel):
 async def update_flashcard(flashcard_id: str, request: FlashcardUpdateRequest):
     """Update an existing flashcard file"""
     
+    logger.info("Updating flashcard", flashcard_id=flashcard_id)
+    
     # Validate ID format
     if not VALID_ID_PATTERN.match(flashcard_id):
+        logger.warning("Invalid flashcard ID for update", flashcard_id=flashcard_id)
         raise HTTPException(
             status_code=400,
             detail="Invalid flashcard ID format. Use only letters, numbers, hyphens, and underscores"
@@ -258,6 +320,7 @@ async def update_flashcard(flashcard_id: str, request: FlashcardUpdateRequest):
     file_path = get_safe_flashcard_path(flashcard_id)
     
     if file_path is None:
+        logger.error("Flashcard not found for update", flashcard_id=flashcard_id)
         raise HTTPException(
             status_code=404,
             detail=f"Flashcard '{flashcard_id}' not found"
@@ -267,6 +330,7 @@ async def update_flashcard(flashcard_id: str, request: FlashcardUpdateRequest):
     try:
         data = yaml.safe_load(request.content)
     except yaml.YAMLError as e:
+        logger.error("Invalid YAML in update request", flashcard_id=flashcard_id, error=str(e))
         raise HTTPException(
             status_code=400,
             detail=f"Invalid YAML format: {str(e)}"
@@ -275,6 +339,9 @@ async def update_flashcard(flashcard_id: str, request: FlashcardUpdateRequest):
     # Validate flashcard structure
     validation = validate_flashcard_yaml(data)
     if not validation["valid"]:
+        logger.warning("Flashcard validation failed during update", 
+                      flashcard_id=flashcard_id, 
+                      errors=validation["errors"])
         return JSONResponse(
             status_code=400,
             content={
@@ -287,6 +354,9 @@ async def update_flashcard(flashcard_id: str, request: FlashcardUpdateRequest):
     
     # Verify that the ID in the content matches the URL parameter
     if data.get("id") != flashcard_id:
+        logger.error("ID mismatch in update request", 
+                    flashcard_id=flashcard_id, 
+                    content_id=data.get("id"))
         raise HTTPException(
             status_code=400,
             detail=f"ID mismatch: URL specifies '{flashcard_id}' but content has '{data.get('id')}'"
@@ -296,6 +366,10 @@ async def update_flashcard(flashcard_id: str, request: FlashcardUpdateRequest):
     try:
         with open(file_path, 'w', encoding='utf-8') as f:
             yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
+        
+        logger.info("Flashcard updated successfully", 
+                   flashcard_id=flashcard_id, 
+                   cards_count=len(data.get("flashcards", [])))
         
         return {
             "success": True,
@@ -312,6 +386,9 @@ async def update_flashcard(flashcard_id: str, request: FlashcardUpdateRequest):
         }
     
     except Exception as e:
+        logger.error("Failed to update flashcard file", 
+                    flashcard_id=flashcard_id, 
+                    error=str(e))
         raise HTTPException(
             status_code=500,
             detail=f"Failed to update file: {str(e)}"
@@ -321,8 +398,11 @@ async def update_flashcard(flashcard_id: str, request: FlashcardUpdateRequest):
 async def upload_flashcard(file: UploadFile = File(...), overwrite: str = Form(default="false")):
     """Upload and validate a new flashcard YAML file"""
     
+    logger.info("Uploading flashcard", filename=file.filename, overwrite=overwrite)
+    
     # Validate file extension
     if not (file.filename.endswith('.yaml') or file.filename.endswith('.yml')):
+        logger.warning("Invalid file extension in upload", filename=file.filename)
         raise HTTPException(
             status_code=400, 
             detail="File must have .yaml or .yml extension"
@@ -331,6 +411,7 @@ async def upload_flashcard(file: UploadFile = File(...), overwrite: str = Form(d
     # Validate file size (max 1MB)
     content = await file.read()
     if len(content) > 1024 * 1024:  # 1MB limit
+        logger.warning("File too large in upload", filename=file.filename, size=len(content))
         raise HTTPException(
             status_code=413,
             detail="File size too large. Maximum size is 1MB"
@@ -340,11 +421,13 @@ async def upload_flashcard(file: UploadFile = File(...), overwrite: str = Form(d
     try:
         data = yaml.safe_load(content.decode('utf-8'))
     except yaml.YAMLError as e:
+        logger.error("YAML parsing error in upload", filename=file.filename, error=str(e))
         raise HTTPException(
             status_code=400,
             detail=f"Invalid YAML format: {str(e)}"
         )
     except UnicodeDecodeError as e:
+        logger.error("Encoding error in upload", filename=file.filename, error=str(e))
         raise HTTPException(
             status_code=400,
             detail=f"File encoding error: {str(e)}. Please use UTF-8 encoding"
@@ -353,6 +436,9 @@ async def upload_flashcard(file: UploadFile = File(...), overwrite: str = Form(d
     # Validate flashcard structure
     validation = validate_flashcard_yaml(data)
     if not validation["valid"]:
+        logger.warning("Flashcard validation failed during upload", 
+                      filename=file.filename, 
+                      errors=validation["errors"])
         return JSONResponse(
             status_code=400,
             content={
@@ -374,6 +460,9 @@ async def upload_flashcard(file: UploadFile = File(...), overwrite: str = Form(d
     allow_overwrite = overwrite.lower() == "true"
     
     if target_path.exists() and not allow_overwrite:
+        logger.warning("Flashcard already exists", 
+                      flashcard_id=data.get('id', filename), 
+                      filename=filename)
         return JSONResponse(
             status_code=409,
             content={
@@ -393,6 +482,12 @@ async def upload_flashcard(file: UploadFile = File(...), overwrite: str = Form(d
         
         action = "overwritten" if target_path.existed() else "created"
         
+        logger.info("Flashcard upload completed", 
+                   flashcard_id=data.get("id"), 
+                   filename=filename, 
+                   action=action,
+                   cards_count=len(data.get("flashcards", [])))
+        
         return {
             "success": True,
             "message": f"Flashcard '{data.get('id', filename)}' {action} successfully",
@@ -408,6 +503,9 @@ async def upload_flashcard(file: UploadFile = File(...), overwrite: str = Form(d
         }
     
     except Exception as e:
+        logger.error("Failed to save uploaded flashcard", 
+                    filename=filename, 
+                    error=str(e))
         raise HTTPException(
             status_code=500,
             detail=f"Failed to save file: {str(e)}"
@@ -418,10 +516,13 @@ async def upload_flashcard(file: UploadFile = File(...), overwrite: str = Form(d
 async def delete_flashcard(flashcard_id: str):
     """Delete a flashcard file"""
     
+    logger.info("Deleting flashcard", flashcard_id=flashcard_id)
+    
     # Get safe path using validation function
     file_path = get_safe_flashcard_path(flashcard_id)
     
     if file_path is None:
+        logger.error("Flashcard not found for deletion", flashcard_id=flashcard_id)
         raise HTTPException(
             status_code=404,
             detail=f"Flashcard '{flashcard_id}' not found"
@@ -429,11 +530,15 @@ async def delete_flashcard(flashcard_id: str):
     
     try:
         file_path.unlink()  # Delete the file
+        logger.info("Flashcard deleted successfully", flashcard_id=flashcard_id)
         return {
             "success": True,
             "message": f"Flashcard '{flashcard_id}' deleted successfully"
         }
     except Exception as e:
+        logger.error("Failed to delete flashcard", 
+                    flashcard_id=flashcard_id, 
+                    error=str(e))
         raise HTTPException(
             status_code=500,
             detail=f"Failed to delete file: {str(e)}"
@@ -444,8 +549,11 @@ async def delete_flashcard(flashcard_id: str):
 async def validate_flashcard_file(file: UploadFile = File(...)):
     """Validate a flashcard YAML file without saving it"""
     
+    logger.info("Validating flashcard file", filename=file.filename)
+    
     # Validate file extension
     if not (file.filename.endswith('.yaml') or file.filename.endswith('.yml')):
+        logger.warning("Invalid file extension in validation", filename=file.filename)
         raise HTTPException(
             status_code=400,
             detail="File must have .yaml or .yml extension"
@@ -456,12 +564,14 @@ async def validate_flashcard_file(file: UploadFile = File(...)):
         content = await file.read()
         data = yaml.safe_load(content.decode('utf-8'))
     except yaml.YAMLError as e:
+        logger.warning("YAML parsing error in validation", filename=file.filename, error=str(e))
         return {
             "valid": False,
             "errors": [f"Invalid YAML format: {str(e)}"],
             "warnings": []
         }
     except UnicodeDecodeError as e:
+        logger.warning("Encoding error in validation", filename=file.filename, error=str(e))
         return {
             "valid": False,
             "errors": [f"File encoding error: {str(e)}. Please use UTF-8 encoding"],
@@ -470,6 +580,11 @@ async def validate_flashcard_file(file: UploadFile = File(...)):
     
     # Validate structure
     validation = validate_flashcard_yaml(data)
+    
+    logger.info("Flashcard validation completed", 
+               filename=file.filename, 
+               valid=validation["valid"], 
+               errors_count=len(validation["errors"]))
     
     return {
         "valid": validation["valid"],
@@ -490,4 +605,16 @@ app.include_router(api_router)
 @app.get("/")
 async def root():
     """Root endpoint"""
+    logger.info("Root endpoint accessed")
     return {"message": "Welcome to Ommiquiz API", "api": "/api"}
+
+# Application startup and shutdown events
+@app.on_event("startup")
+async def startup_event():
+    """Application startup event"""
+    logger.info("Application startup completed")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Application shutdown event"""
+    logger.info("Application shutdown initiated")
