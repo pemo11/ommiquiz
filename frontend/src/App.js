@@ -110,7 +110,7 @@ function App() {
               <h1>🎓 Ommiquiz</h1>
               <span className="header-version">v1.0.0</span>
             </div>
-            <p>Learn with flashcards</p>
+            <p>Erfolgreich durch das Studium der Medieninformatik</p>
           </div>
           <button 
             onClick={handleAdminToggle} 
