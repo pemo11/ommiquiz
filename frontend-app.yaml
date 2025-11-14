@@ -8,6 +8,6 @@ static_sites:
     output_dir: build
     envs:
       - key: REACT_APP_API_URL
-        value: "https://ommiquiz-backend-[APP-ID].ondigitalocean.app/api"
+        value: "https://YOUR-BACKEND-APP-URL.ondigitalocean.app/api"
     routes:
       - path: /
