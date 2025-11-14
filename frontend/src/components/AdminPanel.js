@@ -1,16 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import './AdminPanel.css';
 
-// Use the current hostname for API requests to support mobile access
+// Use the environment variable first, with proper fallback for development
 const getApiUrl = () => {
+  // In production, always use the environment variable
+  if (process.env.NODE_ENV === 'production' && process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
+  }
+  
+  // In development, use environment variable if set, otherwise construct local URL
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
+  }
+  
+  // Development fallback - use current hostname for local development
   const hostname = window.location.hostname;
-  // If we're in development and hostname is localhost, keep localhost
-  // Otherwise, use the current hostname (this allows mobile devices to connect)
   const baseUrl = hostname === 'localhost' ? 'localhost' : hostname;
-  return process.env.REACT_APP_API_URL || `http://${baseUrl}:8000/api`;
+  return `http://${baseUrl}:8000/api`;
 };
 
 const API_URL = getApiUrl();
+
+// Add debug logging to help identify connection issues
+console.log('AdminPanel - Environment:', process.env.NODE_ENV);
+console.log('AdminPanel - REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
+console.log('AdminPanel - Constructed API_URL:', API_URL);
 
 function AdminPanel({ onBack }) {
   const [flashcards, setFlashcards] = useState([]);
