@@ -19,7 +19,10 @@ const getApiUrl = () => {
   // Development fallback - use current hostname for local development
   const hostname = window.location.hostname;
   const baseUrl = hostname === 'localhost' ? 'localhost' : hostname;
-  return `http://${baseUrl}:8000/api`;
+  // Use HTTPS if the current page is served over HTTPS
+  const protocol = window.location.protocol === 'https:' ? 'https' : 'http';
+  const port = hostname === 'localhost' ? ':8000' : '';
+  return `${protocol}://${baseUrl}${port}/api`;
 };
 
 const API_URL = getApiUrl();
