@@ -37,8 +37,7 @@ services:
       - "3000:80"
     depends_on:
       - backend
-    environment:
-      - REACT_APP_API_URL=http://localhost:8000/api
+    # Remove hardcoded API URL to let the frontend determine it dynamically
     networks:
       - ommiquiz-network
 

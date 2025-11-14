@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import './AdminPanel.css';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+// Use the current hostname for API requests to support mobile access
+const getApiUrl = () => {
+  const hostname = window.location.hostname;
+  // If we're in development and hostname is localhost, keep localhost
+  // Otherwise, use the current hostname (this allows mobile devices to connect)
+  const baseUrl = hostname === 'localhost' ? 'localhost' : hostname;
+  return process.env.REACT_APP_API_URL || `http://${baseUrl}:8000/api`;
+};
+
+const API_URL = getApiUrl();
 
 function AdminPanel({ onBack }) {
   const [flashcards, setFlashcards] = useState([]);

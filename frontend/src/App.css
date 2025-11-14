@@ -29,6 +29,26 @@
   font-size: 2.5rem;
 }
 
+/* Title with version layout */
+.title-with-version {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.header-version {
+  color: #666;
+  font-size: 1rem;
+  font-weight: 500;
+  background-color: rgba(102, 126, 234, 0.1);
+  padding: 0.25rem 0.75rem;
+  border-radius: 15px;
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  font-family: 'Courier New', monospace;
+}
+
 .App-header p {
   color: #666;
   font-size: 1.1rem;
@@ -116,12 +136,21 @@
     gap: 1rem;
   }
   
+  .title-with-version {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
   .App-header {
     padding: 1.5rem;
   }
   
   .App-header h1 {
     font-size: 2rem;
+  }
+  
+  .header-version {
+    font-size: 0.9rem;
   }
   
   .admin-toggle-button {

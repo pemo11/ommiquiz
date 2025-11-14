@@ -3,9 +3,17 @@ import './App.css';
 import FlashcardViewer from './components/FlashcardViewer';
 import FlashcardSelector from './components/FlashcardSelector';
 import AdminPanel from './components/AdminPanel';
-import VersionInfo from './components/VersionInfo';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+// Use the current hostname for API requests to support mobile access
+const getApiUrl = () => {
+  const hostname = window.location.hostname;
+  // If we're in development and hostname is localhost, keep localhost
+  // Otherwise, use the current hostname (this allows mobile devices to connect)
+  const baseUrl = hostname === 'localhost' ? 'localhost' : hostname;
+  return process.env.REACT_APP_API_URL || `http://${baseUrl}:8000/api`;
+};
+
+const API_URL = getApiUrl();
 
 function App() {
   const [selectedFlashcard, setSelectedFlashcard] = useState(null);
@@ -84,9 +92,11 @@ function App() {
       <header className="App-header">
         <div className="header-content">
           <div className="header-main">
-            <h1>🎓 Ommiquiz</h1>
+            <div className="title-with-version">
+              <h1>🎓 Ommiquiz</h1>
+              <span className="header-version">v1.0.0</span>
+            </div>
             <p>Learn with flashcards</p>
-            <VersionInfo />
           </div>
           <button 
             onClick={handleAdminToggle} 

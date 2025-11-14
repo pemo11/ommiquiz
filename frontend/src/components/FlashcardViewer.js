@@ -23,9 +23,24 @@ function FlashcardViewer({ flashcard, onBack }) {
 
   // Reset selections when card changes
   useEffect(() => {
-    setSelectedAnswers([]);
-    setShowCorrectAnswers(false);
-    setCurrentCardAnswered(cardResults[currentCardIndex] !== undefined);
+    const cardResult = cardResults[currentCardIndex];
+    
+    if (cardResult) {
+      // Card was previously answered - restore the state
+      if (cardResult.type === 'multiple' && cardResult.selectedAnswers) {
+        setSelectedAnswers(cardResult.selectedAnswers);
+      } else {
+        setSelectedAnswers([]);
+      }
+      // Only set as answered if the answers were actually revealed (not just selected)
+      setShowCorrectAnswers(cardResult.type === 'multiple' && cardResult.selectedAnswers !== undefined);
+      setCurrentCardAnswered(cardResult.type === 'multiple' && cardResult.selectedAnswers !== undefined);
+    } else {
+      // New card - reset everything
+      setSelectedAnswers([]);
+      setShowCorrectAnswers(false);
+      setCurrentCardAnswered(false);
+    }
   }, [currentCardIndex, cardResults]);
 
   // Timer effect
@@ -136,16 +151,12 @@ function FlashcardViewer({ flashcard, onBack }) {
         isCorrect = null; // null indicates "just viewing/learning"
         userAnswer = 'No answer selected (viewing only)';
       } else {
-        // Answer is correct if user selected at least one correct answer and no incorrect ones
-        // OR if user selected all correct answers (perfect score)
-        if (userIncorrectCount === 0 && userCorrectCount > 0) {
-          // No wrong answers selected and at least one correct answer
+        // Answer is correct ONLY if user selected ALL correct answers and NO incorrect ones
+        if (userIncorrectCount === 0 && userCorrectCount === totalCorrectAnswers) {
+          // Perfect match: selected all correct answers and no incorrect ones
           isCorrect = true;
-        } else if (userIncorrectCount > 0) {
-          // Some wrong answers selected
-          isCorrect = false;
         } else {
-          // This case shouldn't happen, but default to false
+          // Either selected some wrong answers OR missed some correct answers
           isCorrect = false;
         }
         userAnswer = selectedAnswers.map(idx => currentCard.answers[idx]).join(', ');
@@ -169,6 +180,21 @@ function FlashcardViewer({ flashcard, onBack }) {
       
       // Remove automatic navigation - let user decide when to proceed
     }
+  };
+
+  // New function to allow retrying a question
+  const handleTryAgain = () => {
+    // Remove this card from results and reset its state
+    setCardResults(prev => {
+      const newResults = { ...prev };
+      delete newResults[currentCardIndex];
+      return newResults;
+    });
+    
+    // Reset the card state to allow new attempt
+    setSelectedAnswers([]);
+    setShowCorrectAnswers(false);
+    setCurrentCardAnswered(false);
   };
 
   const handleNext = () => {
@@ -384,13 +410,19 @@ function FlashcardViewer({ flashcard, onBack }) {
                 
                 // Build CSS classes based on state
                 let answerClasses = `answer-option`;
-                if (isSelectedAnswer) answerClasses += ' selected';
+                if (isSelectedAnswer && !showCorrectAnswers) {
+                  answerClasses += ' selected';
+                }
                 if (showCorrectAnswers) {
                   answerClasses += ' revealed';
                   if (isCorrectAnswer) {
                     answerClasses += ' correct';
                   } else {
                     answerClasses += ' incorrect';
+                  }
+                  // Add selected state for revealed answers
+                  if (isSelectedAnswer) {
+                    answerClasses += ' was-selected';
                   }
                 }
                 
@@ -406,6 +438,11 @@ function FlashcardViewer({ flashcard, onBack }) {
                     {showCorrectAnswers && (
                       <span className={`answer-indicator ${isCorrectAnswer ? 'correct' : 'incorrect'}`}>
                         {isCorrectAnswer ? '✓' : '✗'}
+                      </span>
+                    )}
+                    {showCorrectAnswers && isSelectedAnswer && (
+                      <span className="selection-indicator">
+                        {isCorrectAnswer ? '👍' : '👎'}
                       </span>
                     )}
                   </label>
@@ -441,7 +478,10 @@ function FlashcardViewer({ flashcard, onBack }) {
                 ) : cardResults[currentCardIndex]?.correct ? (
                   <div className="correct-evaluation">✅ Correct! You got it right!</div>
                 ) : cardResults[currentCardIndex]?.correct === false ? (
-                  <div className="incorrect-evaluation">❌ Incorrect. Review the correct answers above.</div>
+                  <div className="incorrect-evaluation">
+                    ❌ Incorrect. Review the correct answers above.
+                    <button onClick={handleTryAgain} className="try-again-button">🔄 Try Again</button>
+                  </div>
                 ) : (
                   <div className="answered-indicator">
                     <span className="skip-indicator">💡 Viewing answers for learning</span>
