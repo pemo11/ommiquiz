@@ -628,7 +628,15 @@ function AdminPanel({ onBack }) {
                     onClick={() => fetchFlashcard(flashcard.id)}
                   >
                     <span className="flashcard-icon">📝</span>
-                    <span className="flashcard-name">{flashcard.id}</span>
+                    <div className="flashcard-details">
+                      <span className="flashcard-title">{flashcard.title || flashcard.id}</span>
+                      {flashcard.description && (
+                        <span className="flashcard-description">{flashcard.description}</span>
+                      )}
+                      <span className="flashcard-meta">
+                        ID: {flashcard.id} | Author: {flashcard.author || 'Unknown'} | Level: {flashcard.level || 'Unknown'}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
