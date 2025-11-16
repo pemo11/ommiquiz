@@ -13,6 +13,7 @@ flashcards:
   - question: What is Python?
     answer: Python is a high-level, interpreted programming language known for its simple syntax and readability.
     type: single
+    level: "A"
   
   - question: What are Python's main features?
     answers:
@@ -23,10 +24,12 @@ flashcards:
       - Cross-platform
     correctAnswers: [true, true, true, true, true]
     type: multiple
+    level: "A"
   
   - question: How do you declare a variable in Python?
     answer: You simply assign a value to a name, e.g., x = 10. No explicit type declaration is needed.
     type: single
+    level: "A"
   
   - question: What are Python's built-in data types?
     answers:
@@ -40,7 +43,9 @@ flashcards:
       - bool (True/False)
     correctAnswers: [true, true, true, true, true, true, true, true]
     type: multiple
+    level: "A"
   
   - question: What does the 'def' keyword do in Python?
     answer: The 'def' keyword is used to define a function in Python.
     type: single
+    level: "A"
