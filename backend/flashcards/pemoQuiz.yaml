@@ -14,6 +14,7 @@ flashcards:
 - question: What is the birthplace of the famous Pemo?
   answer: Aurich
   type: single
+  level: "A"
 - question: What was the favorite TV show of the famous Pemo in the 70s?
   answers:
   - Raumschiff Enterprise
@@ -26,6 +27,8 @@ flashcards:
   - false
   - false
   type: multiple
+  level: "A"
 - question: What was Pemos favorite dish?
   answer: Pfannekuchen mit Apfelmus
   type: single
+  level: "A"

@@ -19,6 +19,7 @@ flashcards:
 - question: Wofür steht NoSQL?
   answer: Not Only SQL – es bezeichnet Datenbanksysteme, die nicht ausschließlich auf SQL basieren.
   type: single
+  level: "A"
 
 - question: Was sind die drei V’s im Big-Data-Kontext?
   answers:
@@ -30,10 +31,12 @@ flashcards:
   - true
   - true
   type: multiple
+  level: "A"
 
 - question: Was unterscheidet NoSQL-Systeme grundlegend von relationalen Datenbanken?
   answer: Sie sind oft schemafrei, skalierbar und verzichten auf komplexe Joins zugunsten von Performance und Flexibilität.
   type: single
+  level: "A"
 
 - question: Was bedeutet das ACID-Prinzip?
   answers:
@@ -47,6 +50,7 @@ flashcards:
   - true
   - true
   type: multiple
+  level: "A"
 
 - question: Wofür steht das BASE-Prinzip als Gegenstück zu ACID?
   answers:
@@ -58,10 +62,12 @@ flashcards:
   - true
   - true
   type: multiple
+  level: "A"
 
 - question: Was bedeutet „eventual consistency“?
   answer: Das System erreicht nach einer gewissen Zeit wieder einen konsistenten Zustand, auch wenn es zwischenzeitlich Abweichungen gibt.
   type: single
+  level: "A"
 
 - question: Welche vier Hauptkategorien von NoSQL-Datenbanken werden unterschieden?
   answers:
@@ -75,10 +81,12 @@ flashcards:
   - true
   - true
   type: multiple
+  level: "A"
 
 - question: Was kennzeichnet Key-Value-Datenbanken?
   answer: Speicherung von Werten unter eindeutigen Schlüsseln ohne interne Strukturinterpretation.
   type: single
+  level: "A"
 
 - question: Welche typischen Befehle unterstützen Key-Value-Stores?
   answers:
@@ -90,10 +98,12 @@ flashcards:
   - true
   - true
   type: multiple
+  level: "A"
 
 - question: Was ist Redis?
   answer: Ein schneller, in-memory Key-Value-Store mit Unterstützung für verschiedene Datentypen wie Listen, Sets oder Hashes.
   type: single
+  level: "A"
 
 - question: Wofür wird Redis häufig eingesetzt?
   answers:
@@ -105,18 +115,22 @@ flashcards:
   - true
   - true
   type: multiple
+  level: "A"
 
 - question: Was unterscheidet Document-Stores von K-V-Stores?
   answer: Sie speichern strukturierte Dokumente (z. B. JSON) statt einfacher Werte und können deren Inhalte teilweise indexieren.
   type: single
+  level: "A"
 
 - question: Wie nennt man die Einheiten, in denen MongoDB Dokumente speichert?
   answer: Collections
   type: single
+  level: "A"
 
 - question: In welchem Format speichert MongoDB Dokumente?
   answer: BSON – eine binäre Form von JSON.
   type: single
+  level: "A"
 
 - question: Welche Vorteile bietet eine Dokumentendatenbank?
   answers:
@@ -128,22 +142,27 @@ flashcards:
   - true
   - true
   type: multiple
+  level: "A"
 
 - question: Was beschreibt die Aggregation-Pipeline in MongoDB?
   answer: Eine mehrstufige Verarbeitung von Dokumenten zur Filterung, Gruppierung und Berechnung von Ergebnissen.
   type: single
+  level: "A"
 
 - question: Was kennzeichnet Column-Stores?
   answer: Speicherung von Daten spaltenweise mit dynamischen Spaltenstrukturen und hoher Schreibgeschwindigkeit.
   type: single
+  level: "A"
 
 - question: Wofür eignen sich Column-Stores besonders gut?
   answer: Für Zeitreihen- und IoT-Daten mit unregelmäßigen Messintervallen.
   type: single
+  level: "A"
 
 - question: Welche NoSQL-Datenbank ist ein Beispiel für einen Column-Store?
   answer: Apache Cassandra
   type: single
+  level: "A"
 
 - question: Was zeichnet Apache Cassandra aus?
   answers:
@@ -155,22 +174,27 @@ flashcards:
   - true
   - true
   type: multiple
+  level: "A"
 
 - question: Wie nennt sich die Abfragesprache von Cassandra?
   answer: CQL – Cassandra Query Language
   type: single
+  level: "A"
 
 - question: Wie ist das Datenmodell in Cassandra aufgebaut?
   answer: Es gibt Keyspaces mit Column Families, die über Row-Keys organisiert sind.
   type: single
+  level: "A"
 
 - question: Was ist eine Graphdatenbank?
   answer: Eine Datenbank, die Daten in Form von Knoten und Kanten speichert und Beziehungen direkt abbildet.
   type: single
+  level: "A"
 
 - question: Welche Abfragesprache verwendet Neo4j?
   answer: Cypher
   type: single
+  level: "A"
 
 - question: Für welche Anwendungsbereiche eignen sich Graphdatenbanken besonders?
   answers:
@@ -184,14 +208,17 @@ flashcards:
   - true
   - true
   type: multiple
+  level: "A"
 
 - question: Was versteht man unter Polyglot Persistence?
   answer: Die gleichzeitige Verwendung verschiedener Datenbanktechnologien in einer Anwendung.
   type: single
+  level: "A"
 
 - question: Welcher Datenbanktyp eignet sich für Sessions und Warenkörbe mit hoher Verfügbarkeit?
   answer: Key-Value-Datenbanken
   type: single
+  level: "A"
 
 - question: Welche fünf Anforderungskategorien helfen bei der Auswahl eines Datenbanksystems?
   answers:
@@ -207,7 +234,9 @@ flashcards:
   - true
   - true
   type: multiple
+  level: "A"
 
 - question: Was bezeichnet den Begriff „Polyglot Persistence“ in einem Webshop-Beispiel?
   answer: Unterschiedliche Datenbanktypen (z. B. Key-Value, Document, Graph) werden für verschiedene Aufgaben eingesetzt.
   type: single
+  level: "A"
