@@ -1,5 +1,5 @@
-generatedAt: '2025-11-16T22:14:43.691301Z'
-total: 9
+generatedAt: '2025-11-16T22:38:51.803596Z'
+total: 10
 flashcards:
 - id: Datenbanktechnologien_Relationen
   filename: Datenbanktechnologien_Relationen.yaml
@@ -14,6 +14,15 @@ flashcards:
   - SQL
   - Datenmodellierung
   module: Datenbanktechnologien
+- id: flashcards_catalog
+  filename: flashcards_catalog.yaml
+  title: flashcards_catalog
+  description: ''
+  language: ''
+  level: ''
+  author: ''
+  topics: []
+  module: ''
 - id: javascript-basics
   filename: javascript-basics.yaml
   title: JavaScript Basics 1
