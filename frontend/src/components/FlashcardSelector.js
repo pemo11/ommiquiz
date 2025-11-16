@@ -73,7 +73,9 @@ function FlashcardSelector({ flashcards, onSelect }) {
             <div className="flashcard-content">
               <span className="flashcard-icon">📚</span>
               <div className="flashcard-info">
-                <span className="flashcard-title">{flashcard.title || flashcard.id}</span>
+                <span className="flashcard-title">
+                  {flashcard.title ? `${flashcard.title} (${flashcard.id})` : flashcard.id}
+                </span>
                 {flashcard.description && (
                   <span className="flashcard-description">{flashcard.description}</span>
                 )}
