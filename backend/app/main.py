@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File, APIRouter, Form
+from fastapi import FastAPI, HTTPException, UploadFile, File, APIRouter, Form, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -12,6 +12,8 @@ from typing import Dict, Any, Optional
 
 # Import logging configuration
 from .logging_config import setup_logging, get_logger, LoggingMiddleware, log_function_call
+from .auth import AuthenticatedUser, get_optional_current_user
+from .download_logger import initialize_download_log_store, log_flashcard_download
 
 # Initialize logging before creating the app
 setup_logging()
@@ -175,7 +177,10 @@ async def list_flashcards():
 
 
 @api_router.get("/flashcards/{flashcard_id}")
-async def get_flashcard(flashcard_id: str) -> Dict[str, Any]:
+async def get_flashcard(
+    flashcard_id: str,
+    user: Optional[AuthenticatedUser] = Depends(get_optional_current_user)
+) -> Dict[str, Any]:
     """Get a specific flashcard file by ID"""
     logger.info("Getting flashcard", flashcard_id=flashcard_id)
     
@@ -190,9 +195,14 @@ async def get_flashcard(flashcard_id: str) -> Dict[str, Any]:
         with open(file_path, 'r', encoding='utf-8') as f:
             data = yaml.safe_load(f)
         
-        logger.info("Flashcard retrieved successfully", 
-                   flashcard_id=flashcard_id, 
-                   cards_count=len(data.get("flashcards", [])))
+        logger.info("Flashcard retrieved successfully",
+                   flashcard_id=flashcard_id,
+                   cards_count=len(data.get("flashcards", [])),
+                   user_sub=user.sub if user else None)
+
+        if user:
+            log_flashcard_download(user, flashcard_id, file_path.name)
+
         return data
     except yaml.YAMLError as e:
         logger.error("YAML parsing error", flashcard_id=flashcard_id, error=str(e))
@@ -612,6 +622,7 @@ async def root():
 @app.on_event("startup")
 async def startup_event():
     """Application startup event"""
+    initialize_download_log_store()
     logger.info("Application startup completed")
 
 @app.on_event("shutdown")
