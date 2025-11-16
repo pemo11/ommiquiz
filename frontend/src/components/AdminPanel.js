@@ -45,10 +45,57 @@ function AdminPanel({ onBack }) {
   const [keywordsInput, setKeywordsInput] = useState('');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [pendingSaveData, setPendingSaveData] = useState(null);
+  const [showStatistics, setShowStatistics] = useState(false);
+  const [catalogData, setCatalogData] = useState(null);
+  const [catalogLoading, setCatalogLoading] = useState(false);
+  const [catalogError, setCatalogError] = useState(null);
+
+  const formatCatalogTimestamp = (value) => {
+    if (!value) return '—';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return value;
+    }
+    return date.toLocaleString();
+  };
 
   useEffect(() => {
     fetchFlashcardList();
   }, []);
+
+  const loadCatalogData = async () => {
+    try {
+      setCatalogLoading(true);
+      setCatalogError(null);
+      const response = await fetch(`${API_URL}/flashcards/catalog/data`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to load catalog data: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      setCatalogData(data);
+    } catch (err) {
+      setCatalogError(err.message);
+    } finally {
+      setCatalogLoading(false);
+    }
+  };
+
+  const handleShowStatistics = () => {
+    setShowStatistics(true);
+    setSelectedFlashcard(null);
+    setEditingFlashcard(null);
+    setShowYamlImport(false);
+    if (!catalogData) {
+      loadCatalogData();
+    }
+  };
+
+  const handleHideStatistics = () => {
+    setShowStatistics(false);
+    setCatalogError(null);
+  };
 
   const fetchFlashcardList = async () => {
     try {
@@ -650,7 +697,98 @@ function AdminPanel({ onBack }) {
         </div>
       )}
 
-      {!selectedFlashcard && !showYamlImport ? (
+      {showStatistics ? (
+        <div className="statistics-section">
+          <div className="statistics-header">
+            <button onClick={handleHideStatistics} className="back-to-list-button">
+              ← Back to List
+            </button>
+            <h3>Flashcard Statistics</h3>
+            <button
+              onClick={loadCatalogData}
+              className="refresh-stats-button"
+              disabled={catalogLoading}
+            >
+              {catalogLoading ? 'Refreshing...' : '↻ Refresh'}
+            </button>
+          </div>
+
+          {catalogError && (
+            <div className="error-message">
+              <p>Error: {catalogError}</p>
+            </div>
+          )}
+
+          {catalogLoading && !catalogData ? (
+            <div className="loading">Loading statistics...</div>
+          ) : catalogData ? (
+            <>
+              <div className="statistics-summary">
+                <div className="stat-card">
+                  <span className="stat-label">Catalog Generated</span>
+                  <span className="stat-value">{formatCatalogTimestamp(catalogData.generatedAt)}</span>
+                  <span className="stat-helper">Timestamp (local time)</span>
+                </div>
+                <div className="stat-card">
+                  <span className="stat-label">Flashcard Sets</span>
+                  <span className="stat-value">
+                    {catalogData.total ?? (catalogData.flashcards ? catalogData.flashcards.length : 0)}
+                  </span>
+                  <span className="stat-helper">Available in catalog</span>
+                </div>
+              </div>
+
+              <div className="statistics-table-wrapper">
+                <table className="statistics-table">
+                  <thead>
+                    <tr>
+                      <th>Title</th>
+                      <th>ID</th>
+                      <th>Author</th>
+                      <th>Language</th>
+                      <th>Level</th>
+                      <th>Module</th>
+                      <th>Topics</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {catalogData.flashcards && catalogData.flashcards.length > 0 ? (
+                      catalogData.flashcards.map((flashcard) => (
+                        <tr key={flashcard.id || flashcard.filename}>
+                          <td>
+                            <div className="stat-title">{flashcard.title || flashcard.id}</div>
+                            {flashcard.description && (
+                              <div className="stat-description">{flashcard.description}</div>
+                            )}
+                          </td>
+                          <td>{flashcard.id || '—'}</td>
+                          <td>{flashcard.author || 'Unknown'}</td>
+                          <td>{flashcard.language || 'n/a'}</td>
+                          <td>{flashcard.level || 'n/a'}</td>
+                          <td>{flashcard.module || 'n/a'}</td>
+                          <td>
+                            {Array.isArray(flashcard.topics) && flashcard.topics.length > 0
+                              ? flashcard.topics.join(', ')
+                              : '—'}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="7" className="no-data">
+                          No flashcards found in catalog.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ) : (
+            <div className="loading">No catalog data available.</div>
+          )}
+        </div>
+      ) : !selectedFlashcard && !showYamlImport ? (
         <div className="flashcard-list-section">
           <div className="flashcard-list-header">
             <h3>Manage Flashcards</h3>
@@ -660,6 +798,9 @@ function AdminPanel({ onBack }) {
               </button>
               <button onClick={createFromYaml} className="import-yaml-button">
                 📋 Import from YAML
+              </button>
+              <button onClick={handleShowStatistics} className="statistics-button">
+                📊 Statistics
               </button>
             </div>
           </div>
