@@ -187,32 +187,18 @@ function Test-NanoQuizFlashcardListing {
     $result = Get-NanoQuizFlashcardSets
     $content = $result.Content
 
-    # Handle both array and single object responses
-    $sets = @()
-    if ($content) {
-        if ($content -is [array]) {
-            $sets = $content
-        } elseif ($content.PSObject.Properties['flashcards']) {
-            $sets = @($content.flashcards)
-        } elseif ($content.PSObject.Properties['flashcard_sets']) {
-            $sets = @($content.flashcard_sets)
-        } else {
-            $sets = @($content)
-        }
-    }
-
-    $hasSets = ($sets.Count -gt 0)
+    $hasSets = ($content -is [array] -and $content.Count -gt 0)
     $hasMetadata = $false
     if ($hasSets) {
-        $first = $sets | Select-Object -First 1
-        $hasMetadata = ($null -ne $first.id)
+        $first = $content | Select-Object -First 1
+        $hasMetadata = ($first.id -and $first.author -and $first.cards)
     }
 
     [pscustomobject]@{
         Test = 'FlashcardListing'
         Success = ($hasSets -and $hasMetadata)
         StatusCode = $result.StatusCode
-        Message = if ($hasSets) { "Retrieved $($sets.Count) flashcard set(s)." } else { 'No flashcard sets returned.' }
+        Message = if ($hasSets) { "Retrieved $($content.Count) flashcard set(s)." } else { 'No flashcard sets returned.' }
         Payload = $content
     }
 }
@@ -230,23 +216,8 @@ function Test-NanoQuizFlashcardDetail {
     $selectedId = $FlashcardId
     if (-not $selectedId) {
         $listing = Get-NanoQuizFlashcardSets
-        
-        # Handle both array and single object responses
-        $sets = @()
-        if ($listing.Content) {
-            if ($listing.Content -is [array]) {
-                $sets = $listing.Content
-            } elseif ($listing.Content.PSObject.Properties['flashcards']) {
-                $sets = @($listing.Content.flashcards)
-            } elseif ($listing.Content.PSObject.Properties['flashcard_sets']) {
-                $sets = @($listing.Content.flashcard_sets)
-            } else {
-                $sets = @($listing.Content)
-            }
-        }
-        
-        $first = $sets | Select-Object -First 1
-        if (-not $first -or -not $first.id) {
+        $first = $listing.Content | Select-Object -First 1
+        if (-not $first) {
             return [pscustomobject]@{
                 Test = 'FlashcardDetail'
                 Success = $false
@@ -261,15 +232,10 @@ function Test-NanoQuizFlashcardDetail {
     $result = Get-NanoQuizFlashcardSet -FlashcardId $selectedId
     $content = $result.Content
 
-    $cards = @()
-    if ($content.flashcards) {
-        $cards = @($content.flashcards)
-    }
-    
-    $hasCards = $cards.Count -gt 0
+    $hasCards = $content.cards -and $content.cards.Count -gt 0
     $firstCardHasFields = $false
     if ($hasCards) {
-        $card = $cards | Select-Object -First 1
+        $card = $content.cards | Select-Object -First 1
         $firstCardHasFields = ($card.question -and ($card.answer -or $card.answers))
     }
 
@@ -277,7 +243,7 @@ function Test-NanoQuizFlashcardDetail {
         Test = 'FlashcardDetail'
         Success = ($hasCards -and $firstCardHasFields)
         StatusCode = $result.StatusCode
-        Message = if ($hasCards) { "Flashcard set '$selectedId' returned $($cards.Count) card(s)." } else { "Flashcard set '$selectedId' did not return any cards." }
+        Message = if ($hasCards) { "Flashcard set '$selectedId' returned $($content.cards.Count) card(s)." } else { "Flashcard set '$selectedId' did not return any cards." }
         Payload = $content
     }
 }
@@ -293,29 +259,29 @@ function Invoke-NanoQuizApiSmokeTests {
     )
 
     $tests = @(
-        { Test-NanoQuizHealthEndpoint },
-        { Test-NanoQuizFlashcardListing },
+        "Test-NanoQuizHealthEndpoint"
+        "Test-NanoQuizFlashcardListing",
         { Test-NanoQuizFlashcardDetail -FlashcardId $FlashcardId }
     )
 
     $results = foreach ($test in $tests) {
-        & $test
+        if ($test -is [scriptblock]) {
+            & $test
+        } else {
+            & $test
+        }
     }
 
-    $allResults = @($results)
-    $passedResults = @($allResults | Where-Object { $_.Success })
-    $failedResults = @($allResults | Where-Object { -not $_.Success })
-
     $summary = [pscustomobject]@{
-        Total = $allResults.Count
-        Passed = $passedResults.Count
-        Failed = $failedResults.Count
+        Total = $results.Count
+        Passed = ($results | Where-Object { $_.Success }).Count
+        Failed = ($results | Where-Object { -not $_.Success }).Count
     }
 
     [pscustomobject]@{
         Summary = $summary
-        Results = $allResults
+        Results = $results
     }
 }
 
-Export-ModuleMember -Function *NanoQuiz*
+# Export-ModuleMember -Function *NanoQuiz*
