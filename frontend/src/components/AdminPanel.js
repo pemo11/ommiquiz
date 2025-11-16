@@ -746,7 +746,7 @@ function AdminPanel({ onBack }) {
                       <th>ID</th>
                       <th>Author</th>
                       <th>Language</th>
-                      <th>Level</th>
+                      <th>Card Count</th>
                       <th>Module</th>
                       <th>Topics</th>
                     </tr>
@@ -764,7 +764,10 @@ function AdminPanel({ onBack }) {
                           <td>{flashcard.id || '—'}</td>
                           <td>{flashcard.author || 'Unknown'}</td>
                           <td>{flashcard.language || 'n/a'}</td>
-                          <td>{flashcard.level || 'n/a'}</td>
+                          <td>{typeof flashcard.cardcount === 'number'
+                            ? flashcard.cardcount
+                            : (typeof flashcard.cardCount === 'number' ? flashcard.cardCount : 'n/a')}
+                          </td>
                           <td>{flashcard.module || 'n/a'}</td>
                           <td>
                             {Array.isArray(flashcard.topics) && flashcard.topics.length > 0
