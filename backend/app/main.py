@@ -118,7 +118,8 @@ def _extract_flashcard_metadata(file_path: Path) -> Dict[str, Any]:
         "level": "",
         "author": "",
         "topics": [],
-        "module": ""
+        "module": "",
+        "cardCount": 0
     }
 
     try:
@@ -134,6 +135,10 @@ def _extract_flashcard_metadata(file_path: Path) -> Dict[str, Any]:
             "topics": data.get("topics", []),
             "module": data.get("module", "")
         })
+
+        flashcards_content = data.get("flashcards", [])
+        if isinstance(flashcards_content, list):
+            metadata["cardCount"] = len(flashcards_content)
         logger.debug("Processed flashcard file", filename=file_path.name)
     except Exception as e:
         logger.warning("Failed to parse flashcard file", filename=file_path.name, error=str(e))
