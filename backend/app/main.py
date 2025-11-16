@@ -1,14 +1,15 @@
 from fastapi import FastAPI, HTTPException, UploadFile, File, APIRouter, Form, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel
 import yaml
 import os
 import re
 import tempfile
 import shutil
+from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 # Import logging configuration
 from .logging_config import setup_logging, get_logger, LoggingMiddleware, log_function_call
@@ -49,6 +50,9 @@ if Path("/app/flashcards").exists():
     FLASHCARDS_DIR = Path("/app/flashcards")
 else:
     FLASHCARDS_DIR = Path(__file__).parent.parent / "flashcards"
+
+CATALOG_FILENAME = "flashcards_catalog.yaml"
+CATALOG_PATH = FLASHCARDS_DIR / CATALOG_FILENAME
 
 logger.info("Application starting", flashcards_dir=str(FLASHCARDS_DIR))
 
@@ -103,83 +107,111 @@ async def api_root():
     return {"message": "Welcome to Ommiquiz API"}
 
 
+def _extract_flashcard_metadata(file_path: Path) -> Dict[str, Any]:
+    """Read a flashcard file and extract its metadata"""
+    metadata = {
+        "id": file_path.stem,
+        "filename": file_path.name,
+        "title": file_path.stem,
+        "description": "",
+        "language": "",
+        "level": "",
+        "author": "",
+        "topics": [],
+        "module": ""
+    }
+
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            data = yaml.safe_load(f) or {}
+
+        metadata.update({
+            "title": data.get("title", metadata["title"]),
+            "description": data.get("description", ""),
+            "language": data.get("language", ""),
+            "level": data.get("level", ""),
+            "author": data.get("author", ""),
+            "topics": data.get("topics", []),
+            "module": data.get("module", "")
+        })
+        logger.debug("Processed flashcard file", filename=file_path.name)
+    except Exception as e:
+        logger.warning("Failed to parse flashcard file", filename=file_path.name, error=str(e))
+
+    return metadata
+
+
+def collect_flashcard_metadata() -> List[Dict[str, Any]]:
+    """Collect metadata for all flashcard YAML files"""
+    if not FLASHCARDS_DIR.exists():
+        logger.warning("Flashcards directory does not exist", flashcards_dir=str(FLASHCARDS_DIR))
+        return []
+
+    flashcard_files: List[Dict[str, Any]] = []
+    for pattern in ("*.yaml", "*.yml"):
+        for file_path in FLASHCARDS_DIR.glob(pattern):
+            flashcard_files.append(_extract_flashcard_metadata(file_path))
+
+    return flashcard_files
+
+
+def generate_flashcard_catalog() -> Dict[str, Any]:
+    """Create or refresh the YAML catalog file and return its data"""
+    logger.info("Generating flashcard catalog", flashcards_dir=str(FLASHCARDS_DIR))
+
+    flashcard_files = collect_flashcard_metadata()
+    FLASHCARDS_DIR.mkdir(parents=True, exist_ok=True)
+
+    catalog_data: Dict[str, Any] = {
+        "generatedAt": datetime.utcnow().isoformat() + "Z",
+        "total": len(flashcard_files),
+        "flashcards": flashcard_files
+    }
+
+    with open(CATALOG_PATH, 'w', encoding='utf-8') as catalog_file:
+        yaml.safe_dump(catalog_data, catalog_file, allow_unicode=True, sort_keys=False)
+
+    logger.info("Flashcard catalog created", path=str(CATALOG_PATH), count=len(flashcard_files))
+    return catalog_data
+
+
 @api_router.get("/flashcards")
 async def list_flashcards():
     """List all available flashcard files with metadata"""
     logger.info("Listing flashcards", flashcards_dir=str(FLASHCARDS_DIR))
-    
-    if not FLASHCARDS_DIR.exists():
-        logger.warning("Flashcards directory does not exist", flashcards_dir=str(FLASHCARDS_DIR))
-        return {"flashcards": []}
-    
-    flashcard_files = []
-    
-    # Process .yaml files
-    for file_path in FLASHCARDS_DIR.glob("*.yaml"):
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                data = yaml.safe_load(f)
-            flashcard_files.append({
-                "id": file_path.stem,
-                "filename": file_path.name,
-                "title": data.get("title", file_path.stem),
-                "description": data.get("description", ""),
-                "language": data.get("language", ""),
-                "level": data.get("level", ""),
-                "author": data.get("author", ""),
-                "topics": data.get("topics", []),
-                "module": data.get("module", "")
-            })
-            logger.debug("Processed flashcard file", filename=file_path.name)
-        except Exception as e:
-            logger.warning("Failed to parse flashcard file", filename=file_path.name, error=str(e))
-            # If YAML parsing fails, fall back to filename
-            flashcard_files.append({
-                "id": file_path.stem,
-                "filename": file_path.name,
-                "title": file_path.stem,
-                "description": "",
-                "language": "",
-                "level": "",
-                "author": "",
-                "topics": [],
-                "module": ""
-            })
-    
-    # Process .yml files
-    for file_path in FLASHCARDS_DIR.glob("*.yml"):
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                data = yaml.safe_load(f)
-            flashcard_files.append({
-                "id": file_path.stem,
-                "filename": file_path.name,
-                "title": data.get("title", file_path.stem),
-                "description": data.get("description", ""),
-                "language": data.get("language", ""),
-                "level": data.get("level", ""),
-                "author": data.get("author", ""),
-                "topics": data.get("topics", []),
-                "module": data.get("module", "")
-            })
-            logger.debug("Processed flashcard file", filename=file_path.name)
-        except Exception as e:
-            logger.warning("Failed to parse flashcard file", filename=file_path.name, error=str(e))
-            # If YAML parsing fails, fall back to filename
-            flashcard_files.append({
-                "id": file_path.stem,
-                "filename": file_path.name,
-                "title": file_path.stem,
-                "description": "",
-                "language": "",
-                "level": "",
-                "author": "",
-                "topics": [],
-                "module": ""
-            })
-    
+
+    flashcard_files = collect_flashcard_metadata()
+
     logger.info("Flashcards listed successfully", count=len(flashcard_files))
     return {"flashcards": flashcard_files}
+
+
+@api_router.get("/flashcards/catalog")
+async def get_flashcard_catalog():
+    """Generate a catalog file with metadata of all flashcards"""
+    generate_flashcard_catalog()
+    return FileResponse(
+        path=CATALOG_PATH,
+        media_type="application/x-yaml",
+        filename=CATALOG_FILENAME
+    )
+
+
+@api_router.get("/flashcards/catalog/data")
+async def get_flashcard_catalog_data():
+    """Read the generated catalog file and return its contents as JSON"""
+    if not CATALOG_PATH.exists():
+        logger.info("Catalog file not found, regenerating", path=str(CATALOG_PATH))
+        catalog_data = generate_flashcard_catalog()
+    else:
+        logger.info("Loading flashcard catalog from file", path=str(CATALOG_PATH))
+        with open(CATALOG_PATH, 'r', encoding='utf-8') as catalog_file:
+            catalog_data = yaml.safe_load(catalog_file) or {}
+
+    catalog_data.setdefault("flashcards", [])
+    catalog_data.setdefault("total", len(catalog_data["flashcards"]))
+
+    return catalog_data
 
 
 @api_router.get("/flashcards/{flashcard_id}")

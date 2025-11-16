@@ -4,7 +4,6 @@ title: JavaScript Basics 1
 description: Simple facts about JavaScript
 createDate: 2025-11-09
 language: en
-level: beginner
 module: Web Development
 topics: [programming, JavaScript]
 keywords: [data types, let, const, JavaScript frameworks]
@@ -13,6 +12,7 @@ flashcards:
   - question: What is JavaScript?
     answer: JavaScript is a high-level, interpreted programming language primarily used for web development to create interactive web pages.
     type: single
+    level: "A"
   
   - question: What are the primitive data types in JavaScript?
     answers:
@@ -25,10 +25,12 @@ flashcards:
       - BigInt
     correctAnswers: [true, true, true, true, true, true, true]
     type: multiple
+    level: "A"
   
   - question: What is the difference between let and const?
     answer: let allows reassignment of the variable, while const creates a constant that cannot be reassigned after initialization.
     type: single
+    level: "A"
   
   - question: Name a few JavaScript frameworks
     answers:
@@ -41,3 +43,4 @@ flashcards:
       - Bootstrap (not a JavaScript framework)
     correctAnswers: [true, true, true, true, true, false, false]
     type: multiple
+    level: "A"

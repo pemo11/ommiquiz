@@ -4,7 +4,6 @@ title: Data Warehouse und Data Mining
 description: Lern- und Verständnisfragen zu Kapitel 6 der VFH-Unterlage „Datenbanktechnologien“
 createDate: 2025-11-12
 language: de
-level: intermediate
 module: Datenbanktechnologien
 topics:
 - Data Warehouse
@@ -18,18 +17,22 @@ flashcards:
 - question: Was unterscheidet OLTP von OLAP-Systemen im Hinblick auf den Zweck?
   answer: OLTP dient der operativen Verarbeitung, OLAP der Analyse und Entscheidungsunterstützung.
   type: single
+  level: "A"
 
 - question: Wie lautet das von Codd formulierte Akronym für OLAP-Grundregeln?
   answer: FASMI – Fast Analysis of Shared Multidimensional Information
   type: single
+  level: "A"
 
 - question: Was bedeutet das „F“ in FASMI?
   answer: Fast – Analysen sollen in wenigen Sekunden Ergebnisse liefern.
   type: single
+  level: "A"
 
 - question: Was ist ein Data Warehouse?
   answer: Eine zentrale, integrierte, historisierte und auswertungsorientierte Datensammlung zur Entscheidungsunterstützung.
   type: single
+  level: "A"
 
 - question: Wofür steht der ETL-Prozess im Data Warehouse?
   answers:
@@ -41,18 +44,22 @@ flashcards:
   - true
   - true
   type: multiple
+  level: "A"
 
 - question: Was ist der Unterschied zwischen ETL und ELT?
   answer: Bei ELT werden die Daten zuerst geladen und danach transformiert.
   type: single
+  level: "A"
 
 - question: Was sind slowly changing dimensions (SCD)?
   answer: Dimensionen, die sich über die Zeit verändern und deren Historie unterschiedlich gepflegt werden kann.
   type: single
+  level: "A"
 
 - question: Wie unterscheiden sich SCD Typ 1 und Typ 2?
   answer: Typ 1 überschreibt alte Werte, Typ 2 legt neue Versionen mit Historie an.
   type: single
+  level: "A"
 
 - question: Welche Hauptmerkmale zeichnen ein Data Warehouse laut Codd aus?
   answers:
@@ -66,6 +73,7 @@ flashcards:
   - true
   - true
   type: multiple
+  level: "A"
 
 - question: Nenne drei zusätzliche Eigenschaften laut Kaufmann (2023).
   answers:
@@ -79,18 +87,22 @@ flashcards:
   - true
   - true
   type: multiple
+  level: "A"
 
 - question: Was beschreibt der Top-Down-Ansatz im Data Warehousing?
   answer: Zentrale Sammlung der Daten in einem DWH, von dem Data Marts abgeleitet werden.
   type: single
+  level: "A"
 
 - question: Wie wird der Bottom-Up-Ansatz charakterisiert?
   answer: Aufbau einzelner Data Marts, die später integriert werden.
   type: single
+  level: "A"
 
 - question: Welche moderne Hybridform kombiniert DWH und Data Lake?
   answer: Data Lakehouse
   type: single
+  level: "A"
 
 - question: Welche drei Schichten umfasst die Lambda-Architektur?
   answers:
@@ -102,34 +114,42 @@ flashcards:
   - true
   - true
   type: multiple
+  level: "A"
 
 - question: Was ist ein OLAP-Würfel (Cube)?
   answer: Ein mehrdimensionales Datenmodell mit Fakten in den Zellen und Dimensionen als Achsen.
   type: single
+  level: "A"
 
 - question: Welche OLAP-Operation fasst Daten auf höherer Ebene zusammen?
   answer: Roll-up (Aggregation)
   type: single
+  level: "A"
 
 - question: Welche OLAP-Operation zeigt detailliertere Daten an?
   answer: Drill-down
   type: single
+  level: "A"
 
 - question: Was bedeuten Slicing und Dicing?
   answer: Herausfiltern oder Ausschneiden bestimmter Teilmengen aus einem Datenwürfel.
   type: single
+  level: "A"
 
 - question: Was bewirkt eine Pivot-Operation?
   answer: Den Tausch der Achsen im Datenwürfel, um eine andere Perspektive darzustellen.
   type: single
+  level: "A"
 
 - question: Was ist ein Sternschema?
   answer: Eine de-normalisierte Struktur mit einer Faktentabelle im Zentrum und mehreren Dimensionstabellen.
   type: single
+  level: "A"
 
 - question: Wie unterscheidet sich das Schneeflockenschema vom Sternschema?
   answer: Es normalisiert die Dimensionstabellen und bildet Hierarchien ab.
   type: single
+  level: "A"
 
 - question: Welche drei Typen von Fakttabellen gibt es?
   answers:
@@ -141,6 +161,7 @@ flashcards:
   - true
   - true
   type: multiple
+  level: "A"
 
 - question: Welche OLAP-Systemvarianten gibt es?
   answers:
@@ -154,18 +175,22 @@ flashcards:
   - true
   - true
   type: multiple
+  level: "A"
 
 - question: Worin liegt der Vorteil von MOLAP?
   answer: Schnelle Abfragen durch direkte multidimensionale Speicherung.
   type: single
+  level: "A"
 
 - question: Welche SQL-Erweiterung erzeugt alle Gruppierungskombinationen für Aggregationen?
   answer: CUBE
   type: single
+  level: "A"
 
 - question: Was ist das Ziel von Data Mining?
   answer: Automatische Entdeckung neuer, nützlicher Muster und Zusammenhänge in großen Datenmengen.
   type: single
+  level: "A"
 
 - question: Nenne vier typische Anwendungsklassen des Data Minings.
   answers:
@@ -179,18 +204,22 @@ flashcards:
   - true
   - true
   type: multiple
+  level: "A"
 
 - question: Was bedeutet der Support-Wert bei Assoziationsregeln?
   answer: Anteil der Transaktionen, in denen eine Regel zutrifft.
   type: single
+  level: "A"
 
 - question: Was drückt die Confidence bei einer Regel aus?
   answer: Wie oft der DANN-Teil erfüllt ist, wenn der WENN-Teil zutrifft.
   type: single
+  level: "A"
 
 - question: Was zeigt der Lift-Wert an?
   answer: Ob die Regel stärker ist als ein zufälliger Zusammenhang.
   type: single
+  level: "A"
 
 - question: Welche Verfahren gehören zu den Methoden des Data Minings?
   answers:
@@ -204,14 +233,17 @@ flashcards:
   - true
   - true
   type: multiple
+  level: "A"
 
 - question: Wofür werden neuronale Netze im Data Mining eingesetzt?
   answer: Für Klassifikations- und Prognoseaufgaben durch selbstlernende Modelle.
   type: single
+  level: "A"
 
 - question: Was sind genetische Algorithmen?
   answer: Optimierungsverfahren, die auf Prinzipien der Evolution basieren.
   type: single
+  level: "A"
 
 - question: Nenne zwei Beispiele für Data-Mining-Werkzeuge.
   answers:
@@ -221,3 +253,4 @@ flashcards:
   - true
   - true
   type: multiple
+  level: "A"

@@ -121,6 +121,8 @@ The frontend will run on http://localhost:3000 and proxy API requests to the bac
 
 - `GET /` - Welcome message
 - `GET /flashcards` - List all available flashcard sets
+- `GET /flashcards/catalog` - Download the aggregated YAML catalog of all flashcard metadata
+- `GET /flashcards/catalog/data` - Read the generated catalog file and return the same information as JSON
 - `GET /flashcards/{flashcard_id}` - Get a specific flashcard set by ID
 - `GET /health` - Health check endpoint
 
