@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
     container_name: ommiquiz-backend
     ports:
-      - "8000:8000"
+      - "8080:8000"
     volumes:
       - ./backend/flashcards:/app/flashcards
       - ./logs:/app/logs  # Mount logs directory for persistent logging

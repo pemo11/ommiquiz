@@ -21,7 +21,7 @@ const getApiUrl = () => {
   const baseUrl = hostname === 'localhost' ? 'localhost' : hostname;
   // Use HTTPS if the current page is served over HTTPS, HTTP for localhost
   const protocol = hostname === 'localhost' ? 'http' : window.location.protocol.replace(':', '');
-  const port = hostname === 'localhost' ? ':8000' : '';
+  const port = hostname === 'localhost' ? ':8080' : '';
   return `${protocol}://${baseUrl}${port}/api`;
 };
 
