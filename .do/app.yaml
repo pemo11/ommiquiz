@@ -6,7 +6,7 @@ services:
     run_command: uvicorn app.main:app --host 0.0.0.0 --port 8080
     environment_slug: python
     instance_count: 1
-    instance_size_slug: basic-xxs
+    instance_size_slug: basic-xs
     http_port: 8080
     health_check:
       http_path: /api/health
