@@ -3,6 +3,9 @@ name: ommiquiz-backend
 services:
   - name: backend
     source_dir: /backend
+    github:
+      repo: pemo11/ommiquiz
+      branch: main
     run_command: uvicorn app.main:app --host 0.0.0.0 --port 8080
     environment_slug: python
     instance_count: 1
@@ -13,6 +16,10 @@ services:
     envs:
       - key: PYTHONUNBUFFERED
         value: "1"
+      - key: LOG_LEVEL
+        value: "INFO"
+      - key: ENVIRONMENT
+        value: "production"
       - key: CORS_ORIGINS
         value: "*"
     routes:
