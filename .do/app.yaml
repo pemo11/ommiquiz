@@ -2,7 +2,7 @@ name: ommiquiz-app
 
 services:
   - name: backend
-    source_dir: /backend
+    source_dir: backend
     github:
       repo: pemo11/ommiquiz
       branch: main
@@ -25,15 +25,15 @@ services:
 
 static_sites:
   - name: frontend
-    source_dir: /frontend
+    source_dir: frontend
     github:
       repo: pemo11/ommiquiz
       branch: main
     build_command: npm run build
     environment_slug: node-js
-    output_dir: /build
+    output_dir: build
     envs:
       - key: REACT_APP_API_URL
-        value: "${backend.PUBLIC_URL}/api"
+        value: "/api"
     routes:
       - path: /
