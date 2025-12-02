@@ -1,5 +1,26 @@
 # DigitalOcean App Platform Deployment - Konfigurationsübersicht
 
+## Aktuelle App-Platform-Konfiguration (empfohlen)
+
+Die Repository-Ordnerstruktur ist bereits für den DigitalOcean App Platform Workflow vorbereitet. Die kombinierte App-Spezifikation liegt unter `.do/app.yaml` und kann entweder über das Web-UI oder per `doctl` verwendet werden. Sie deployt Backend (FastAPI) und Frontend (React) in einer einzigen App-Platform-Anwendung.
+
+### Schritte über das Web-UI
+1. **App erstellen** → GitHub → Repository `pemo11/ommiquiz` (oder eigener Fork) wählen
+2. **Spec-Datei auswählen**: Im Dialog „Import an app spec“ die Datei `.do/app.yaml` auswählen
+3. **Environment-Variablen prüfen**:
+   - Backend: `PYTHONUNBUFFERED=1`, `LOG_LEVEL=INFO`, `ENVIRONMENT=production`
+   - Frontend: `REACT_APP_API_URL=/api` (nutzt denselben Host wie der Backend-Route-Pfad)
+4. **Routen**: Backend wird unter `/api` bereitgestellt, Frontend unter `/`
+5. **Health Check**: Backend verwendet `/api/health`
+6. **Deploy** starten
+
+### Schritte mit `doctl`
+1. Anmelden: `doctl auth init`
+2. Spec anwenden: `doctl apps create --spec .do/app.yaml`
+3. Bei Updates: `doctl apps update <APP_ID> --spec .do/app.yaml`
+
+Die `source_dir`-Angaben sind relativ zum Repository-Root (`backend` und `frontend`), sodass kein manuelles Umschreiben für den App-Platform-Build nötig ist. Das Frontend nutzt `REACT_APP_API_URL=/api`, womit sowohl die App-eigene Domain als auch spätere Custom Domains ohne zusätzliche CORS-Konfiguration funktionieren.
+
 ## Szenario 1: Separate Backend und Frontend Apps
 
 ### Backend App Konfiguration

@@ -2,7 +2,7 @@ name: ommiquiz-backend
 
 services:
   - name: backend
-    source_dir: /backend
+    source_dir: backend
     github:
       repo: pemo11/ommiquiz
       branch: main
