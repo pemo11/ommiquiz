@@ -97,6 +97,18 @@ cards:
    - Backend API: http://localhost:8000
    - API Documentation: http://localhost:8000/docs
 
+### Production API URL (Wichtig für getrennte Deployments)
+
+Die React-App verwendet in der Produktion **nicht** automatisch den Backend-Host, wenn Frontend und Backend auf verschiedenen Domains oder Droplets laufen. Setzen Sie deshalb vor dem Build immer die Umgebungsvariable `REACT_APP_API_URL` auf die öffentliche Backend-URL (inkl. `/api`-Präfix), z. B.:
+
+```bash
+# Beispiel: Backend läuft unter https://ommiquiz-backend.example.com
+export REACT_APP_API_URL="https://ommiquiz-backend.example.com/api"
+npm run build
+```
+
+Ohne diese Variable versucht das Frontend Anfragen an `${window.location.origin}/api` zu senden und erhält dann HTML (die eigene `index.html`) statt JSON – exakt der Fehler „Server returned non-JSON response. Content-Type: text/html“. Stellen Sie sicher, dass der Wert beim Image-Build gesetzt wird (z. B. über eine `.env.production`).
+
 ### Running Locally (Development)
 
 #### Backend
