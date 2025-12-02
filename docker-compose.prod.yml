@@ -28,8 +28,6 @@ services:
       - "3000:80"
     depends_on:
       - backend
-    environment:
-      - REACT_APP_API_URL=${REACT_APP_API_URL:-https://your-domain.com/api}
     networks:
       - ommiquiz-network
 

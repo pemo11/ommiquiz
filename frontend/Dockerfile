@@ -8,9 +8,15 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install
 
+# Copy environment file for production build
+COPY .env.production ./
+
 # Copy source code
 COPY public/ ./public/
 COPY src/ ./src/
+
+# Set NODE_ENV to production for the build
+ENV NODE_ENV=production
 
 # Build the app
 RUN npm run build
