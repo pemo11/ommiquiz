@@ -2,10 +2,11 @@ name: ommiquiz-backend
 
 services:
   - name: backend
-    source_dir: /backend
+    source_dir: backend
     github:
       repo: pemo11/ommiquiz
       branch: main
+    build_command: pip install -r requirements.txt
     run_command: uvicorn app.main:app --host 0.0.0.0 --port 8080
     environment_slug: python
     instance_count: 1
@@ -13,6 +14,11 @@ services:
     http_port: 8080
     health_check:
       http_path: /api/health
+      initial_delay_seconds: 60
+      period_seconds: 10
+      timeout_seconds: 5
+      failure_threshold: 3
+      success_threshold: 1
     envs:
       - key: PYTHONUNBUFFERED
         value: "1"
@@ -20,7 +26,6 @@ services:
         value: "INFO"
       - key: ENVIRONMENT
         value: "production"
-      - key: CORS_ORIGINS
-        value: "*"
     routes:
+      - path: /api
       - path: /

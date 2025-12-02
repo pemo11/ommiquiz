@@ -211,7 +211,6 @@ function AdminPanel({ onBack }) {
       let currentSection = 'metadata';
       let currentCard = null;
       let currentAnswers = [];
-      let indentLevel = 0;
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
@@ -412,7 +411,7 @@ function AdminPanel({ onBack }) {
         throw new Error(errorData.message || 'Failed to save flashcard');
       }
 
-      const result = await response.json();
+      await response.json();
       const actionText = isUpdatingExisting ? 'updated' : (isNewButExists ? 'overwritten' : 'created');
       setMessage(`Flashcard ${actionText} successfully!`);
       setSelectedFlashcard({ ...editingFlashcard });
@@ -467,19 +466,6 @@ function AdminPanel({ onBack }) {
       setMessage(`Flashcard "${dataToExport.title || dataToExport.id}" exported successfully!`);
       setTimeout(() => setMessage(null), 3000);
       
-    } catch (err) {
-      setError(`Failed to export flashcard: ${err.message}`);
-    }
-  };
-
-  const exportFlashcardById = async (flashcardId) => {
-    try {
-      const response = await fetch(`${API_URL}/flashcards/${flashcardId}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch flashcard for export');
-      }
-      const data = await response.json();
-      exportFlashcard(data);
     } catch (err) {
       setError(`Failed to export flashcard: ${err.message}`);
     }
@@ -577,7 +563,8 @@ function AdminPanel({ onBack }) {
       setTopicsInput(arrayToString(editingFlashcard.topics));
       setKeywordsInput(arrayToString(editingFlashcard.keywords));
     }
-  }, [editingFlashcard?.id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editingFlashcard?.id, editingFlashcard?.topics, editingFlashcard?.keywords]);
 
   const updateCardField = (cardIndex, field, value) => {
     setEditingFlashcard(prev => {

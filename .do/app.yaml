@@ -2,10 +2,11 @@ name: ommiquiz-app
 
 services:
   - name: backend
-    source_dir: /backend
+    source_dir: backend
     github:
       repo: pemo11/ommiquiz
       branch: main
+    build_command: pip install -r requirements.txt
     run_command: uvicorn app.main:app --host 0.0.0.0 --port 8080
     environment_slug: python
     instance_count: 1
@@ -13,6 +14,11 @@ services:
     http_port: 8080
     health_check:
       http_path: /api/health
+      initial_delay_seconds: 60
+      period_seconds: 10
+      timeout_seconds: 5
+      failure_threshold: 3
+      success_threshold: 1
     envs:
       - key: PYTHONUNBUFFERED
         value: "1"
@@ -25,15 +31,22 @@ services:
 
 static_sites:
   - name: frontend
-    source_dir: /frontend
+    source_dir: frontend
     github:
       repo: pemo11/ommiquiz
       branch: main
-    build_command: npm run build
+    build_command: npm ci && CI=false npm run build
+    output_dir: build
     environment_slug: node-js
-    output_dir: /build
     envs:
       - key: REACT_APP_API_URL
         value: "${backend.PUBLIC_URL}/api"
+      - key: NODE_ENV
+        value: "production"
+      - key: GENERATE_SOURCEMAP
+        value: "false"
+      - key: CI
+        value: "false"
     routes:
       - path: /
+    catchall_document: index.html

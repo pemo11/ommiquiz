@@ -33,21 +33,24 @@ echo -e "\n4. Testing API endpoints..."
 echo -e "\nTesting root endpoint..."
 curl -s http://localhost:8000/ | python3 -m json.tool
 
+echo -e "\nTesting API root endpoint..."
+curl -s http://localhost:8000/api/ | python3 -m json.tool
+
 echo -e "\nTesting flashcards list..."
-curl -s http://localhost:8000/flashcards | python3 -m json.tool
+curl -s http://localhost:8000/api/flashcards | python3 -m json.tool
 
 echo -e "\nTesting python-basics flashcard..."
-curl -s http://localhost:8000/flashcards/python-basics | python3 -m json.tool | head -20
+curl -s http://localhost:8000/api/flashcards/python-basics | python3 -m json.tool | head -20
 
 echo -e "\nTesting javascript-basics flashcard..."
-curl -s http://localhost:8000/flashcards/javascript-basics | python3 -m json.tool | head -20
+curl -s http://localhost:8000/api/flashcards/javascript-basics | python3 -m json.tool | head -20
 
 echo -e "\nTesting health endpoint..."
-curl -s http://localhost:8000/health | python3 -m json.tool
+curl -s http://localhost:8000/api/health | python3 -m json.tool
 
 # Test path traversal protection
 echo -e "\nTesting path traversal protection..."
-curl -s "http://localhost:8000/flashcards/../../../etc/passwd"
+curl -s "http://localhost:8000/api/flashcards/../../../etc/passwd"
 
 # Cleanup
 echo -e "\n\n5. Stopping server..."
