@@ -463,15 +463,16 @@ function AdminPanel({ onBack }) {
       return;
     }
 
-    const expectedName = (editingFlashcard?.title || selectedFlashcard?.title || selectedFlashcard?.id || '').trim();
+    // Use ID consistently for deletion confirmation
+    const expectedId = selectedFlashcard.id;
 
     if (!deleteConfirmation.trim()) {
-      setDeleteError('Please enter the flashcard title to confirm deletion.');
+      setDeleteError('Please enter the flashcard ID to confirm deletion.');
       return;
     }
 
-    if (deleteConfirmation.trim() !== expectedName) {
-      setDeleteError('Entered title does not match the flashcard title.');
+    if (deleteConfirmation.trim() !== expectedId) {
+      setDeleteError('Entered ID does not match the flashcard ID.');
       return;
     }
 
@@ -496,7 +497,7 @@ function AdminPanel({ onBack }) {
       }
 
       await response.json();
-      setMessage(`Flashcard "${expectedName}" deleted successfully!`);
+      setMessage(`Flashcard "${selectedFlashcard.id}" deleted successfully!`);
       setShowDeleteDialog(false);
       setSelectedFlashcard(null);
       setEditingFlashcard(null);
@@ -1215,8 +1216,8 @@ flashcards:
           <div className="confirm-dialog-content">
             <h4>Delete Flashcard</h4>
             <p>
-              To confirm deletion, please type the flashcard title
-              <strong> "{editingFlashcard?.title || selectedFlashcard?.title || selectedFlashcard?.id}"</strong>.
+              To confirm deletion, please type the flashcard ID
+              <strong> "{selectedFlashcard?.id}"</strong>.
               This action cannot be undone.
             </p>
             <input
@@ -1227,7 +1228,7 @@ flashcards:
                 setDeleteError(null);
               }}
               className="delete-confirmation-input"
-              placeholder="Enter flashcard title to confirm"
+              placeholder="Enter flashcard ID to confirm"
             />
             {deleteError && (
               <div className="delete-error">{deleteError}</div>

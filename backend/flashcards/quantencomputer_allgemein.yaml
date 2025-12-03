@@ -4,7 +4,7 @@ title: Allgemeine Grundlagen der Quantencomputer
 description: Fragen und Antworten zu allgemeinen Grundlagen der Quantencomputer, einschließlich Qubits, Superposition, Verschränkung und wichtigen Quantengattern.
 createDate: 2025-11-09
 language: de
-mdule: Quantencomputer
+module: Quantencomputer
 topics: [Quantencomputer]
 keywords: [Quantencomputer, qubit, superposition, verschränkung, quantengatter, hadamard, pauli-x, pauli-z, cnot, bell-zustände]
 

@@ -3,7 +3,6 @@ import './FlashcardSelector.css';
 
 function FlashcardSelector({ flashcards, onSelect }) {
   const [selectedModule, setSelectedModule] = useState('all');
-  const [selectedTopic, setSelectedTopic] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Extrahiere alle verfügbaren Module aus den Metadaten
@@ -17,21 +16,6 @@ function FlashcardSelector({ flashcards, onSelect }) {
     return Array.from(modulesSet).sort();
   }, [flashcards]);
 
-  const availableTopics = useMemo(() => {
-    const topicsSet = new Set();
-    flashcards.forEach(flashcard => {
-      if (Array.isArray(flashcard.topics)) {
-        flashcard.topics.forEach(topic => {
-          const trimmed = (topic || '').trim();
-          if (trimmed) {
-            topicsSet.add(trimmed);
-          }
-        });
-      }
-    });
-    return Array.from(topicsSet).sort((a, b) => a.localeCompare(b));
-  }, [flashcards]);
-
   // Filtere Flashcards basierend auf dem ausgewählten Modul
   const filteredFlashcards = useMemo(() => {
     const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -39,14 +23,6 @@ function FlashcardSelector({ flashcards, onSelect }) {
     return flashcards.filter(flashcard => {
       if (selectedModule !== 'all' && flashcard.module !== selectedModule) {
         return false;
-      }
-
-      if (selectedTopic !== 'all') {
-        const topics = Array.isArray(flashcard.topics) ? flashcard.topics : [];
-        const hasTopic = topics.some(topic => (topic || '').toLowerCase() === selectedTopic.toLowerCase());
-        if (!hasTopic) {
-          return false;
-        }
       }
 
       if (!normalizedQuery) {
@@ -78,7 +54,7 @@ function FlashcardSelector({ flashcards, onSelect }) {
 
       return haystack.includes(normalizedQuery);
     });
-  }, [flashcards, searchQuery, selectedModule, selectedTopic]);
+  }, [flashcards, searchQuery, selectedModule]);
 
   if (flashcards.length === 0) {
     return (
@@ -133,30 +109,6 @@ function FlashcardSelector({ flashcards, onSelect }) {
         </div>
       )}
 
-      {/* Topic Filter Buttons */}
-      {availableTopics.length > 0 && (
-        <div className="topic-filter-section">
-          <h3>Filter by Topic</h3>
-          <div className="topic-buttons">
-            <button
-              className={`topic-button ${selectedTopic === 'all' ? 'active' : ''}`}
-              onClick={() => setSelectedTopic('all')}
-            >
-              🧠 All Topics
-            </button>
-            {availableTopics.map(topic => (
-              <button
-                key={topic}
-                className={`topic-button ${selectedTopic === topic ? 'active' : ''}`}
-                onClick={() => setSelectedTopic(topic)}
-              >
-                🏷️ {topic}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       <div className="flashcard-list">
         {filteredFlashcards.map((flashcard) => (
           <button
@@ -194,11 +146,9 @@ function FlashcardSelector({ flashcards, onSelect }) {
       {filteredFlashcards.length === 0 && (
         <div className="no-flashcards-filtered">
           <p>No flashcards match your filters.</p>
-          {(selectedModule !== 'all' || selectedTopic !== 'all') && (
+          {selectedModule !== 'all' && (
             <p>
-              Try clearing the {selectedModule !== 'all' ? 'module filter' : ''}
-              {selectedModule !== 'all' && selectedTopic !== 'all' ? ' and ' : ''}
-              {selectedTopic !== 'all' ? 'topic filter' : ''}.
+              Try clearing the module filter.
             </p>
           )}
           {searchQuery.trim() && <p>Adjust or clear your search query to see more results.</p>}
