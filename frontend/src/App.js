@@ -133,7 +133,7 @@ function App() {
           <div className="header-main">
             <div className="title-with-version">
               <h1>🎓 Ommiquiz</h1>
-              <span className="header-version">v1.0.0</span>
+              <span className="header-version">v1.0.1</span>
             </div>
             <p>Erfolgreich durch das Studium der Medieninformatik</p>
           </div>
