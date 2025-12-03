@@ -29,7 +29,7 @@ function VersionInfo() {
   };
 
   // Get frontend version from package.json
-  const frontendVersion = process.env.REACT_APP_VERSION || '1.0.0';
+  const frontendVersion = process.env.REACT_APP_VERSION || '1.0.1';
 
   return (
     <div className="version-info">
