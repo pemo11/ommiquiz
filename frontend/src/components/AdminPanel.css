@@ -474,6 +474,34 @@
   box-shadow: none;
 }
 
+.delete-flashcard-button {
+  background-color: #dc3545;
+  color: white;
+  border: 1px solid #dc3545;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.delete-flashcard-button:hover {
+  background-color: #c82333;
+  border-color: #c82333;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+}
+
+.delete-flashcard-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 .save-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -860,6 +888,21 @@
   display: flex;
   gap: 1rem;
   justify-content: center;
+}
+
+.delete-confirmation-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #dee2e6;
+  border-radius: 5px;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+}
+
+.delete-error {
+  color: #dc3545;
+  margin-bottom: 1rem;
+  font-weight: 600;
 }
 
 .confirm-button {

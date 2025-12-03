@@ -45,6 +45,10 @@ function AdminPanel({ onBack }) {
   const [keywordsInput, setKeywordsInput] = useState('');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [pendingSaveData, setPendingSaveData] = useState(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [deleteError, setDeleteError] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const [showStatistics, setShowStatistics] = useState(false);
   const [catalogData, setCatalogData] = useState(null);
   const [catalogLoading, setCatalogLoading] = useState(false);
@@ -439,6 +443,74 @@ function AdminPanel({ onBack }) {
   const handleCancelOverwrite = () => {
     setShowConfirmDialog(false);
     setPendingSaveData(null);
+  };
+
+  const handleDeleteClick = () => {
+    setShowDeleteDialog(true);
+    setDeleteConfirmation('');
+    setDeleteError(null);
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteDialog(false);
+    setDeleteConfirmation('');
+    setDeleteError(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedFlashcard || isCreatingNew) {
+      setDeleteError('Cannot delete an unsaved flashcard.');
+      return;
+    }
+
+    const expectedName = (editingFlashcard?.title || selectedFlashcard?.title || selectedFlashcard?.id || '').trim();
+
+    if (!deleteConfirmation.trim()) {
+      setDeleteError('Please enter the flashcard title to confirm deletion.');
+      return;
+    }
+
+    if (deleteConfirmation.trim() !== expectedName) {
+      setDeleteError('Entered title does not match the flashcard title.');
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      setDeleteError(null);
+      setError(null);
+
+      const response = await fetch(`${API_URL}/flashcards/${selectedFlashcard.id}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        let errorMessage = 'Failed to delete flashcard';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData?.detail || errorData?.message || errorMessage;
+        } catch (err) {
+          // Ignore JSON parsing errors
+        }
+        throw new Error(errorMessage);
+      }
+
+      await response.json();
+      setMessage(`Flashcard "${expectedName}" deleted successfully!`);
+      setShowDeleteDialog(false);
+      setSelectedFlashcard(null);
+      setEditingFlashcard(null);
+      setIsCreatingNew(false);
+      setDeleteConfirmation('');
+
+      await fetchFlashcardList();
+
+      setTimeout(() => setMessage(null), 3000);
+    } catch (err) {
+      setDeleteError(err.message);
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const exportFlashcard = (flashcardData = null) => {
@@ -910,6 +982,14 @@ flashcards:
               >
                 {saving ? '🔄 Updating...' : (isCreatingNew ? '📝 Create Flashcard' : '📝 Update YAML File')}
               </button>
+              {!isCreatingNew && (
+                <button
+                  onClick={handleDeleteClick}
+                  className="delete-flashcard-button"
+                >
+                  🗑️ Delete Flashcard
+                </button>
+              )}
               <button
                 onClick={() => exportFlashcard()}
                 className="export-button"
@@ -1126,6 +1206,47 @@ flashcards:
             <div className="confirm-dialog-buttons">
               <button onClick={handleConfirmOverwrite} className="confirm-button">Yes, Overwrite</button>
               <button onClick={handleCancelOverwrite} className="cancel-button">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showDeleteDialog && (
+        <div className="confirm-dialog">
+          <div className="confirm-dialog-content">
+            <h4>Delete Flashcard</h4>
+            <p>
+              To confirm deletion, please type the flashcard title
+              <strong> "{editingFlashcard?.title || selectedFlashcard?.title || selectedFlashcard?.id}"</strong>.
+              This action cannot be undone.
+            </p>
+            <input
+              type="text"
+              value={deleteConfirmation}
+              onChange={(e) => {
+                setDeleteConfirmation(e.target.value);
+                setDeleteError(null);
+              }}
+              className="delete-confirmation-input"
+              placeholder="Enter flashcard title to confirm"
+            />
+            {deleteError && (
+              <div className="delete-error">{deleteError}</div>
+            )}
+            <div className="confirm-dialog-buttons">
+              <button
+                onClick={handleConfirmDelete}
+                className="confirm-button"
+                disabled={deleting}
+              >
+                {deleting ? 'Deleting...' : 'Yes, Delete'}
+              </button>
+              <button
+                onClick={handleCancelDelete}
+                className="cancel-button"
+                disabled={deleting}
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>
