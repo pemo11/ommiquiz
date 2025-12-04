@@ -878,6 +878,32 @@
   font-size: 1.3rem;
 }
 
+.delete-id-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.delete-id-label {
+  font-weight: 600;
+  color: #475569;
+}
+
+.delete-id-value {
+  background-color: #1e293b;
+  color: #e2e8f0;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.95rem;
+}
+
 .confirm-dialog-content p {
   margin-bottom: 2rem;
   color: #333;
