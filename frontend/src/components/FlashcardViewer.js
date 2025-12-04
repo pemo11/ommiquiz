@@ -7,11 +7,12 @@ function FlashcardViewer({ flashcard, onBack }) {
   const [selectedAnswers, setSelectedAnswers] = useState([]);
   const [showCorrectAnswers, setShowCorrectAnswers] = useState(false);
   const [startTime] = useState(Date.now());  const [elapsedTime, setElapsedTime] = useState(0);
-  
+
   // New state for quiz tracking
   const [cardResults, setCardResults] = useState({});
   const [showSummary, setShowSummary] = useState(false);
   const [currentCardAnswered, setCurrentCardAnswered] = useState(false);
+  const [swipeDirection, setSwipeDirection] = useState(null);
   const touchStartRef = useRef(null);
   const gestureHandledRef = useRef(false);
 
@@ -95,8 +96,10 @@ function FlashcardViewer({ flashcard, onBack }) {
       gestureHandledRef.current = true;
 
       if (deltaX > 0) {
+        setSwipeDirection('right');
         handleSingleAnswerEvaluation(true);
       } else {
+        setSwipeDirection('left');
         handleSingleAnswerEvaluation(false);
       }
     }
@@ -118,6 +121,10 @@ function FlashcardViewer({ flashcard, onBack }) {
 
   // New function to handle single-answer card evaluation
   const handleSingleAnswerEvaluation = (isCorrect) => {
+    if (swipeDirection === null && currentCard.type === 'single' && !currentCardAnswered) {
+      setSwipeDirection(isCorrect ? 'right' : 'left');
+    }
+
     setCardResults(prev => ({
       ...prev,
       [currentCardIndex]: {
@@ -139,6 +146,8 @@ function FlashcardViewer({ flashcard, onBack }) {
         setShowSummary(true);
       }
     }, 500);
+
+    setTimeout(() => setSwipeDirection(null), 600);
   };
 
   // New function to handle skip action
@@ -158,6 +167,7 @@ function FlashcardViewer({ flashcard, onBack }) {
     if (currentCardIndex < cards.length - 1) {
       setCurrentCardIndex(currentCardIndex + 1);
       setIsFlipped(false);
+      setSwipeDirection(null);
     } else {
       setShowSummary(true);
     }
@@ -241,6 +251,7 @@ function FlashcardViewer({ flashcard, onBack }) {
     if (currentCardIndex < cards.length - 1) {
       setCurrentCardIndex(currentCardIndex + 1);
       setIsFlipped(false);
+      setSwipeDirection(null);
     } else {
       // We're on the last card, show summary if there are any results
       if (Object.keys(cardResults).length > 0) {
@@ -253,6 +264,7 @@ function FlashcardViewer({ flashcard, onBack }) {
     if (currentCardIndex > 0) {
       setCurrentCardIndex(currentCardIndex - 1);
       setIsFlipped(false);
+      setSwipeDirection(null);
     }
   };
 
@@ -275,6 +287,7 @@ function FlashcardViewer({ flashcard, onBack }) {
     setShowCorrectAnswers(false);
     setShowSummary(false);
     setCurrentCardAnswered(false);
+    setSwipeDirection(null);
   };
 
   if (showSummary) {
@@ -383,7 +396,7 @@ function FlashcardViewer({ flashcard, onBack }) {
         // Single answer card (flip-style)
         <div className="card-container">
           <div
-            className={`flashcard ${isFlipped ? 'flipped' : ''}`}
+            className={`flashcard ${isFlipped ? 'flipped' : ''} ${swipeDirection ? `swipe-${swipeDirection}` : ''}`}
             onClick={handleCardClick}
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
