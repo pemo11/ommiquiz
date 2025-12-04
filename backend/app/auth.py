@@ -63,6 +63,24 @@ def _require_auth0_settings() -> Dict[str, Any]:
     }
 
 
+def _require_auth0_login_settings() -> Dict[str, Any]:
+    settings = _require_auth0_settings()
+    client_id = os.getenv("AUTH0_CLIENT_ID")
+    client_secret = os.getenv("AUTH0_CLIENT_SECRET")
+    realm = os.getenv("AUTH0_REALM")
+
+    if not client_id or not client_secret:
+        logger.warning(
+            "Auth0 login configuration missing", client_id=bool(client_id), client_secret=bool(client_secret)
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Authentication provider is not configured",
+        )
+
+    return {**settings, "client_id": client_id, "client_secret": client_secret, "realm": realm}
+
+
 @lru_cache(maxsize=1)
 def _get_jwks(domain: str) -> Dict[str, Any]:
     url = f"https://{domain}/.well-known/jwks.json"
@@ -117,6 +135,63 @@ def _decode_token(token: str) -> Dict[str, Any]:
     except JWTError as exc:
         logger.warning("Token verification failed", error=str(exc))
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication token") from exc
+
+
+async def login_with_email_password(email: str, password: str) -> Dict[str, Any]:
+    settings = _require_auth0_login_settings()
+
+    grant_type = "http://auth0.com/oauth/grant-type/password-realm" if settings.get("realm") else "password"
+    payload = {
+        "grant_type": grant_type,
+        "username": email,
+        "password": password,
+        "audience": settings["audience"],
+        "client_id": settings["client_id"],
+        "client_secret": settings["client_secret"],
+        "scope": "openid profile email",
+    }
+
+    if settings.get("realm"):
+        payload["realm"] = settings["realm"]
+
+    token_url = f"https://{settings['domain']}/oauth/token"
+
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            response = await client.post(token_url, json=payload)
+    except httpx.HTTPError as exc:
+        logger.error("Auth0 login request failed", url=token_url, error=str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Authentication service temporarily unavailable",
+        ) from exc
+
+    if response.status_code == status.HTTP_401_UNAUTHORIZED:
+        logger.info("Auth0 login failed with invalid credentials", email=email)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
+
+    try:
+        response.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        logger.error(
+            "Auth0 login returned unexpected status",
+            status_code=response.status_code,
+            response_text=response.text,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Authentication service error",
+        ) from exc
+
+    token_data = response.json()
+    if "access_token" not in token_data:
+        logger.error("Auth0 login response missing access token", response_text=response.text)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Authentication service error",
+        )
+
+    return token_data
 
 
 async def get_optional_current_user(

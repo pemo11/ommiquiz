@@ -13,7 +13,7 @@ from typing import Dict, Any, Optional, List
 
 # Import logging configuration
 from .logging_config import setup_logging, get_logger, LoggingMiddleware, log_function_call
-from .auth import AuthenticatedUser, get_optional_current_user
+from .auth import AuthenticatedUser, get_optional_current_user, login_with_email_password
 from .download_logger import initialize_download_log_store, log_flashcard_download
 
 # Initialize logging before creating the app
@@ -44,6 +44,19 @@ app.add_middleware(
 
 # Create API router with /api prefix
 api_router = APIRouter(prefix="/api")
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str
+    expires_in: Optional[int] = None
+    refresh_token: Optional[str] = None
+    id_token: Optional[str] = None
 
 # Support both Docker and local development paths
 if Path("/app/flashcards").exists():
@@ -123,6 +136,14 @@ async def api_root():
     """API root endpoint"""
     logger.info("API root endpoint accessed")
     return {"message": "Welcome to Ommiquiz API"}
+
+
+@api_router.post("/auth/login", response_model=LoginResponse)
+async def auth_login(payload: LoginRequest):
+    """Authenticate a user with Auth0 using email and password credentials."""
+
+    token_data = await login_with_email_password(payload.email, payload.password)
+    return token_data
 
 
 def _extract_flashcard_metadata(file_path: Path) -> Dict[str, Any]:
