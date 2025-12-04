@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './VersionInfo.css';
+import { FRONTEND_VERSION } from '../version';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
 
@@ -28,14 +29,11 @@ function VersionInfo() {
     }
   };
 
-  // Get frontend version from package.json
-  const frontendVersion = process.env.REACT_APP_VERSION || '1.0.2';
-
   return (
     <div className="version-info">
       <div className="version-item">
         <span className="version-label">Frontend:</span>
-        <span className="version-value">v{frontendVersion}</span>
+        <span className="version-value">v{FRONTEND_VERSION}</span>
       </div>
       <div className="version-item">
         <span className="version-label">Backend:</span>
