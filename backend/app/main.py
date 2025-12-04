@@ -610,11 +610,32 @@ async def delete_flashcard(flashcard_id: str):
         )
     
     try:
-        file_path.unlink()  # Delete the file
-        logger.info("Flashcard deleted successfully", flashcard_id=flashcard_id)
+        # Track all deleted files so we can report them and clean up alternates
+        deleted_files = []
+
+        # Delete the primary file
+        file_path.unlink()
+        deleted_files.append(file_path.name)
+
+        # Also delete the alternate extension if it exists (e.g., .yaml vs .yml)
+        alternate_suffix = ".yml" if file_path.suffix.lower() == ".yaml" else ".yaml"
+        alternate_path = file_path.with_suffix(alternate_suffix)
+        if alternate_path.exists():
+            alternate_path.unlink()
+            deleted_files.append(alternate_path.name)
+
+        # Regenerate the catalog to keep it in sync with the filesystem
+        generate_flashcard_catalog()
+
+        logger.info(
+            "Flashcard deleted successfully",
+            flashcard_id=flashcard_id,
+            deleted_files=deleted_files
+        )
         return {
             "success": True,
-            "message": f"Flashcard '{flashcard_id}' deleted successfully"
+            "message": f"Flashcard '{flashcard_id}' deleted successfully",
+            "deleted_files": deleted_files
         }
     except Exception as e:
         logger.error("Failed to delete flashcard", 
