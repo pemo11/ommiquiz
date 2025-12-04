@@ -558,18 +558,18 @@ function FlashcardViewer({ flashcard, onBack }) {
 
       <div className="navigation-buttons">
         <button
-          onClick={handlePrevious}
-          disabled={currentCardIndex === 0}
-          className="nav-button"
-        >
-          ← Previous
-        </button>
-        <button
           onClick={handleNext}
           disabled={false}
           className="nav-button"
         >
           {currentCardIndex === cards.length - 1 ? 'Show Results' : 'Next →'}
+        </button>
+        <button
+          onClick={handlePrevious}
+          disabled={currentCardIndex === 0}
+          className="nav-button"
+        >
+          ← Previous
         </button>
       </div>
 
