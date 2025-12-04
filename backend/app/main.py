@@ -171,8 +171,18 @@ def collect_flashcard_metadata() -> List[Dict[str, Any]]:
         return []
 
     flashcard_files: List[Dict[str, Any]] = []
+    catalog_path_resolved = CATALOG_PATH.resolve()
+
     for pattern in ("*.yaml", "*.yml"):
         for file_path in FLASHCARDS_DIR.glob(pattern):
+            try:
+                if file_path.resolve() == catalog_path_resolved:
+                    logger.debug("Skipping catalog file during metadata collection", filename=file_path.name)
+                    continue
+            except Exception as e:
+                logger.warning("Failed to resolve file path during metadata collection", filename=file_path.name, error=str(e))
+                continue
+
             flashcard_files.append(_extract_flashcard_metadata(file_path))
 
     return flashcard_files
