@@ -155,6 +155,12 @@
   margin-top: 1rem;
 }
 
+.swipe-hint {
+  font-size: 0.85rem;
+  margin-top: 0.35rem;
+  opacity: 0.9;
+}
+
 .navigation-buttons {
   display: flex;
   gap: 1rem;
