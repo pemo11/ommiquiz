@@ -5,6 +5,9 @@ description: Lern- und Verständnisfragen zu Kapitel 7 der VFH-Unterlage „Date
 createDate: 2025-11-12
 language: de
 modul: Datenbanktechnologien
+semester: none
+institution: none
+studycourse: none
 topics:
 - verteilte_systeme
 - cap_theorem

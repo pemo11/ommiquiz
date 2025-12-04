@@ -5,6 +5,9 @@ description: A test flashcard to demonstrate the upload functionality
 createDate: 2025-11-11
 language: en
 level: beginner
+semester: none
+institution: none
+studycourse: none
 topics: [testing, demo]
 keywords: [upload, test, demo]
 

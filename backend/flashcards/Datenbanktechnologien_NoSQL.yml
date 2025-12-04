@@ -5,6 +5,9 @@ description: Lern- und Verständnisfragen zu Kapitel 8 der VFH-Unterlage „Date
 createDate: 2025-11-12
 language: de
 module: Datenbanktechnologien
+semester: none
+institution: none
+studycourse: none
 topics:
 - nosql
 - key_value
