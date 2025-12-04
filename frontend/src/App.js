@@ -3,6 +3,7 @@ import './App.css';
 import FlashcardViewer from './components/FlashcardViewer';
 import FlashcardSelector from './components/FlashcardSelector';
 import AdminPanel from './components/AdminPanel';
+import { FRONTEND_VERSION } from './version';
 
 // Use the environment variable first, with proper fallback for development
 const getApiUrl = () => {
@@ -133,7 +134,7 @@ function App() {
           <div className="header-main">
             <div className="title-with-version">
               <h1>🎓 Das OMMI Quiz</h1>
-              <span className="header-version">v1.0.1</span>
+              <span className="header-version">v{FRONTEND_VERSION}</span>
             </div>
             <p>Erfolgreich durch das Studium mit Lernkarten</p>
           </div>
