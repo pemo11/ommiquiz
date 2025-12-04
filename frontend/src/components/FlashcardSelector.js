@@ -121,7 +121,7 @@ function FlashcardSelector({ flashcards, onSelect }) {
               <span className="flashcard-icon">📚</span>
               <div className="flashcard-info">
                 <span className="flashcard-title">
-                  {flashcard.title ? `${flashcard.title} (${flashcard.id})` : flashcard.id}
+                  {flashcard.title || flashcard.id}
                 </span>
                 {flashcard.description && (
                   <span className="flashcard-description">{flashcard.description}</span>

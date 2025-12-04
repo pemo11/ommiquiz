@@ -5,6 +5,9 @@ description: Simple facts about Python
 createDate: 2025-11-09
 language: en
 module: Python Programming
+semester: none
+institution: none
+studycourse: none
 topics: [programming, Python]
 keywords: [main features, variable declaration, built-in data types, def keyword]
 

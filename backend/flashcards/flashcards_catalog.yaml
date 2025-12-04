@@ -1,6 +1,30 @@
-generatedAt: '2025-11-16T22:38:51.803596Z'
-total: 10
+generatedAt: '2025-12-04T10:26:32.934553Z'
+total: 9
 flashcards:
+- id: quantencomputer_allgemein
+  filename: quantencomputer_allgemein.yaml
+  title: Allgemeine Grundlagen der Quantencomputer
+  description: Fragen und Antworten zu allgemeinen Grundlagen der Quantencomputer,
+    einschließlich Qubits, Superposition, Verschränkung und wichtigen Quantengattern.
+  language: de
+  level: ''
+  author: Claude & Peter Monadjemi
+  topics:
+  - Quantencomputer
+  module: Quantencomputer
+  cardcount: 20
+- id: javascript-basics
+  filename: javascript-basics.yaml
+  title: JavaScript Basics 1
+  description: Simple facts about JavaScript
+  language: en
+  level: ''
+  author: Peter Monadjemi
+  topics:
+  - programming
+  - JavaScript
+  module: Web Development
+  cardcount: 4
 - id: Datenbanktechnologien_Relationen
   filename: Datenbanktechnologien_Relationen.yaml
   title: Basiswissen Datenbanksysteme
@@ -14,36 +38,7 @@ flashcards:
   - SQL
   - Datenmodellierung
   module: Datenbanktechnologien
-- id: flashcards_catalog
-  filename: flashcards_catalog.yaml
-  title: flashcards_catalog
-  description: ''
-  language: ''
-  level: ''
-  author: ''
-  topics: []
-  module: ''
-- id: javascript-basics
-  filename: javascript-basics.yaml
-  title: JavaScript Basics 1
-  description: Simple facts about JavaScript
-  language: en
-  level: ''
-  author: Peter Monadjemi
-  topics:
-  - programming
-  - JavaScript
-  module: Web Development
-- id: pemoQuiz
-  filename: pemoQuiz.yaml
-  title: The great Pemo quiz
-  description: Trivia and fun facts about Pemo
-  language: en
-  level: ''
-  author: Pemo
-  topics:
-  - pemo;aurich;Ostfriesland
-  module: Miscellaneous
+  cardcount: 20
 - id: python-basics
   filename: python-basics.yaml
   title: Python Basics 1
@@ -55,60 +50,18 @@ flashcards:
   - programming
   - Python
   module: Python Programming
-- id: quantencomputer_allgemein
-  filename: quantencomputer_allgemein.yaml
-  title: Allgemeine Grundlagen der Quantencomputer
-  description: Fragen und Antworten zu allgemeinen Grundlagen der Quantencomputer,
-    einschließlich Qubits, Superposition, Verschränkung und wichtigen Quantengattern.
-  language: de
-  level: ''
-  author: Claude & Peter Monadjemi
-  topics:
-  - Quantencomputer
-  module: ''
-- id: Datenbanktechnologien_DataWarehouse
-  filename: Datenbanktechnologien_DataWarehouse.yml
-  title: Data Warehouse und Data Mining
-  description: Lern- und Verständnisfragen zu Kapitel 6 der VFH-Unterlage „Datenbanktechnologien“
-  language: de
+  cardcount: 5
+- id: pemoQuiz
+  filename: pemoQuiz.yaml
+  title: The great Pemo quiz
+  description: Trivia and fun facts about Pemo
+  language: en
   level: ''
   author: Pemo
   topics:
-  - Data Warehouse
-  - OLAP und OLTP
-  - ETL
-  - Multidimensionale Modelle
-  - data_mining
-  module: Datenbanktechnologien
-- id: Datenbanktechnologien_NoSQL
-  filename: Datenbanktechnologien_NoSQL.yml
-  title: NoSQL-Datenbanken
-  description: Lern- und Verständnisfragen zu Kapitel 8 der VFH-Unterlage „Datenbanktechnologien“
-  language: de
-  level: ''
-  author: Pemo
-  topics:
-  - nosql
-  - key_value
-  - document_store
-  - column_store
-  - graph_database
-  - polyglot_persistence
-  module: Datenbanktechnologien
-- id: Datenbanktechnologien_Vektordatenbanken
-  filename: Datenbanktechnologien_Vektordatenbanken.yml
-  title: Exkurs – Vektordatenbanken
-  description: Lern- und Verständnisfragen zu Kapitel 9 der VFH-Unterlage „Datenbanktechnologien“
-  language: de
-  level: ''
-  author: Pemo
-  topics:
-  - vektordatenbanken
-  - embeddings
-  - similarity_search
-  - milvus
-  - weaviate
-  module: Datenbanktechnologien
+  - pemo;aurich;Ostfriesland
+  module: Miscellaneous
+  cardcount: 3
 - id: Datenbanktechnologien_Verteiltheit
   filename: Datenbanktechnologien_Verteiltheit.yml
   title: Verteiltheit
@@ -124,3 +77,50 @@ flashcards:
   - map_reduce
   - koordination
   module: ''
+  cardcount: 28
+- id: Datenbanktechnologien_NoSQL
+  filename: Datenbanktechnologien_NoSQL.yml
+  title: NoSQL-Datenbanken
+  description: Lern- und Verständnisfragen zu Kapitel 8 der VFH-Unterlage „Datenbanktechnologien“
+  language: de
+  level: ''
+  author: Pemo
+  topics:
+  - nosql
+  - key_value
+  - document_store
+  - column_store
+  - graph_database
+  - polyglot_persistence
+  module: Datenbanktechnologien
+  cardcount: 29
+- id: Datenbanktechnologien_Vektordatenbanken
+  filename: Datenbanktechnologien_Vektordatenbanken.yml
+  title: Exkurs – Vektordatenbanken
+  description: Lern- und Verständnisfragen zu Kapitel 9 der VFH-Unterlage „Datenbanktechnologien“
+  language: de
+  level: ''
+  author: Pemo
+  topics:
+  - vektordatenbanken
+  - embeddings
+  - similarity_search
+  - milvus
+  - weaviate
+  module: Datenbanktechnologien
+  cardcount: 20
+- id: Datenbanktechnologien_DataWarehouse
+  filename: Datenbanktechnologien_DataWarehouse.yml
+  title: Data Warehouse und Data Mining
+  description: Lern- und Verständnisfragen zu Kapitel 6 der VFH-Unterlage „Datenbanktechnologien“
+  language: de
+  level: ''
+  author: Pemo
+  topics:
+  - Data Warehouse
+  - OLAP und OLTP
+  - ETL
+  - Multidimensionale Modelle
+  - data_mining
+  module: Datenbanktechnologien
+  cardcount: 34
