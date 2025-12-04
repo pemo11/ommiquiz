@@ -545,56 +545,66 @@ function AdminPanel({ onBack }) {
   };
 
   const convertToYAML = (data) => {
+    const toArray = (value) => (Array.isArray(value) ? value : []);
+    const escapeQuotes = (value = '') => value.replace(/"/g, '\\"');
+
     const yamlLines = [];
     yamlLines.push(`id: ${data.id}`);
     yamlLines.push(`author: ${data.author}`);
     yamlLines.push(`title: ${data.title}`);
-    yamlLines.push(`description: ${data.description}`);
+    yamlLines.push(`description: ${data.description || ''}`);
     yamlLines.push(`createDate: ${data.createDate}`);
     yamlLines.push(`language: ${data.language}`);
     yamlLines.push(`level: ${data.level}`);
-    
-    if (data.topics && data.topics.length > 0) {
+
+    const topics = toArray(data.topics);
+    if (topics.length > 0) {
       yamlLines.push('topics:');
-      data.topics.forEach(topic => {
+      topics.forEach(topic => {
         yamlLines.push(`  - ${topic}`);
       });
     } else {
       yamlLines.push('topics: []');
     }
-    
-    if (data.keywords && data.keywords.length > 0) {
+
+    const keywords = toArray(data.keywords);
+    if (keywords.length > 0) {
       yamlLines.push('keywords:');
-      data.keywords.forEach(keyword => {
+      keywords.forEach(keyword => {
         yamlLines.push(`  - ${keyword}`);
       });
     } else {
       yamlLines.push('keywords: []');
     }
-    
+
     yamlLines.push('');
     yamlLines.push('flashcards:');
-    
+
     data.flashcards.forEach(card => {
-      yamlLines.push(`  - question: "${card.question.replace(/"/g, '\\"')}"`);
+      yamlLines.push(`  - question: "${escapeQuotes(card.question || '')}"`);
+
       if (card.type === 'single') {
-        yamlLines.push(`    answer: "${card.answer.replace(/"/g, '\\"')}"`);
+        yamlLines.push(`    answer: "${escapeQuotes(card.answer || '')}"`);
       } else {
+        const answers = toArray(card.answers);
         yamlLines.push('    answers:');
-        card.answers.forEach(answer => {
-          yamlLines.push(`      - "${answer.replace(/"/g, '\\"')}"`);
+        answers.forEach(answer => {
+          yamlLines.push(`      - "${escapeQuotes(answer || '')}"`);
         });
-        if (card.correctAnswers && card.correctAnswers.some(isCorrect => isCorrect)) {
+
+        const correctAnswers = toArray(card.correctAnswers);
+        if (correctAnswers.some(isCorrect => isCorrect)) {
           yamlLines.push('    correctAnswers:');
-          card.correctAnswers.forEach(isCorrect => {
-            yamlLines.push(`      - ${isCorrect}`);
+          correctAnswers.forEach(isCorrect => {
+            yamlLines.push(`      - ${Boolean(isCorrect)}`);
           });
         }
       }
+
       yamlLines.push(`    type: ${card.type}`);
       yamlLines.push('');
     });
-    
+
     return yamlLines.join('\n');
   };
 
