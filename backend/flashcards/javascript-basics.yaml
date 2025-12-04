@@ -5,6 +5,9 @@ description: Simple facts about JavaScript
 createDate: 2025-11-09
 language: en
 module: Web Development
+semester: none
+institution: none
+studycourse: none
 topics: [programming, JavaScript]
 keywords: [data types, let, const, JavaScript frameworks]
 

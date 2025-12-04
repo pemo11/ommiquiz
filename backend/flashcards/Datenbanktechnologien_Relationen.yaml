@@ -5,6 +5,9 @@ description: Lern- und Verständnisfragen zum Kapitel 5 der VFH-Unterlage „Dat
 createDate: 2025-11-12
 language: de
 module: Datenbanktechnologien
+semester: none
+institution: none
+studycourse: none
 topics:
 - Relationale Datenbanken
 - Normalisierung
