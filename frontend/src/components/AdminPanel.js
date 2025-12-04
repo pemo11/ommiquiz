@@ -1215,9 +1215,13 @@ flashcards:
         <div className="confirm-dialog">
           <div className="confirm-dialog-content">
             <h4>Delete Flashcard</h4>
+            <div className="delete-id-display">
+              <span className="delete-id-label">Flashcard ID:</span>
+              <code className="delete-id-value">{selectedFlashcard?.id || 'Unknown'}</code>
+            </div>
             <p>
-              To confirm deletion, please type the flashcard ID
-              <strong> "{selectedFlashcard?.id}"</strong>.
+              Deleting flashcards requires confirming their ID. To continue,
+              type <strong>{selectedFlashcard?.id}</strong> exactly as shown below.
               This action cannot be undone.
             </p>
             <input
