@@ -132,10 +132,10 @@ function App() {
         <div className="header-content">
           <div className="header-main">
             <div className="title-with-version">
-              <h1>🎓 Ommiquiz</h1>
+              <h1>🎓 Das OMMI Quiz</h1>
               <span className="header-version">v1.0.1</span>
             </div>
-            <p>Erfolgreich durch das Studium der Medieninformatik</p>
+            <p>Erfolgreich durch das Studium mit Lernkarten</p>
           </div>
           <button 
             onClick={handleAdminToggle} 
