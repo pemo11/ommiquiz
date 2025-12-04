@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './FlashcardViewer.css';
 
 function FlashcardViewer({ flashcard, onBack }) {
@@ -12,6 +12,8 @@ function FlashcardViewer({ flashcard, onBack }) {
   const [cardResults, setCardResults] = useState({});
   const [showSummary, setShowSummary] = useState(false);
   const [currentCardAnswered, setCurrentCardAnswered] = useState(false);
+  const touchStartRef = useRef(null);
+  const gestureHandledRef = useRef(false);
 
   console.log('FlashcardViewer received flashcard:', flashcard);
   
@@ -59,9 +61,47 @@ function FlashcardViewer({ flashcard, onBack }) {
   };
 
   const handleCardClick = () => {
+    if (gestureHandledRef.current) {
+      gestureHandledRef.current = false;
+      return;
+    }
+
     if (currentCard.type === 'single' && !currentCardAnswered) {
       setIsFlipped(!isFlipped);
     }
+  };
+
+  const handleTouchStart = (event) => {
+    const touch = event.touches[0];
+    touchStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY
+    };
+    gestureHandledRef.current = false;
+  };
+
+  const handleTouchEnd = (event) => {
+    if (!touchStartRef.current || currentCard.type !== 'single' || currentCardAnswered) {
+      return;
+    }
+
+    const touch = event.changedTouches[0];
+    const deltaX = touch.clientX - touchStartRef.current.x;
+    const deltaY = touch.clientY - touchStartRef.current.y;
+    const swipeThreshold = 50;
+    const verticalLimit = 40;
+
+    if (Math.abs(deltaX) > swipeThreshold && Math.abs(deltaY) < verticalLimit) {
+      gestureHandledRef.current = true;
+
+      if (deltaX > 0) {
+        handleSingleAnswerEvaluation(true);
+      } else {
+        handleSingleAnswerEvaluation(false);
+      }
+    }
+
+    touchStartRef.current = null;
   };
 
   const handleAnswerSelect = (answerIndex) => {
@@ -342,13 +382,23 @@ function FlashcardViewer({ flashcard, onBack }) {
       {currentCard.type === 'single' ? (
         // Single answer card (flip-style)
         <div className="card-container">
-          <div className={`flashcard ${isFlipped ? 'flipped' : ''}`} onClick={handleCardClick}>
+          <div
+            className={`flashcard ${isFlipped ? 'flipped' : ''}`}
+            onClick={handleCardClick}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
+          >
             <div className="flashcard-face flashcard-front">
               <div className="card-header">Question</div>
               <div className="card-content">
                 <p>{currentCard.question}</p>
               </div>
-              {!currentCardAnswered && <div className="card-hint">Click to flip</div>}
+              {!currentCardAnswered && (
+                <div className="card-hint">
+                  Click to flip
+                  <div className="swipe-hint">Swipe ⬅️ to postpone • Swipe ➡️ to mark done</div>
+                </div>
+              )}
             </div>
             <div className="flashcard-face flashcard-back">
               <div className="card-header">Answer</div>
