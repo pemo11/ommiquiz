@@ -75,13 +75,31 @@ def get_safe_flashcard_path(flashcard_id: str) -> Optional[Path]:
     yaml_path = FLASHCARDS_DIR / f"{flashcard_id}.yaml"
     yml_path = FLASHCARDS_DIR / f"{flashcard_id}.yml"
     
-    # Check which file exists
+    # Check which file exists directly by filename
     candidate_path = None
     if yaml_path.exists():
         candidate_path = yaml_path
     elif yml_path.exists():
         candidate_path = yml_path
-    else:
+
+    # If no direct filename match, try to locate by YAML `id` field
+    if candidate_path is None:
+        logger.info("Flashcard filename not found, attempting ID lookup", flashcard_id=flashcard_id)
+        for pattern in ("*.yaml", "*.yml"):
+            for file_path in FLASHCARDS_DIR.glob(pattern):
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        data = yaml.safe_load(f) or {}
+                    if data.get("id") == flashcard_id:
+                        candidate_path = file_path
+                        logger.info("Flashcard matched by YAML id", flashcard_id=flashcard_id, filename=file_path.name)
+                        break
+                except Exception as e:
+                    logger.warning("Failed to read flashcard during ID lookup", filename=file_path.name, error=str(e))
+            if candidate_path:
+                break
+
+    if candidate_path is None:
         logger.info("Flashcard file not found", flashcard_id=flashcard_id)
         return None
     
