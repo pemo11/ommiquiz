@@ -20,3 +20,5 @@ Eine Registrierung ist nur für den Fall erforderlich, dass man Inhalte editiere
 - Zur Zeit studiere ich Medieninformatik Master Online an der HS Emden Leer
 
 Viel Erfolg beim Lernen mit Karten!
+
+PS: Bei Fragen und Kommentaren bitte eine E-Mail an peter.monadjemi@stud.hs-emden-leer.de
