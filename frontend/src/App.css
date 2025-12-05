@@ -62,6 +62,7 @@
 }
 
 .about-button,
+.login-button,
 .admin-toggle-button {
   background-color: #667eea;
   color: white;
@@ -146,6 +147,136 @@
   background-color: #e3e9ff;
   color: #2d3748;
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.login-button {
+  background-color: #0ea5e9;
+  color: #ffffff;
+}
+
+.login-button:hover {
+  background-color: #0284c7;
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
+}
+
+.login-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1000;
+}
+
+.login-modal {
+  background: #ffffff;
+  max-width: 420px;
+  width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  padding: 1.5rem;
+}
+
+.login-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.login-header h2 {
+  margin: 0;
+  color: #1f2937;
+}
+
+.login-close {
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #6b7280;
+}
+
+.login-close:hover {
+  color: #111827;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.login-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: #374151;
+  font-weight: 600;
+}
+
+.login-label input {
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.login-label input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+.login-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.login-submit,
+.login-cancel {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.login-submit {
+  background-color: #667eea;
+  color: #ffffff;
+}
+
+.login-submit:hover {
+  background-color: #5568d3;
+}
+
+.login-cancel {
+  background-color: #f3f4f6;
+  color: #1f2937;
+}
+
+.login-cancel:hover {
+  background-color: #e5e7eb;
+}
+
+.login-error {
+  background-color: #fef2f2;
+  color: #dc2626;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #fecdd3;
+}
+
+.login-hint {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.95rem;
+  text-align: center;
 }
 
 /* Responsive Design */
