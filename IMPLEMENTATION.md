@@ -62,6 +62,7 @@ Each card can be:
 **Single Answer:**
 ```yaml
 - question: Your question?
+  bitmap: iVBORw0KGgoAAAANSUhEUgAA...
   answer: The answer
   type: single
 ```
@@ -69,12 +70,15 @@ Each card can be:
 **Multiple Answers:**
 ```yaml
 - question: Your question?
+  bitmap: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
   answers:
     - Answer 1
     - Answer 2
     - Answer 3
   type: multiple
 ```
+
+Use the optional `bitmap` field to attach an inline base64 image (with or without a data URI prefix) to the question prompt.
 
 ## How It Works
 

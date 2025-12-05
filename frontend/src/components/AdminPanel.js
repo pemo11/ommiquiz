@@ -270,6 +270,9 @@ function AdminPanel({ onBack }) {
               type: 'single'
             };
             currentAnswers = [];
+          } else if (trimmedLine.startsWith('bitmap:') && currentCard) {
+            const bitmapValue = trimmedLine.substring(trimmedLine.indexOf(':') + 1).trim().replace(/^"(.*)"$/, '$1');
+            currentCard.bitmap = bitmapValue;
           } else if (trimmedLine.startsWith('answer:') && currentCard) {
             currentCard.answer = trimmedLine.substring(trimmedLine.indexOf(':') + 1).trim().replace(/^"(.*)"$/, '$1');
             currentCard.type = 'single';
@@ -583,6 +586,10 @@ function AdminPanel({ onBack }) {
     data.flashcards.forEach(card => {
       yamlLines.push(`  - question: "${escapeQuotes(card.question || '')}"`);
 
+      if (card.bitmap) {
+        yamlLines.push(`    bitmap: "${escapeQuotes(card.bitmap)}"`);
+      }
+
       if (card.type === 'single') {
         yamlLines.push(`    answer: "${escapeQuotes(card.answer || '')}"`);
       } else {
@@ -671,6 +678,7 @@ function AdminPanel({ onBack }) {
         {
           question: '',
           answer: '',
+          bitmap: '',
           type: 'single'
         }
       ]
@@ -1130,6 +1138,17 @@ flashcards:
                         onChange={(e) => updateCardField(cardIndex, 'question', e.target.value)}
                         rows="2"
                       />
+                    </div>
+
+                    <div className="form-row">
+                      <label>Bitmap (optional):</label>
+                      <textarea
+                        value={card.bitmap || ''}
+                        onChange={(e) => updateCardField(cardIndex, 'bitmap', e.target.value)}
+                        rows="3"
+                        placeholder="Paste base64-encoded image data or a data URI"
+                      />
+                      <small>Attach an image to the question. Provide base64 data (optionally prefixed with a data URI).</small>
                     </div>
 
                     <div className="form-row">

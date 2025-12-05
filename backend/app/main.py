@@ -319,6 +319,10 @@ def validate_flashcard_yaml(data: Dict[str, Any]) -> Dict[str, Any]:
                             errors.append(f"Flashcard {i+1} 'answers' must be a list")
                     else:
                         errors.append(f"Flashcard {i+1} has invalid type '{card['type']}'. Must be 'single' or 'multiple'")
+
+                # Optional bitmap validation
+                if "bitmap" in card and not isinstance(card["bitmap"], str):
+                    errors.append(f"Flashcard {i+1} field 'bitmap' must be a string containing image data")
     
     is_valid = len(errors) == 0
     logger.debug("Flashcard validation completed", 
