@@ -5,16 +5,15 @@ description: Lern- und Verständnisfragen zu Kapitel 7 der VFH-Unterlage „Date
 createDate: 2025-11-12
 language: de
 modul: Datenbanktechnologien
-semester: none
-institution: none
-studycourse: none
+semester: WS 2025/26
+institution: HS Emden Leer
+studycourse: Medieninformatik Master
 topics:
-- verteilte_systeme
-- cap_theorem
-- replikation
-- sharding
-- map_reduce
-- koordination
+- Verteilte_systeme
+- CAP-Theorem
+- Replikation
+- sSharding
+- MAP Reduce
 keywords:
 - Consistency;Availability;Partition_Tolerance;Vektoruhren;CRDT;Leader;Raft;Paxos
 flashcards:
@@ -35,7 +34,7 @@ flashcards:
   type: multiple
   level: "A"
 
-- question: Welche drei Eigenschaften beschreibt das CAP-Theorem?
+- question: Welche drei Eigenschaften beschreiben das CAP-Theorem?
   answers:
   - Consistency
   - Availability
@@ -158,7 +157,7 @@ flashcards:
   type: multiple
   level: "A"
 
-- question: Was ist das Prinzip hinter MapReduce?
+- question: Was ist das Prinzip hinter Map Reduce?
   answer: Parallele Datenverarbeitung in zwei Phasen – Map und Reduce – auf verteilten Clustern.
   type: single
   level: "A"
