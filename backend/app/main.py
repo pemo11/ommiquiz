@@ -3,18 +3,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel
 import yaml
-import os
 import re
-import tempfile
-import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Tuple
 
 # Import logging configuration
 from .logging_config import setup_logging, get_logger, LoggingMiddleware, log_function_call
 from .auth import AuthenticatedUser, get_optional_current_user, login_with_email_password
 from .download_logger import initialize_download_log_store, log_flashcard_download
+from .storage import FlashcardDocument, get_flashcard_storage
 
 # Initialize logging before creating the app
 setup_logging()
@@ -65,7 +63,8 @@ else:
     FLASHCARDS_DIR = Path(__file__).parent.parent / "flashcards"
 
 CATALOG_FILENAME = "flashcards_catalog.yaml"
-CATALOG_PATH = FLASHCARDS_DIR / CATALOG_FILENAME
+
+storage = get_flashcard_storage(FLASHCARDS_DIR, CATALOG_FILENAME)
 
 logger.info("Application starting", flashcards_dir=str(FLASHCARDS_DIR))
 
@@ -73,62 +72,17 @@ logger.info("Application starting", flashcards_dir=str(FLASHCARDS_DIR))
 VALID_ID_PATTERN = re.compile(r'^[a-zA-Z0-9_-]+$')
 
 
-@log_function_call("get_safe_flashcard_path")
-def get_safe_flashcard_path(flashcard_id: str) -> Optional[Path]:
-    """
-    Safely construct and validate a flashcard file path.
-    Returns None if the flashcard doesn't exist or validation fails.
-    """
-    # Validate ID format to prevent path traversal
+def get_flashcard_document(flashcard_id: str) -> Optional[FlashcardDocument]:
+    """Retrieve a flashcard document from the configured storage backend."""
+
     if not VALID_ID_PATTERN.match(flashcard_id):
         logger.warning("Invalid flashcard ID format", flashcard_id=flashcard_id)
         return None
-    
-    # Construct paths with validated ID
-    yaml_path = FLASHCARDS_DIR / f"{flashcard_id}.yaml"
-    yml_path = FLASHCARDS_DIR / f"{flashcard_id}.yml"
-    
-    # Check which file exists directly by filename
-    candidate_path = None
-    if yaml_path.exists():
-        candidate_path = yaml_path
-    elif yml_path.exists():
-        candidate_path = yml_path
 
-    # If no direct filename match, try to locate by YAML `id` field
-    if candidate_path is None:
-        logger.info("Flashcard filename not found, attempting ID lookup", flashcard_id=flashcard_id)
-        for pattern in ("*.yaml", "*.yml"):
-            for file_path in FLASHCARDS_DIR.glob(pattern):
-                try:
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        data = yaml.safe_load(f) or {}
-                    if data.get("id") == flashcard_id:
-                        candidate_path = file_path
-                        logger.info("Flashcard matched by YAML id", flashcard_id=flashcard_id, filename=file_path.name)
-                        break
-                except Exception as e:
-                    logger.warning("Failed to read flashcard during ID lookup", filename=file_path.name, error=str(e))
-            if candidate_path:
-                break
-
-    if candidate_path is None:
-        logger.info("Flashcard file not found", flashcard_id=flashcard_id)
-        return None
-    
-    # Ensure resolved path is within FLASHCARDS_DIR
-    try:
-        resolved_path = candidate_path.resolve()
-        resolved_base = FLASHCARDS_DIR.resolve()
-        if not str(resolved_path).startswith(str(resolved_base)):
-            logger.error("Path traversal attempt detected", flashcard_id=flashcard_id, resolved_path=str(resolved_path))
-            return None
-    except Exception as e:
-        logger.error("Error resolving flashcard path", flashcard_id=flashcard_id, error=str(e))
-        return None
-    
-    logger.debug("Flashcard path resolved", flashcard_id=flashcard_id, path=str(candidate_path))
-    return resolved_path
+    document = storage.get_flashcard(flashcard_id)
+    if not document:
+        logger.info("Flashcard document not found", flashcard_id=flashcard_id)
+    return document
 
 
 @api_router.get("/")
@@ -146,12 +100,12 @@ async def auth_login(payload: LoginRequest):
     return token_data
 
 
-def _extract_flashcard_metadata(file_path: Path) -> Dict[str, Any]:
-    """Read a flashcard file and extract its metadata"""
+def _extract_flashcard_metadata(document: FlashcardDocument) -> Dict[str, Any]:
+    """Read a flashcard document and extract its metadata"""
     metadata = {
-        "id": file_path.stem,
-        "filename": file_path.name,
-        "title": file_path.stem,
+        "id": document.id,
+        "filename": document.filename,
+        "title": document.id,
         "description": "",
         "language": "",
         "level": "",
@@ -162,8 +116,7 @@ def _extract_flashcard_metadata(file_path: Path) -> Dict[str, Any]:
     }
 
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            data = yaml.safe_load(f) or {}
+        data = yaml.safe_load(document.content) or {}
 
         metadata.update({
             "title": data.get("title", metadata["title"]),
@@ -178,43 +131,31 @@ def _extract_flashcard_metadata(file_path: Path) -> Dict[str, Any]:
         flashcards_content = data.get("flashcards", [])
         if isinstance(flashcards_content, list):
             metadata["cardcount"] = len(flashcards_content)
-        logger.debug("Processed flashcard file", filename=file_path.name)
+        logger.debug("Processed flashcard document", filename=document.filename)
     except Exception as e:
-        logger.warning("Failed to parse flashcard file", filename=file_path.name, error=str(e))
+        logger.warning("Failed to parse flashcard file", filename=document.filename, error=str(e))
 
     return metadata
 
 
 def collect_flashcard_metadata() -> List[Dict[str, Any]]:
     """Collect metadata for all flashcard YAML files"""
-    if not FLASHCARDS_DIR.exists():
-        logger.warning("Flashcards directory does not exist", flashcards_dir=str(FLASHCARDS_DIR))
-        return []
-
     flashcard_files: List[Dict[str, Any]] = []
-    catalog_path_resolved = CATALOG_PATH.resolve()
 
-    for pattern in ("*.yaml", "*.yml"):
-        for file_path in FLASHCARDS_DIR.glob(pattern):
-            try:
-                if file_path.resolve() == catalog_path_resolved:
-                    logger.debug("Skipping catalog file during metadata collection", filename=file_path.name)
-                    continue
-            except Exception as e:
-                logger.warning("Failed to resolve file path during metadata collection", filename=file_path.name, error=str(e))
-                continue
-
-            flashcard_files.append(_extract_flashcard_metadata(file_path))
+    for document in storage.list_flashcards():
+        if document.filename == CATALOG_FILENAME:
+            logger.debug("Skipping catalog file during metadata collection", filename=document.filename)
+            continue
+        flashcard_files.append(_extract_flashcard_metadata(document))
 
     return flashcard_files
 
 
-def generate_flashcard_catalog() -> Dict[str, Any]:
-    """Create or refresh the YAML catalog file and return its data"""
-    logger.info("Generating flashcard catalog", flashcards_dir=str(FLASHCARDS_DIR))
+def generate_flashcard_catalog() -> Tuple[Dict[str, Any], Path]:
+    """Create or refresh the YAML catalog file and return its data and local path"""
+    logger.info("Generating flashcard catalog")
 
     flashcard_files = collect_flashcard_metadata()
-    FLASHCARDS_DIR.mkdir(parents=True, exist_ok=True)
 
     catalog_data: Dict[str, Any] = {
         "generatedAt": datetime.utcnow().isoformat() + "Z",
@@ -222,11 +163,11 @@ def generate_flashcard_catalog() -> Dict[str, Any]:
         "flashcards": flashcard_files
     }
 
-    with open(CATALOG_PATH, 'w', encoding='utf-8') as catalog_file:
-        yaml.safe_dump(catalog_data, catalog_file, allow_unicode=True, sort_keys=False)
+    catalog_yaml = yaml.safe_dump(catalog_data, allow_unicode=True, sort_keys=False)
+    catalog_path = storage.save_catalog(catalog_yaml, CATALOG_FILENAME)
 
-    logger.info("Flashcard catalog created", path=str(CATALOG_PATH), count=len(flashcard_files))
-    return catalog_data
+    logger.info("Flashcard catalog created", path=str(catalog_path), count=len(flashcard_files))
+    return catalog_data, catalog_path
 
 
 @api_router.get("/flashcards")
@@ -243,9 +184,9 @@ async def list_flashcards():
 @api_router.get("/flashcards/catalog")
 async def get_flashcard_catalog():
     """Generate a catalog file with metadata of all flashcards"""
-    generate_flashcard_catalog()
+    _, catalog_path = generate_flashcard_catalog()
     return FileResponse(
-        path=CATALOG_PATH,
+        path=catalog_path,
         media_type="application/x-yaml",
         filename=CATALOG_FILENAME
     )
@@ -254,13 +195,7 @@ async def get_flashcard_catalog():
 @api_router.get("/flashcards/catalog/data")
 async def get_flashcard_catalog_data():
     """Read the generated catalog file and return its contents as JSON"""
-    if not CATALOG_PATH.exists():
-        logger.info("Catalog file not found, regenerating", path=str(CATALOG_PATH))
-        catalog_data = generate_flashcard_catalog()
-    else:
-        logger.info("Loading flashcard catalog from file", path=str(CATALOG_PATH))
-        with open(CATALOG_PATH, 'r', encoding='utf-8') as catalog_file:
-            catalog_data = yaml.safe_load(catalog_file) or {}
+    catalog_data, _ = generate_flashcard_catalog()
 
     catalog_data.setdefault("flashcards", [])
     catalog_data.setdefault("total", len(catalog_data["flashcards"]))
@@ -276,24 +211,22 @@ async def get_flashcard(
     """Get a specific flashcard file by ID"""
     logger.info("Getting flashcard", flashcard_id=flashcard_id)
     
-    # Get safe path using validation function
-    file_path = get_safe_flashcard_path(flashcard_id)
-    
-    if file_path is None:
+    document = get_flashcard_document(flashcard_id)
+
+    if document is None:
         logger.error("Flashcard not found", flashcard_id=flashcard_id)
         raise HTTPException(status_code=404, detail=f"Flashcard '{flashcard_id}' not found")
-    
+
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            data = yaml.safe_load(f)
-        
+        data = yaml.safe_load(document.content)
+
         logger.info("Flashcard retrieved successfully",
                    flashcard_id=flashcard_id,
                    cards_count=len(data.get("flashcards", [])),
                    user_sub=user.sub if user else None)
 
         if user:
-            log_flashcard_download(user, flashcard_id, file_path.name)
+            log_flashcard_download(user, flashcard_id, document.filename)
 
         return data
     except yaml.YAMLError as e:
@@ -418,10 +351,9 @@ async def update_flashcard(flashcard_id: str, request: FlashcardUpdateRequest):
             detail="Invalid flashcard ID format. Use only letters, numbers, hyphens, and underscores"
         )
     
-    # Get the existing file path
-    file_path = get_safe_flashcard_path(flashcard_id)
-    
-    if file_path is None:
+    document = get_flashcard_document(flashcard_id)
+
+    if document is None:
         logger.error("Flashcard not found for update", flashcard_id=flashcard_id)
         raise HTTPException(
             status_code=404,
@@ -466,17 +398,21 @@ async def update_flashcard(flashcard_id: str, request: FlashcardUpdateRequest):
     
     # Update the file
     try:
-        with open(file_path, 'w', encoding='utf-8') as f:
-            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
-        
-        logger.info("Flashcard updated successfully", 
-                   flashcard_id=flashcard_id, 
+        updated_content = yaml.dump(
+            data, default_flow_style=False, allow_unicode=True, sort_keys=False
+        )
+        saved_document = storage.save_flashcard(
+            document.filename, updated_content, overwrite=True
+        )
+
+        logger.info("Flashcard updated successfully",
+                   flashcard_id=flashcard_id,
                    cards_count=len(data.get("flashcards", [])))
-        
+
         return {
             "success": True,
             "message": f"Flashcard '{flashcard_id}' updated successfully",
-            "filename": file_path.name,
+            "filename": saved_document.filename,
             "flashcard_id": flashcard_id,
             "warnings": validation["warnings"],
             "stats": {
@@ -551,41 +487,35 @@ async def upload_flashcard(file: UploadFile = File(...), overwrite: str = Form(d
             }
         )
     
-    # Generate filename from ID or use original filename
-    if "id" in data:
-        filename = f"{data['id']}.yaml"
-    else:
-        filename = file.filename
-    
-    # Check if file already exists
-    target_path = FLASHCARDS_DIR / filename
+    flashcard_id = data.get("id")
+    filename = f"{flashcard_id}.yaml"
     allow_overwrite = overwrite.lower() == "true"
-    
-    if target_path.exists() and not allow_overwrite:
-        logger.warning("Flashcard already exists", 
-                      flashcard_id=data.get('id', filename), 
+
+    existing_flashcard = storage.flashcard_exists(flashcard_id)
+
+    if existing_flashcard and not allow_overwrite:
+        logger.warning("Flashcard already exists",
+                      flashcard_id=flashcard_id,
                       filename=filename)
         return JSONResponse(
             status_code=409,
             content={
                 "success": False,
-                "message": f"Flashcard with ID '{data.get('id', filename)}' already exists",
+                "message": f"Flashcard with ID '{flashcard_id}' already exists",
                 "suggestion": "Use a different ID or enable overwrite option"
             }
         )
-    
-    # Ensure flashcards directory exists
-    FLASHCARDS_DIR.mkdir(parents=True, exist_ok=True)
-    
+
     # Save file
     try:
-        with open(target_path, 'w', encoding='utf-8') as f:
-            yaml.dump(data, f, default_flow_style=False, allow_unicode=True, sort_keys=False)
-        
-        action = "overwritten" if target_path.existed() else "created"
-        
-        logger.info("Flashcard upload completed", 
-                   flashcard_id=data.get("id"), 
+        serialized = yaml.dump(
+            data, default_flow_style=False, allow_unicode=True, sort_keys=False
+        )
+        action = "overwritten" if existing_flashcard else "created"
+        storage.save_flashcard(filename, serialized, overwrite=allow_overwrite)
+
+        logger.info("Flashcard upload completed",
+                   flashcard_id=data.get("id"),
                    filename=filename, 
                    action=action,
                    cards_count=len(data.get("flashcards", [])))
@@ -620,32 +550,27 @@ async def delete_flashcard(flashcard_id: str):
     
     logger.info("Deleting flashcard", flashcard_id=flashcard_id)
     
-    # Get safe path using validation function
-    file_path = get_safe_flashcard_path(flashcard_id)
-    
-    if file_path is None:
+    document = get_flashcard_document(flashcard_id)
+
+    if document is None:
         logger.error("Flashcard not found for deletion", flashcard_id=flashcard_id)
         raise HTTPException(
             status_code=404,
             detail=f"Flashcard '{flashcard_id}' not found"
         )
-    
+
     try:
         # Track all deleted files so we can report them and clean up alternates
-        deleted_files = []
+        deleted_files = storage.delete_flashcard(flashcard_id)
 
-        # Delete the primary file
-        file_path.unlink()
-        deleted_files.append(file_path.name)
+        if not deleted_files:
+            logger.error("Failed to delete flashcard from storage", flashcard_id=flashcard_id)
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to delete flashcard '{flashcard_id}'"
+            )
 
-        # Also delete the alternate extension if it exists (e.g., .yaml vs .yml)
-        alternate_suffix = ".yml" if file_path.suffix.lower() == ".yaml" else ".yaml"
-        alternate_path = file_path.with_suffix(alternate_suffix)
-        if alternate_path.exists():
-            alternate_path.unlink()
-            deleted_files.append(alternate_path.name)
-
-        # Regenerate the catalog to keep it in sync with the filesystem
+        # Regenerate the catalog to keep it in sync with the storage backend
         generate_flashcard_catalog()
 
         logger.info(

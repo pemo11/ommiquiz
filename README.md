@@ -119,6 +119,16 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
+To store flashcard YAML files in an S3-compatible bucket instead of the local filesystem, set the following environment variables:
+
+- `FLASHCARDS_STORAGE=s3`
+- `S3_BUCKET=<bucket-name>`
+- `S3_PREFIX=flashcards/` (optional, defaults to `flashcards/`)
+- `S3_ENDPOINT_URL` (optional for services like MinIO)
+- `AWS_REGION` (optional, required for AWS S3)
+
+Uploads, updates, deletions, and catalog generation will read and write directly against the configured bucket.
+
 #### Frontend
 
 ```bash
