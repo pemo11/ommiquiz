@@ -41,6 +41,11 @@ function App() {
   const [error, setError] = useState(null);
   const [showAdmin, setShowAdmin] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [showLoginForm, setShowLoginForm] = useState(false);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     fetchFlashcardList();
@@ -137,6 +142,32 @@ function App() {
     setShowAbout(false);
   };
 
+  const handleLoginClick = () => {
+    setShowLoginForm(true);
+    setLoginError(null);
+  };
+
+  const handleLoginClose = () => {
+    setShowLoginForm(false);
+    setLoginError(null);
+    setLoginEmail('');
+    setLoginPassword('');
+  };
+
+  const handleLoginSubmit = (event) => {
+    event.preventDefault();
+
+    if (loginEmail === 'ommi-admin' && loginPassword === 'demo+123') {
+      setIsLoggedIn(true);
+      setShowLoginForm(false);
+      setLoginError(null);
+      setLoginEmail('');
+      setLoginPassword('');
+    } else {
+      setLoginError('Invalid email or password.');
+    }
+  };
+
   return (
     <div className="App">
       <header className="App-header">
@@ -156,13 +187,24 @@ function App() {
             >
               ℹ️ About
             </button>
-            <button
-              onClick={handleAdminToggle}
-              className={`admin-toggle-button ${showAdmin ? 'active' : ''}`}
-              title={showAdmin ? 'Switch to Quiz Mode' : 'Switch to Admin Mode'}
-            >
-              {showAdmin ? '🎯 Quiz' : '🔧 Admin'}
-            </button>
+            {!isLoggedIn && (
+              <button
+                onClick={handleLoginClick}
+                className="login-button"
+                title="Sign in to access admin controls"
+              >
+                🔐 Login
+              </button>
+            )}
+            {isLoggedIn && (
+              <button
+                onClick={handleAdminToggle}
+                className={`admin-toggle-button ${showAdmin ? 'active' : ''}`}
+                title={showAdmin ? 'Switch to Quiz Mode' : 'Switch to Admin Mode'}
+              >
+                {showAdmin ? '🎯 Quiz' : '🔧 Admin'}
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -199,6 +241,55 @@ function App() {
           </>
         )}
       </main>
+
+      {showLoginForm && (
+        <div className="login-overlay" role="dialog" aria-modal="true">
+          <div className="login-modal">
+            <div className="login-header">
+              <h2>Login</h2>
+              <button
+                className="login-close"
+                onClick={handleLoginClose}
+                aria-label="Close login form"
+              >
+                ×
+              </button>
+            </div>
+            <form className="login-form" onSubmit={handleLoginSubmit}>
+              <label className="login-label">
+                Email address
+                <input
+                  type="text"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  required
+                />
+              </label>
+              <label className="login-label">
+                Password
+                <input
+                  type="password"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  required
+                />
+              </label>
+              {loginError && <div className="login-error">{loginError}</div>}
+              <div className="login-actions">
+                <button type="button" className="login-cancel" onClick={handleLoginClose}>
+                  Cancel
+                </button>
+                <button type="submit" className="login-submit">
+                  Login
+                </button>
+              </div>
+              <p className="login-hint">Use ommi-admin with password demo+123 to continue.</p>
+            </form>
+          </div>
+        </div>
+      )}
 
       <AboutModal isOpen={showAbout} onClose={handleAboutClose} />
     </div>
