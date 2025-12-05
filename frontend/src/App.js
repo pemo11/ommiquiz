@@ -3,6 +3,7 @@ import './App.css';
 import FlashcardViewer from './components/FlashcardViewer';
 import FlashcardSelector from './components/FlashcardSelector';
 import AdminPanel from './components/AdminPanel';
+import AboutModal from './components/AboutModal';
 import { FRONTEND_VERSION } from './version';
 
 // Use the environment variable first, with proper fallback for development
@@ -39,6 +40,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
 
   useEffect(() => {
     fetchFlashcardList();
@@ -127,6 +129,14 @@ function App() {
     fetchFlashcardList(); // Refresh the list in case changes were made
   };
 
+  const handleAboutOpen = () => {
+    setShowAbout(true);
+  };
+
+  const handleAboutClose = () => {
+    setShowAbout(false);
+  };
+
   return (
     <div className="App">
       <header className="App-header">
@@ -138,13 +148,22 @@ function App() {
             </div>
             <p>Erfolgreich durch das Studium mit Lernkarten</p>
           </div>
-          <button 
-            onClick={handleAdminToggle} 
-            className={`admin-toggle-button ${showAdmin ? 'active' : ''}`}
-            title={showAdmin ? 'Switch to Quiz Mode' : 'Switch to Admin Mode'}
-          >
-            {showAdmin ? '🎯 Quiz' : '🔧 Admin'}
-          </button>
+          <div className="header-actions">
+            <button
+              onClick={handleAboutOpen}
+              className="about-button"
+              title="Learn more about OMMI Quiz"
+            >
+              ℹ️ About
+            </button>
+            <button
+              onClick={handleAdminToggle}
+              className={`admin-toggle-button ${showAdmin ? 'active' : ''}`}
+              title={showAdmin ? 'Switch to Quiz Mode' : 'Switch to Admin Mode'}
+            >
+              {showAdmin ? '🎯 Quiz' : '🔧 Admin'}
+            </button>
+          </div>
         </div>
       </header>
       
@@ -180,6 +199,8 @@ function App() {
           </>
         )}
       </main>
+
+      <AboutModal isOpen={showAbout} onClose={handleAboutClose} />
     </div>
   );
 }
