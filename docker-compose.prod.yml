@@ -9,6 +9,10 @@ services:
       - "8000:8000"
     environment:
       - PYTHONUNBUFFERED=1
+    volumes:
+      # Persist uploaded/edited flashcards and logs between container recreations
+      - flashcards-data:/app/flashcards
+      - backend-logs:/app/logs
     networks:
       - ommiquiz-network
     healthcheck:
@@ -34,3 +38,7 @@ services:
 networks:
   ommiquiz-network:
     driver: bridge
+
+volumes:
+  flashcards-data:
+  backend-logs:

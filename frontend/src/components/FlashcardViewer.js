@@ -21,8 +21,31 @@ function FlashcardViewer({ flashcard, onBack }) {
   const cards = flashcard.cards || [];
   console.log('Cards array:', cards);
   console.log('Cards length:', cards.length);
-  
+
   const currentCard = cards[currentCardIndex];
+
+  const getBitmapSrc = (bitmap) => {
+    if (!bitmap) return null;
+    return bitmap.startsWith('data:') ? bitmap : `data:image/png;base64,${bitmap}`;
+  };
+
+  const renderQuestionContent = () => {
+    const imageSrc = getBitmapSrc(currentCard?.bitmap);
+
+    return (
+      <div className="question-content">
+        <p>{currentCard?.question}</p>
+        {imageSrc && (
+          <img
+            src={imageSrc}
+            alt="Question illustration"
+            className="question-image"
+            onClick={(e) => e.stopPropagation()}
+          />
+        )}
+      </div>
+    );
+  };
 
   // Reset selections when card changes
   useEffect(() => {
@@ -404,7 +427,7 @@ function FlashcardViewer({ flashcard, onBack }) {
             <div className="flashcard-face flashcard-front">
               <div className="card-header">Question</div>
               <div className="card-content">
-                <p>{currentCard.question}</p>
+                {renderQuestionContent()}
               </div>
               {!currentCardAnswered && (
                 <div className="card-hint">
@@ -460,7 +483,7 @@ function FlashcardViewer({ flashcard, onBack }) {
           <div className="question-section">
             <div className="card-header">Question</div>
             <div className="card-content">
-              <p>{currentCard.question}</p>
+              {renderQuestionContent()}
             </div>
           </div>
           
