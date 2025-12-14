@@ -1,0 +1,119 @@
+id: ommi_queryopt_rewriting_quiz
+author: Pemo
+title: Query Optimierung & Rewriting (PostgreSQL)
+description: Lern- und Verständnisfragen zu Query Optimierung, Ausführungsplänen (EXPLAIN), Tautologien und Query Rewriting in PostgreSQL (Supabase)
+createDate: 2025-12-14
+language: de
+module: Datenbanktechnologien
+semester: WS 2025/26
+institution: HS Emden Leer
+studycourse: Medieninformatik Master
+topics:
+  - SQL
+  - Query Optimierung
+  - Query Rewriting
+  - PostgreSQL
+  - Ausführungspläne
+keywords:
+  - EXPLAIN;EXPLAIN ANALYZE;Planner;Optimizer;Join Order;Predicate Pushdown;Subquery;EXISTS;IN;NOT EXISTS;NOT IN;UNION ALL;OR;Tautologie;Cache;Buffers;Index Scan;Seq Scan;Hash Join;Nested Loop;Bitmap Heap Scan
+
+flashcards:
+  - question: Was versteht man unter Query Optimierung in einem DBMS wie PostgreSQL?
+    answer: Die Auswahl eines möglichst effizienten Ausführungsplans (Plan) für eine gegebene SQL-Abfrage, um Laufzeit und Ressourcenverbrauch zu minimieren.
+    type: single
+    level: "A"
+
+  - question: Was bedeutet Query Rewriting?
+    answer: Die Umformulierung einer SQL-Abfrage in eine logisch äquivalente Form, die für den Optimizer leichter/effizienter planbar ist (z. B. Subquery → Join, OR → UNION ALL).
+    type: single
+    level: "A"
+
+  - question: Optimiert PostgreSQL eine nicht optimale Abfrage automatisch dadurch, dass man sie mehrfach ausführt?
+    answer: Nein. Die SQL-Abfrage wird nicht automatisch umgeschrieben; schneller wird sie oft durch Cache-Effekte (Daten/Indexseiten im Cache) oder ggf. Plan-Caching bei Prepared Statements.
+    type: single
+    level: "A"
+
+  - question: Was ist eine Tautologie in SQL?
+    answer: Ein Prädikat, das (logisch) immer wahr ist und daher keine Zeilen herausfiltert (z. B. WHERE 1=1).
+    type: single
+    level: "A"
+
+  - question: Nenne eine echte SQL-Tautologie.
+    answer: "WHERE 1=1 (oder: WHERE id = id)."
+    type: single
+    level: "A"
+
+  - question: Was macht der Optimizer typischerweise mit einer Tautologie in der WHERE-Klausel?
+    answer: Er kann die Selektion entfernen (wegoptimieren), weil sie das Ergebnis nicht verändert.
+    type: single
+    level: "B"
+
+  - question: Was zeigt EXPLAIN in PostgreSQL?
+    answer: Den geplanten Ausführungsplan (ohne Ausführung) inklusive Operatoren wie Seq Scan, Index Scan, Hash Join und geschätzten Kosten/Zeilen.
+    type: single
+    level: "A"
+
+  - question: Was zeigt EXPLAIN (ANALYZE) zusätzlich zu EXPLAIN?
+    answer: Reale Laufzeiten, tatsächlich verarbeitete Zeilen (actual rows) und ob der Plan wirklich so ausgeführt wurde.
+    type: single
+    level: "A"
+
+  - question: Welche Aussage beschreibt die Funktion von BUFFERS in EXPLAIN (ANALYZE, BUFFERS) am besten?
+    answer: Es zeigt Cache-Nutzung/I-O (z. B. shared hit vs. shared read blocks) und hilft zu erkennen, ob Beschleunigung durch Cache kommt.
+    type: single
+    level: "B"
+
+  - question: Was bedeutet „Predicate Pushdown“ (Prädikatsverschiebung) bei der Optimierung?
+    answer: Filterbedingungen werden so früh wie möglich angewendet (idealerweise vor Joins), um die Datenmenge zu reduzieren.
+    type: single
+    level: "A"
+
+  - question: Warum sind unterprädikative Bedingungen (nur auf eine Tabelle bezogen) vor Joins oft wichtig?
+    answer: Sie reduzieren die Anzahl der zu joinenden Tupel, was Join-Kosten (Zeit/Speicher) senkt.
+    type: single
+    level: "A"
+
+  - question: Warum ist EXISTS häufig effizienter als IN (SELECT ...) bei „mindestens ein Treffer“?
+    answer: EXISTS kann nach dem ersten Treffer abbrechen und muss keine vollständige Ergebnismenge materialisieren.
+    type: single
+    level: "B"
+
+  - question: Warum gilt NOT IN (SELECT ...) oft als gefährlich/problematisch?
+    answer: Wegen NULL-Semantik: Enthält die Subquery NULL, kann NOT IN unerwartet zu keinem Treffer führen.
+    type: single
+    level: "B"
+
+  - question: Welche Umformulierung ist meist die robustere Alternative zu NOT IN?
+    answer: NOT EXISTS (oder Anti-Join mit LEFT JOIN ... WHERE ... IS NULL).
+    type: single
+    level: "A"
+
+  - question: Was bedeutet „disjunkt“ im Kontext von Statusgruppen (z. B. 'PAID' vs. 'SHIPPED')?
+    answer: Die Gruppen überschneiden sich nicht; eine Zeile kann höchstens zu einer Gruppe gehören.
+    type: single
+    level: "A"
+
+  - question: Wann ist OR → UNION ALL als Query Rewriting korrekt?
+    answer: Wenn die Teilbedingungen disjunkt sind (keine Überschneidung), damit UNION ALL keine Duplikate erzeugt.
+    type: single
+    level: "B"
+
+  - question: Warum kann ein OR-Prädikat die Indexnutzung erschweren?
+    answer: Der Planner kann sich eher für einen Seq Scan entscheiden, weil mehrere alternative Bedingungen kombiniert werden und die Selektivität schwerer nutzbar ist.
+    type: single
+    level: "B"
+
+  - question: Was ist das typische Query Rewriting bei einer korrelierten Subquery, die pro Order aggregiert?
+    answer: Umformung zu JOIN + GROUP BY + HAVING, damit der Optimizer Join-Reihenfolge und Aggregation effizient planen kann.
+    type: single
+    level: "B"
+
+  - question: Nenne ein Beispiel für Query Rewriting bei „Orders mit Items“.
+    answer: "Nicht optimal: WHERE id IN (SELECT order_id FROM order_items) → besser: WHERE EXISTS (SELECT 1 FROM order_items WHERE order_id = o.id)."
+    type: single
+    level: "B"
+
+  - question: Warum ist derselbe Query in Supabase/PostgreSQL beim zweiten Lauf oft schneller, ohne dass SQL umgeschrieben wurde?
+    answer: Weil Daten- und Indexseiten im PostgreSQL-Cache (shared buffers) und/oder OS-Cache liegen (mehr hits, weniger reads).
+    type: single
+    level: "A"

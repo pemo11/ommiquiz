@@ -22,7 +22,7 @@ Aktuell ist *OMMI-Quiz* ein reines Hobbyprojekt, das ich im Rahmen meines Studiu
 
 
 ## Über mich
-- Mein Name ist *Peter Monadjemi*. Ich bin ein großer Fan vom Konzept des Lebenslangem Lernen und von Karteikarten als Hilfsmittel für die Vorbereitung auf eine Prüfung
+- Mein Name ist *Peter Monadjemi*. Ich bin ein großer Fan vom Konzept des lebenslangem Lernen und von Karteikarten als Hilfsmittel für die Vorbereitung auf eine Prüfung
 - Ich habe bereits in meinem Chemiestudium "vor vielen Jahren" an der Justus Liebig Universität in Gießen im 1. Semester damit gute Erfahrungen gemacht
 - Zur Zeit studiere ich Medieninformatik Master Online an der HS Emden Leer
 

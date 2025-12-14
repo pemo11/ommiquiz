@@ -242,3 +242,75 @@ flashcards:
   answer: Unterschiedliche Datenbanktypen (z. B. Key-Value, Document, Graph) werden für verschiedene Aufgaben eingesetzt.
   type: single
   level: "A"
+
+flashcards:
+
+  - question: Welche Aussagen zur Query Optimierung in PostgreSQL sind korrekt?
+    answers:
+      - PostgreSQL schreibt SQL-Abfragen automatisch um, wenn sie oft ausgeführt werden
+      - Der Optimizer wählt einen Ausführungsplan basierend auf Kosten
+      - Cache-Effekte können eine Abfrage bei Wiederholung beschleunigen
+      - Query Rewriting verändert die logische Struktur einer Abfrage
+    correctAnswers:
+      - false
+      - true
+      - true
+      - true
+    type: multiple
+    level: "A"
+
+  - question: Welche der folgenden SQL-Prädikate sind echte Tautologien?
+    answers:
+      - WHERE 1 = 1
+      - WHERE id = id
+      - WHERE status = 'PAID' OR status = 'SHIPPED'
+      - WHERE quantity >= 0 OR quantity < 0
+    correctAnswers:
+      - true
+      - true
+      - false
+      - true
+    type: multiple
+    level: "A"
+
+  - question: Welche Aussagen zu EXPLAIN ANALYZE sind korrekt?
+    answers:
+      - Die Abfrage wird tatsächlich ausgeführt
+      - Es werden reale Laufzeiten angezeigt
+      - Es werden nur geschätzte Kosten ausgegeben
+      - Cache-Nutzung kann mit BUFFERS sichtbar gemacht werden
+    correctAnswers:
+      - true
+      - true
+      - false
+      - true
+    type: multiple
+    level: "A"
+
+  - question: Welche Vorteile hat EXISTS gegenüber IN bei Subqueries?
+    answers:
+      - EXISTS kann nach dem ersten Treffer abbrechen
+      - EXISTS ist immun gegen NULL-Probleme
+      - IN ist immer schneller als EXISTS
+      - EXISTS erzeugt keine vollständige Ergebnismenge
+    correctAnswers:
+      - true
+      - true
+      - false
+      - true
+    type: multiple
+    level: "B"
+
+  - question: Wann ist ein OR-Prädikat per UNION ALL korrekt umschreibbar?
+    answers:
+      - Wenn die Teilmengen disjunkt sind
+      - Wenn keine Duplikate entstehen können
+      - Wenn die Bedingungen sich überschneiden
+      - Wenn UNION statt UNION ALL verwendet wird
+    correctAnswers:
+      - true
+      - true
+      - false
+      - false
+    type: multiple
+    level: "B"
