@@ -25,6 +25,8 @@ function FlashcardViewer({ flashcard, onBack }) {
   console.log('Cards length:', cards.length);
 
   const currentCard = cards[currentCardIndex];
+  const rawCardType = currentCard?.type || (Array.isArray(currentCard?.correctAnswers) ? 'multiple' : 'single');
+  const cardType = (typeof rawCardType === 'string' ? rawCardType.toLowerCase() : rawCardType) || 'single';
 
   const getBitmapSrc = (bitmap) => {
     if (!bitmap) return null;
@@ -123,7 +125,7 @@ function FlashcardViewer({ flashcard, onBack }) {
       return;
     }
 
-    if (currentCard.type === 'single' && !currentCardAnswered) {
+    if (cardType === 'single' && !currentCardAnswered) {
       setIsFlipped(!isFlipped);
     }
   };
@@ -138,7 +140,7 @@ function FlashcardViewer({ flashcard, onBack }) {
   };
 
   const handleTouchEnd = (event) => {
-    if (!touchStartRef.current || currentCard.type !== 'single' || currentCardAnswered) {
+    if (!touchStartRef.current || cardType !== 'single' || currentCardAnswered) {
       return;
     }
 
@@ -164,7 +166,7 @@ function FlashcardViewer({ flashcard, onBack }) {
   };
 
   const handleAnswerSelect = (answerIndex) => {
-    if (currentCard.type === 'multiple' && !currentCardAnswered) {
+    if (cardType === 'multiple' && !currentCardAnswered) {
       setSelectedAnswers(prev => {
         if (prev.includes(answerIndex)) {
           return prev.filter(idx => idx !== answerIndex);
@@ -177,7 +179,7 @@ function FlashcardViewer({ flashcard, onBack }) {
 
   // New function to handle single-answer card evaluation
   const handleSingleAnswerEvaluation = (isCorrect) => {
-    if (swipeDirection === null && currentCard.type === 'single' && !currentCardAnswered) {
+    if (swipeDirection === null && cardType === 'single' && !currentCardAnswered) {
       setSwipeDirection(isCorrect ? 'right' : 'left');
     }
 
@@ -210,12 +212,12 @@ function FlashcardViewer({ flashcard, onBack }) {
   // New function to handle skip action
   const handleSkip = () => {
     setCardResults(prev => ({
-      ...prev,
-      [currentCardIndex]: {
-        type: currentCard.type,
+        ...prev,
+        [currentCardIndex]: {
+        type: cardType,
         correct: null, // null indicates skipped
         question: currentCard.question,
-        answer: currentCard.type === 'single' ? currentCard.answer : currentCard.answers.filter((_, idx) => currentCard.correctAnswers[idx]).join(', '),
+        answer: cardType === 'single' ? currentCard.answer : currentCard.answers.filter((_, idx) => currentCard.correctAnswers[idx]).join(', '),
         userAnswer: 'Skipped'
       }
     }));
@@ -226,7 +228,7 @@ function FlashcardViewer({ flashcard, onBack }) {
 
   // Enhanced function to handle multiple choice evaluation
   const handleShowAnswers = () => {
-    if (currentCard.type === 'multiple' && !currentCardAnswered) {
+    if (cardType === 'multiple' && !currentCardAnswered) {
       setShowCorrectAnswers(true);
       
       // Calculate if the answer is correct
@@ -460,7 +462,7 @@ function FlashcardViewer({ flashcard, onBack }) {
         </div>
       )}
 
-      {currentCard.type === 'single' ? (
+      {cardType === 'single' ? (
         // Single answer card (flip-style)
         <div className="card-container">
           <div
