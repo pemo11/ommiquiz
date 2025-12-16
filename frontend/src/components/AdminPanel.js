@@ -396,7 +396,9 @@ function AdminPanel({ onBack }) {
       }
     }
 
-    const isUpdatingExisting = selectedFlashcard && selectedFlashcard.id === editingFlashcard.id;
+    const isUpdatingExisting = !isCreatingNew &&
+      selectedFlashcard &&
+      selectedFlashcard.id === editingFlashcard.id;
     const isNewButExists = isCreatingNew && flashcards.some(fc => fc.id === editingFlashcard.id);
 
     if (isNewButExists && !forceOverwrite) {
