@@ -135,9 +135,33 @@ class LocalFlashcardStorage(BaseFlashcardStorage):
     def save_flashcard(self, filename: str, content: str, overwrite: bool = False) -> FlashcardDocument:
         target_path = self.flashcards_dir / filename
         if target_path.exists() and not overwrite:
+            logger.error(
+                "Flashcard already exists in local storage",
+                filename=filename,
+                path=str(target_path),
+                overwrite=overwrite,
+            )
             raise FileExistsError(f"Flashcard '{filename}' already exists")
 
-        target_path.write_text(content, encoding="utf-8")
+        try:
+            target_path.write_text(content, encoding="utf-8")
+            logger.info(
+                "Flashcard saved to local storage",
+                filename=filename,
+                path=str(target_path),
+                overwrite=overwrite,
+                content_length=len(content),
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.error(
+                "Failed to save flashcard to local storage",
+                filename=filename,
+                path=str(target_path),
+                overwrite=overwrite,
+                error=str(exc),
+            )
+            raise
+
         return FlashcardDocument(id=Path(filename).stem, filename=filename, content=content)
 
     def delete_flashcard(self, flashcard_id: str) -> List[str]:
@@ -246,13 +270,31 @@ class S3FlashcardStorage(BaseFlashcardStorage):
                 )
             except (ClientError, BotoCoreError):
                 pass
-
-        self.client.put_object(
-            Bucket=self.bucket,
-            Key=key,
-            Body=content.encode("utf-8"),
-            ContentType="application/x-yaml",
-        )
+        try:
+            self.client.put_object(
+                Bucket=self.bucket,
+                Key=key,
+                Body=content.encode("utf-8"),
+                ContentType="application/x-yaml",
+            )
+            logger.info(
+                "Flashcard saved to S3",
+                filename=filename,
+                bucket=self.bucket,
+                key=key,
+                overwrite=overwrite,
+                content_length=len(content),
+            )
+        except (ClientError, BotoCoreError) as exc:
+            logger.error(
+                "Failed to save flashcard to S3",
+                filename=filename,
+                bucket=self.bucket,
+                key=key,
+                overwrite=overwrite,
+                error=str(exc),
+            )
+            raise
         return FlashcardDocument(id=Path(filename).stem, filename=filename, content=content)
 
     def delete_flashcard(self, flashcard_id: str) -> List[str]:
