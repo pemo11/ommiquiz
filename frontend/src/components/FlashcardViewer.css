@@ -48,6 +48,31 @@
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
+.postponed-banner {
+  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+  border: 1px solid #ffb74d;
+  color: #e65100;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 12px rgba(255, 183, 77, 0.25);
+}
+
+.postponed-icon {
+  font-size: 1.5rem;
+}
+
+.postponed-title {
+  font-weight: 700;
+}
+
+.postponed-subtitle {
+  font-size: 0.95rem;
+}
+
 .stat {
   display: flex;
   flex-direction: column;
@@ -560,6 +585,51 @@
   margin: 0 0 2rem;
   font-size: 2.5rem;
   font-weight: bold;
+}
+
+.celebration {
+  position: relative;
+  padding: 0.5rem 0 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.celebration-message {
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.firework {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 10%, rgba(255, 255, 255, 0.2) 70%);
+  box-shadow:
+    0 0 12px rgba(255, 255, 255, 0.8),
+    0 0 22px rgba(255, 255, 255, 0.6);
+  animation: burst 1.8s ease-in-out infinite;
+}
+
+.firework-1 { animation-delay: 0s; }
+.firework-2 { animation-delay: 0.35s; }
+.firework-3 { animation-delay: 0.7s; }
+
+@keyframes burst {
+  0% {
+    transform: scale(0.4) translateY(12px);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.1) translateY(-6px);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.6) translateY(8px);
+    opacity: 0.8;
+  }
 }
 
 .summary-stats {
