@@ -1,15 +1,6 @@
 id: esa1_flashcards
 author: Pemo
-title: Datenbanktechnologien - ESA1
-description: Flashcards ausschließlich auf Basis der ESA1-Aufgaben (Markdown-Datei)
-createDate: 2025-12-16
-language: de
-module: Datenbanktechnologien
-semester: WS 2025/26
-institution: HS Emden Leer
-studycourse: Medieninformatik Master
-topics:
-- Relationale Datenbanken
+title: Datenbanktechnologien - ESA1 Query-OptimierungA
 - SQL
 - Anfrageoptimierung
 - Ausführungspläne
