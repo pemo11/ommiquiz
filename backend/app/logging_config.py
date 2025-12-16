@@ -132,7 +132,13 @@ class LoggingConfig:
         self.log_level = os.getenv("LOG_LEVEL", "INFO").upper()
         self.log_format = os.getenv("LOG_FORMAT", "json")  # json or text
         self.log_file_enabled = os.getenv("LOG_FILE_ENABLED", "true").lower() == "true"
-        self.log_file_path = os.getenv("LOG_FILE_PATH", "/app/backend/logs/app.log")
+        
+        # Generate log filename with current date
+        current_date = datetime.now().strftime("%Y-%m-%d")
+        # Use the correct Docker container path that matches docker-compose volume mount
+        default_log_path = f"/app/logs/app-{current_date}.log"
+        self.log_file_path = os.getenv("LOG_FILE_PATH", default_log_path)
+        
         self.log_file_max_size = int(os.getenv("LOG_FILE_MAX_SIZE", "10485760"))  # 10MB
         self.log_file_backup_count = int(os.getenv("LOG_FILE_BACKUP_COUNT", "5"))
         

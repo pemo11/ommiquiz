@@ -6,6 +6,23 @@ import AdminPanel from './components/AdminPanel';
 import AboutModal from './components/AboutModal';
 import { FRONTEND_VERSION } from './version';
 
+// Add debug logging for version number
+console.log('🔥 === FRONTEND VERSION DEBUG ===');
+console.log('📦 FRONTEND_VERSION from import:', FRONTEND_VERSION);
+console.log('🌍 process.env.NODE_ENV:', process.env.NODE_ENV);
+console.log('🔧 process.env.REACT_APP_VERSION:', process.env.REACT_APP_VERSION);
+
+// Try to get package.json version directly
+try {
+  const packageJson = require('../package.json');
+  console.log('📋 Package.json version direct:', packageJson.version);
+} catch (error) {
+  console.log('❌ Could not load package.json directly:', error.message);
+}
+
+console.log('✨ Frontend app starting with version:', FRONTEND_VERSION);
+console.log('🔥 === END VERSION DEBUG ===');
+
 // Use the environment variable first, with proper fallback for development
 const getApiUrl = () => {
   // In production, always use the environment variable
@@ -42,8 +59,9 @@ function App() {
   const [showAdmin, setShowAdmin] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showLoginForm, setShowLoginForm] = useState(false);
-  const [loginEmail, setLoginEmail] = useState('');
+  const [loginEmail, setLoginEmail] = useState('ommi-admin'); // Pre-fill username
   const [loginPassword, setLoginPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false); // Add password visibility state
   const [loginError, setLoginError] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -54,39 +72,146 @@ function App() {
   const fetchFlashcardList = async () => {
     try {
       setLoading(true);
-      console.log('Fetching from URL:', `${API_URL}/flashcards`);
-      const response = await fetch(`${API_URL}/flashcards`);
+      // Add cache-busting parameter to prevent browser caching
+      const timestamp = Date.now();
+      const url = `${API_URL}/flashcards?_t=${timestamp}`;
+      console.log('🔍 === FETCHING FLASHCARD LIST ===');
+      console.log('📡 Fetching from URL:', url);
+      console.log('⏰ Timestamp:', new Date().toISOString());
+      
+      const response = await fetch(url, {
+        cache: 'no-cache',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
       
       // Log response details for debugging
-      console.log('Response status:', response.status);
-      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
-      console.log('Response URL:', response.url);
+      console.log('📊 Response status:', response.status);
+      console.log('📋 Response headers:', Object.fromEntries(response.headers.entries()));
+      console.log('🔗 Response URL:', response.url);
       
       if (!response.ok) {
         // Try to get the error text instead of JSON
         const errorText = await response.text();
-        console.error('Error response text:', errorText);
-        throw new Error(`Failed to fetch flashcard list: ${response.status} ${response.statusText} - ${errorText}`);
+        console.error('❌ ERROR: Response not OK');
+        console.error('📄 Error response text:', errorText);
+        const errorMessage = `Failed to fetch flashcard list: ${response.status} ${response.statusText} - ${errorText}`;
+        console.error('🚨 Throwing error:', errorMessage);
+        throw new Error(errorMessage);
       }
       
       // Check if response is actually JSON
       const contentType = response.headers.get('content-type');
-      console.log('Content-Type:', contentType);
+      console.log('📝 Content-Type:', contentType);
       
       if (!contentType || !contentType.includes('application/json')) {
         const responseText = await response.text();
-        console.error('Non-JSON response received:', responseText.substring(0, 500) + '...');
-        throw new Error(`Server returned non-JSON response. Content-Type: ${contentType}. Response: ${responseText.substring(0, 200)}...`);
+        console.error('❌ ERROR: Non-JSON response received');
+        console.error('📄 Response text (first 500 chars):', responseText.substring(0, 500) + '...');
+        const errorMessage = `Server returned non-JSON response. Content-Type: ${contentType}. Response: ${responseText.substring(0, 200)}...`;
+        console.error('🚨 Throwing error:', errorMessage);
+        throw new Error(errorMessage);
       }
       
       const data = await response.json();
+      console.log('🎯 === RAW API RESPONSE ANALYSIS ===');
+      console.log('📦 Full response object:', JSON.stringify(data, null, 2));
+      console.log('📊 Flashcards array exists:', !!data.flashcards);
+      console.log('🔢 Number of flashcards received:', data.flashcards ? data.flashcards.length : 0);
+      console.log('📋 Flashcards array type:', Array.isArray(data.flashcards) ? 'Array' : typeof data.flashcards);
+      
+      // Log each flashcard for debugging with detailed analysis
+      if (data.flashcards && Array.isArray(data.flashcards)) {
+        console.log('🔍 === INDIVIDUAL FLASHCARD ANALYSIS ===');
+        data.flashcards.forEach((card, index) => {
+          const cardInfo = {
+            index: index + 1,
+            id: card.id,
+            filename: card.filename,
+            module: card.module,
+            title: card.title,
+            description: card.description,
+            cardcount: card.cardcount,
+            isEmpty: !card.title && !card.description && !card.module,
+            isQueryOptimierung: card.id === 'DBTE_QueryOptimierung'
+          };
+          
+          if (cardInfo.isQueryOptimierung) {
+            console.log('🚨 PHANTOM MODULE DETECTED:', cardInfo);
+            console.log('🔍 Full phantom card object:', JSON.stringify(card, null, 2));
+          } else if (index === 1) {
+            console.log(`🎯 POSITION #2 CARD (USER SAYS PHANTOM IS HERE):`, cardInfo);
+            console.log('🔍 Full #2 card object:', JSON.stringify(card, null, 2));
+          } else {
+            console.log(`📇 Flashcard ${cardInfo.index}:`, cardInfo);
+          }
+        });
+        
+        // Detailed module counting analysis
+        console.log('📊 === MODULE COUNTING ANALYSIS ===');
+        const moduleCounts = {};
+        const moduleDetails = {};
+        
+        data.flashcards.forEach((card, index) => {
+          const moduleKey = card.module || '[EMPTY_MODULE]';
+          
+          if (!moduleCounts[moduleKey]) {
+            moduleCounts[moduleKey] = 0;
+            moduleDetails[moduleKey] = [];
+          }
+          
+          moduleCounts[moduleKey]++;
+          moduleDetails[moduleKey].push({
+            index: index + 1,
+            id: card.id,
+            title: card.title || '[NO_TITLE]',
+            isEmpty: !card.title && !card.description && !card.module
+          });
+        });
+        
+        console.log('🎯 Module counts from API:', moduleCounts);
+        console.log('📋 Module details:', moduleDetails);
+        
+        // Check for empty/phantom modules
+        Object.entries(moduleDetails).forEach(([module, cards]) => {
+          const emptyCards = cards.filter(card => card.isEmpty);
+          if (emptyCards.length > 0) {
+            console.log(`🚨 Found ${emptyCards.length} empty/phantom cards in module "${module}":`, emptyCards);
+          }
+        });
+      } else {
+        console.error('❌ ERROR: flashcards is not an array:', data.flashcards);
+      }
+      
+      console.log('💾 === SETTING STATE ===');
+      console.log('📥 About to set flashcards state with:', data.flashcards);
       setFlashcards(data.flashcards);
+      console.log('✅ State updated with flashcards');
       setError(null);
+      console.log('✅ Error state cleared');
+      
+      // Log the state after setting (with a small delay to ensure state is updated)
+      setTimeout(() => {
+        console.log('🔍 === STATE VERIFICATION ===');
+        console.log('📦 Current flashcards state:', flashcards);
+        console.log('🔢 Current flashcards count:', flashcards ? flashcards.length : 0);
+      }, 100);
+      
     } catch (err) {
-      console.error('Fetch error:', err);
+      console.error('🚨 === FETCH ERROR OCCURRED ===');
+      console.error('🔧 Error type:', err.constructor.name);
+      console.error('💬 Error message:', err.message);
+      console.error('📜 Error stack:', err.stack);
+      console.error('🔍 Full error object:', err);
       setError(err.message);
+      console.error('💾 Error state set to:', err.message);
     } finally {
       setLoading(false);
+      console.log('⏹️ Loading state set to false');
+      console.log('🏁 === FETCH COMPLETE ===');
     }
   };
 
@@ -95,9 +220,17 @@ function App() {
       setLoading(true);
       console.log('Fetching flashcard:', flashcardId);
       const response = await fetch(`${API_URL}/flashcards/${flashcardId}`);
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch flashcard');
+        if (response.status === 404) {
+          throw new Error('The selected flashcard set is not available. It may have been moved or deleted.');
+        } else if (response.status >= 500) {
+          throw new Error('Server error occurred while loading the flashcard set. Please try again later.');
+        } else {
+          throw new Error('Unable to load the flashcard set. Please try selecting a different one.');
+        }
       }
+      
       const data = await response.json();
       console.log('Raw data from API:', data);
       
@@ -145,13 +278,15 @@ function App() {
   const handleLoginClick = () => {
     setShowLoginForm(true);
     setLoginError(null);
+    setLoginEmail('ommi-admin'); // Ensure username is pre-filled when opening
   };
 
   const handleLoginClose = () => {
     setShowLoginForm(false);
     setLoginError(null);
-    setLoginEmail('');
+    setLoginEmail('ommi-admin'); // Keep username pre-filled
     setLoginPassword('');
+    setShowPassword(false); // Reset password visibility
   };
 
   const handleLoginSubmit = (event) => {
@@ -174,49 +309,29 @@ function App() {
         <div className="header-content">
           <div className="header-main">
             <div className="title-with-version">
-              <h1>🎓 Das OMMI Quiz</h1>
-              <span className="header-version">v{FRONTEND_VERSION}</span>
+              <h1>Das OMMI Quiz</h1>
+              <div className="version-info">v{FRONTEND_VERSION}</div>
             </div>
-            <p>Erfolgreich durch das Studium mit Lernkarten</p>
-          </div>
-          <div className="header-actions">
-            <button
-              onClick={handleAboutOpen}
-              className="about-button"
-              title="Learn more about OMMI Quiz"
-            >
-              ℹ️ About
-            </button>
-            {!isLoggedIn && (
-              <button
-                onClick={handleLoginClick}
-                className="login-button"
-                title="Sign in to access admin controls"
-              >
-                🔐 Login
+            <div className="header-actions">
+              <button onClick={handleAboutOpen} className="about-btn">
+                About
               </button>
-            )}
-            {isLoggedIn && (
-              <button
-                onClick={handleAdminToggle}
-                className={`admin-toggle-button ${showAdmin ? 'active' : ''}`}
-                title={showAdmin ? 'Switch to Quiz Mode' : 'Switch to Admin Mode'}
-              >
-                {showAdmin ? '🎯 Quiz' : '🔧 Admin'}
-              </button>
-            )}
+              {!showAdmin && (
+                <button onClick={isLoggedIn ? handleAdminToggle : handleLoginClick} className="admin-btn">
+                  Admin
+                </button>
+              )}
+            </div>
           </div>
+          {error && (
+            <div className="error-message">
+              <p>⚠️ {error}</p>
+            </div>
+          )}
         </div>
       </header>
-      
-      <main className="App-main">
-        {error && !showAdmin && (
-          <div className="error-message">
-            <p>Error: {error}</p>
-            <button onClick={() => window.location.reload()}>Retry</button>
-          </div>
-        )}
 
+      <main className="App-main">
         {showAdmin ? (
           <AdminPanel onBack={handleAdminBack} />
         ) : (
@@ -257,24 +372,34 @@ function App() {
             </div>
             <form className="login-form" onSubmit={handleLoginSubmit}>
               <label className="login-label">
-                Email address
+                Username
                 <input
                   type="text"
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
-                  placeholder="you@example.com"
+                  placeholder="ommi-admin"
                   required
                 />
               </label>
               <label className="login-label">
                 Password
-                <input
-                  type="password"
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  required
-                />
+                <div className="password-input-container">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="password-toggle-btn"
+                    title={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? '👁️‍🗨️' : '👁️'}
+                  </button>
+                </div>
               </label>
               {loginError && <div className="login-error">{loginError}</div>}
               <div className="login-actions">

@@ -17,16 +17,21 @@
   justify-content: space-between;
   max-width: 1200px;
   margin: 0 auto;
+  width: 100%;
 }
 
 .header-actions {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex-shrink: 0;
 }
 
 .header-main {
-  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
 }
 
 .App-header h1 {
@@ -39,9 +44,19 @@
 .title-with-version {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 1rem;
   flex-wrap: wrap;
+}
+
+.version-info {
+  color: #666;
+  font-size: 1rem;
+  font-weight: 500;
+  background-color: rgba(102, 126, 234, 0.1);
+  padding: 0.25rem 0.75rem;
+  border-radius: 15px;
+  border: 1px solid rgba(102, 126, 234, 0.2);
+  font-family: 'Courier New', monospace;
 }
 
 .header-version {
@@ -105,30 +120,71 @@
 .error-message {
   background-color: rgba(255, 255, 255, 0.95);
   padding: 2rem;
-  border-radius: 10px;
+  border-radius: 15px;
   text-align: center;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(231, 76, 60, 0.1);
+  max-width: 500px;
+  margin: 0 auto;
 }
 
-.error-message p {
-  color: #e74c3c;
+.error-icon {
+  font-size: 3rem;
   margin-bottom: 1rem;
-  font-size: 1.1rem;
 }
 
-.error-message button {
-  background-color: #667eea;
-  color: white;
+.error-content h3 {
+  color: #2c3e50;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.error-content p {
+  color: #666;
+  margin-bottom: 1.5rem;
+  font-size: 1.1rem;
+  line-height: 1.5;
+}
+
+.error-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.error-button {
   border: none;
   padding: 0.75rem 1.5rem;
   font-size: 1rem;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: all 0.3s;
+  font-weight: 600;
+  min-width: 120px;
 }
 
-.error-message button:hover {
+.error-button.primary {
+  background-color: #667eea;
+  color: white;
+}
+
+.error-button.primary:hover {
   background-color: #5568d3;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.error-button.secondary {
+  background-color: #f8f9fa;
+  color: #495057;
+  border: 1px solid #dee2e6;
+}
+
+.error-button.secondary:hover {
+  background-color: #e9ecef;
+  color: #212529;
 }
 
 .loading {
@@ -231,6 +287,43 @@
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
 }
 
+.password-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-container input {
+  width: 100%;
+  padding-right: 3rem; /* Make space for the toggle button */
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 0.75rem;
+  background: transparent;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: color 0.2s, background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.password-toggle-btn:hover {
+  color: #374151;
+  background-color: #f9fafb;
+}
+
+.password-toggle-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
 .login-actions {
   display: flex;
   justify-content: flex-end;
@@ -277,6 +370,56 @@
   color: #6b7280;
   font-size: 0.95rem;
   text-align: center;
+}
+
+.about-btn,
+.admin-btn {
+  background-color: #667eea;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: 600;
+  min-width: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.about-btn {
+  background-color: #f0f4ff;
+  color: #4a5568;
+  border: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.about-btn:hover {
+  background-color: #e3e9ff;
+  color: #2d3748;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+  transform: translateY(-2px);
+}
+
+.admin-btn {
+  background-color: #667eea;
+  color: white;
+}
+
+.admin-btn:hover {
+  background-color: #5568d3;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.admin-btn.active {
+  background-color: #28a745;
+}
+
+.admin-btn.active:hover {
+  background-color: #218838;
 }
 
 /* Responsive Design */

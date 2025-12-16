@@ -318,4 +318,267 @@ function Invoke-NanoQuizApiSmokeTests {
     }
 }
 
+function Get-NanoQuizLogs {
+    <#
+    .SYNOPSIS
+    Queries application logs from the NanoQuiz API with optional filtering.
+
+    .DESCRIPTION
+    Retrieves log entries from the backend with support for time-based filtering,
+    log level filtering, message content search, and pagination.
+
+    .PARAMETER StartTime
+    Start time for log filtering (ISO format datetime).
+
+    .PARAMETER EndTime
+    End time for log filtering (ISO format datetime).
+
+    .PARAMETER Level
+    Log level filter (DEBUG, INFO, WARNING, ERROR).
+
+    .PARAMETER MessageContains
+    Filter logs containing this text in the message field.
+
+    .PARAMETER Limit
+    Maximum number of log entries to return (default: 100).
+
+    .PARAMETER Offset
+    Number of log entries to skip for pagination (default: 0).
+
+    .EXAMPLE
+    Get-NanoQuizLogs -Level ERROR -Limit 50
+
+    .EXAMPLE
+    Get-NanoQuizLogs -StartTime "2025-12-16T10:00:00" -MessageContains "flashcard"
+
+    .EXAMPLE
+    Get-NanoQuizLogs -Level WARNING -StartTime (Get-Date).AddHours(-1).ToString("yyyy-MM-ddTHH:mm:ss")
+    #>
+    [CmdletBinding()]
+    param(
+        [datetime]$StartTime,
+        [datetime]$EndTime,
+        [ValidateSet('DEBUG','INFO','WARNING','ERROR')]
+        [string]$Level,
+        [string]$MessageContains,
+        [int]$Limit = 100,
+        [int]$Offset = 0
+    )
+
+    $queryParams = @()
+    
+    if ($PSBoundParameters.ContainsKey('StartTime')) {
+        $startTimeStr = $StartTime.ToString('yyyy-MM-ddTHH:mm:ss')
+        $queryParams += "start_time=$([uri]::EscapeDataString($startTimeStr))"
+    }
+    
+    if ($PSBoundParameters.ContainsKey('EndTime')) {
+        $endTimeStr = $EndTime.ToString('yyyy-MM-ddTHH:mm:ss')
+        $queryParams += "end_time=$([uri]::EscapeDataString($endTimeStr))"
+    }
+    
+    if ($PSBoundParameters.ContainsKey('Level')) {
+        $queryParams += "level=$([uri]::EscapeDataString($Level))"
+    }
+    
+    if ($PSBoundParameters.ContainsKey('MessageContains')) {
+        $queryParams += "message_contains=$([uri]::EscapeDataString($MessageContains))"
+    }
+    
+    $queryParams += "limit=$Limit"
+    $queryParams += "offset=$Offset"
+    
+    $queryString = if ($queryParams.Count -gt 0) { "?" + ($queryParams -join "&") } else { "" }
+    $path = "/logs$queryString"
+    
+    Invoke-NanoQuizApiRequest -Path $path -Method 'GET' -ExpectedStatusCode 200
+}
+
+function Get-NanoQuizLogFiles {
+    <#
+    .SYNOPSIS
+    Lists available log files from the NanoQuiz API.
+
+    .DESCRIPTION
+    Retrieves metadata about available log files including filename, size, 
+    and last modified date.
+
+    .EXAMPLE
+    Get-NanoQuizLogFiles
+    #>
+    [CmdletBinding()]
+    param()
+
+    Invoke-NanoQuizApiRequest -Path '/logs/files' -Method 'GET' -ExpectedStatusCode 200
+}
+
+function Get-NanoQuizLogFile {
+    <#
+    .SYNOPSIS
+    Downloads a specific log file from the NanoQuiz API.
+
+    .DESCRIPTION
+    Downloads the content of a specific log file. The content is returned as text.
+
+    .PARAMETER Filename
+    Name of the log file to download (e.g., "app-2025-12-16.log").
+
+    .EXAMPLE
+    Get-NanoQuizLogFile -Filename "app-2025-12-16.log"
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$Filename
+    )
+
+    # Validate filename pattern
+    if ($Filename -notmatch '^[a-zA-Z0-9_-]+\.log$') {
+        throw "Invalid log filename format. Expected format: alphanumeric characters, hyphens, underscores, and .log extension."
+    }
+
+    Invoke-NanoQuizApiRequest -Path "/logs/download/$Filename" -Method 'GET' -ExpectedStatusCode 200 -SkipJsonParsing
+}
+
+function Test-NanoQuizLogsEndpoint {
+    <#
+    .SYNOPSIS
+    Validates the logs endpoint and ensures it returns log data.
+
+    .DESCRIPTION
+    Tests the logs querying functionality by making a basic request and validating
+    the response structure.
+
+    .OUTPUTS
+    PSCustomObject with test results including Success flag and message.
+    #>
+    [CmdletBinding()]
+    param()
+
+    try {
+        $result = Get-NanoQuizLogs -Limit 10
+        $content = $result.Content
+
+        $hasLogs = $false
+        $hasStructure = $false
+        $logCount = 0
+
+        if ($content) {
+            $hasStructure = ($null -ne $content.logs -and $null -ne $content.total)
+            if ($hasStructure) {
+                $logs = @($content.logs)
+                $logCount = $logs.Count
+                $hasLogs = $logCount -gt 0
+                
+                # Validate log entry structure if we have logs
+                if ($hasLogs) {
+                    $firstLog = $logs | Select-Object -First 1
+                    $hasRequiredFields = ($null -ne $firstLog.timestamp -and 
+                                        $null -ne $firstLog.level -and 
+                                        $null -ne $firstLog.message)
+                    if (-not $hasRequiredFields) {
+                        $hasStructure = $false
+                    }
+                }
+            }
+        }
+
+        $success = $hasStructure
+        $message = if ($hasLogs) {
+            "Logs endpoint returned $logCount log entries with valid structure."
+        } elseif ($hasStructure) {
+            "Logs endpoint returned valid structure but no log entries."
+        } else {
+            "Logs endpoint did not return expected structure."
+        }
+
+        [pscustomobject]@{
+            Test = 'LogsEndpoint'
+            Success = $success
+            StatusCode = $result.StatusCode
+            Message = $message
+            LogCount = $logCount
+            Payload = $content
+        }
+    }
+    catch {
+        [pscustomobject]@{
+            Test = 'LogsEndpoint'
+            Success = $false
+            StatusCode = $null
+            Message = "Logs endpoint test failed: $($_.Exception.Message)"
+            LogCount = 0
+            Payload = $null
+        }
+    }
+}
+
+function Test-NanoQuizLogFilesEndpoint {
+    <#
+    .SYNOPSIS
+    Validates the log files listing endpoint.
+
+    .OUTPUTS
+    PSCustomObject with test results including Success flag and message.
+    #>
+    [CmdletBinding()]
+    param()
+
+    try {
+        $result = Get-NanoQuizLogFiles
+        $content = $result.Content
+
+        $hasFiles = $false
+        $hasStructure = $false
+        $fileCount = 0
+
+        if ($content -and $content.log_files) {
+            $files = @($content.log_files)
+            $fileCount = $files.Count
+            $hasFiles = $fileCount -gt 0
+            $hasStructure = $true
+            
+            # Validate file entry structure if we have files
+            if ($hasFiles) {
+                $firstFile = $files | Select-Object -First 1
+                $hasRequiredFields = ($null -ne $firstFile.filename -and 
+                                    $null -ne $firstFile.size -and 
+                                    $null -ne $firstFile.modified)
+                if (-not $hasRequiredFields) {
+                    $hasStructure = $false
+                }
+            }
+        }
+
+        $success = $hasStructure
+        $message = if ($hasFiles) {
+            "Log files endpoint returned $fileCount log files with valid structure."
+        } elseif ($hasStructure) {
+            "Log files endpoint returned valid structure but no log files."
+        } else {
+            "Log files endpoint did not return expected structure."
+        }
+
+        [pscustomobject]@{
+            Test = 'LogFilesEndpoint'
+            Success = $success
+            StatusCode = $result.StatusCode
+            Message = $message
+            FileCount = $fileCount
+            Payload = $content
+        }
+    }
+    catch {
+        [pscustomobject]@{
+            Test = 'LogFilesEndpoint'
+            Success = $false
+            StatusCode = $null
+            Message = "Log files endpoint test failed: $($_.Exception.Message)"
+            FileCount = 0
+            Payload = $null
+        }
+    }
+}
+
 Export-ModuleMember -Function *NanoQuiz*

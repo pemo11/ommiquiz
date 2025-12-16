@@ -1,0 +1,105 @@
+generatedAt: '2025-12-16T07:49:19.383394Z'
+total: 7
+flashcards:
+- id: quantencomputer_allgemein
+  filename: quantencomputer_allgemein.yaml
+  title: Allgemeine Grundlagen der Quantencomputer
+  description: Fragen und Antworten zu allgemeinen Grundlagen der Quantencomputer,
+    einschließlich Qubits, Superposition, Verschränkung und wichtigen Quantengattern.
+  language: de
+  level: ''
+  author: Claude & Peter Monadjemi
+  topics:
+  - Quantencomputer
+  module: Quantencomputer
+  cardcount: 20
+- id: test-frontend-display
+  filename: test-frontend-display.yaml
+  title: Frontend Display Test Quiz
+  description: A new quiz to test the frontend display functionality with proper module
+    field
+  language: de
+  level: intermediate
+  author: Peter Monadjemi
+  topics:
+  - frontend
+  - testing
+  - display
+  - modules
+  module: Frontend Testing
+  cardcount: 4
+- id: DBTE_Relationen
+  filename: DBTE_Relationen.yaml
+  title: Basiswissen Datenbanksysteme
+  description: Lern- und Verständnisfragen zum Kapitel 5 der VFH-Unterlage „Datenbanktechnologien“
+  language: de
+  level: ''
+  author: Pemo
+  topics:
+  - Relationale Datenbanken
+  - Normalisierung
+  - SQL
+  - Datenmodellierung
+  module: Datenbanktechnologien
+  cardcount: 20
+- id: DBTE_NoSQL
+  filename: DBTE_NoSQL.yml
+  title: NoSQL-Datenbanken
+  description: Lern- und Verständnisfragen zu Kapitel 8 der VFH-Unterlage „Datenbanktechnologien“
+  language: de
+  level: ''
+  author: Pemo
+  topics:
+  - nosql
+  - key_value
+  - document_store
+  - column_store
+  - graph_database
+  - polyglot_persistence
+  module: Datenbanktechnologien
+  cardcount: 5
+- id: DBTE_Vektordatenbanken
+  filename: DBTE_Vektordatenbanken.yml
+  title: Exkurs – Vektordatenbanken
+  description: Lern- und Verständnisfragen zu Kapitel 9 der VFH-Unterlage „Datenbanktechnologien“
+  language: de
+  level: ''
+  author: Pemo
+  topics:
+  - vektordatenbanken
+  - embeddings
+  - similarity_search
+  - milvus
+  - weaviate
+  module: Datenbanktechnologien
+  cardcount: 20
+- id: DBTE_Verteiltheit
+  filename: DBTE_Verteiltheit.yml
+  title: Verteiltheit
+  description: Lern- und Verständnisfragen zu Kapitel 7 der VFH-Unterlage „Datenbanktechnologien“
+  language: de
+  level: ''
+  author: Pemo
+  topics:
+  - Verteilte_systeme
+  - CAP-Theorem
+  - Replikation
+  - sSharding
+  - MAP Reduce
+  module: Datenbanktechnologien
+  cardcount: 28
+- id: DBTE_DataWarehouse
+  filename: DBTE_DataWarehouse.yml
+  title: Data Warehouse und Data Mining
+  description: Lern- und Verständnisfragen zu Kapitel 6 der VFH-Unterlage „Datenbanktechnologien“
+  language: de
+  level: ''
+  author: Pemo
+  topics:
+  - Data Warehouse
+  - OLAP und OLTP
+  - ETL
+  - Multidimensionale Modelle
+  - data_mining
+  module: Datenbanktechnologien
+  cardcount: 34

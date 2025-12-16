@@ -110,13 +110,16 @@ function FlashcardSelector({ flashcards, onSelect }) {
       )}
 
       <div className="flashcard-list">
-        {filteredFlashcards.map((flashcard) => (
+        {filteredFlashcards.map((flashcard, index) => (
           <button
             key={flashcard.id}
             className="flashcard-item"
             onClick={() => onSelect(flashcard.id)}
             title={flashcard.description || flashcard.title}
           >
+            <div className="flashcard-number">
+              {index + 1}
+            </div>
             <div className="flashcard-content">
               <span className="flashcard-icon">📚</span>
               <div className="flashcard-info">

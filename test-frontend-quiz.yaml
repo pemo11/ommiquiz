@@ -1,0 +1,43 @@
+id: test-frontend-display
+author: Peter Monadjemi
+title: Frontend Display Test Quiz
+description: A new quiz to test the frontend display functionality with proper module field
+createDate: 2025-12-16
+language: de
+module: Frontend Testing
+level: intermediate
+semester: WS 2025/26
+institution: HS Emden Leer
+studycourse: Medieninformatik Master
+topics:
+  - frontend
+  - testing
+  - display
+  - modules
+keywords:
+  - quiz
+  - test
+  - frontend
+  - display
+  - module
+
+flashcards:
+  - question: Was ist der Zweck dieses Quiz?
+    answer: Dieses Quiz testet die Frontend-Anzeige-Funktionalität mit einem korrekten Modulfeld.
+    type: single
+    level: "A"
+
+  - question: Welches Feld ist wichtig für die Frontend-Filterung?
+    answer: Das 'module' Feld ist entscheidend für die korrekte Kategorisierung und Filterung im Frontend.
+    type: single
+    level: "A"
+
+  - question: Warum werden manche Quiz nicht im Frontend angezeigt?
+    answer: Quiz ohne gültiges 'module' Feld werden vom Frontend-Filter herausgefiltert und nicht angezeigt.
+    type: single
+    level: "B"
+
+  - question: Wie kann man sicherstellen, dass ein Quiz im Frontend erscheint?
+    answer: Man muss sicherstellen, dass das YAML-Datei ein gültiges 'module' Feld mit einem nicht-leeren Wert enthält.
+    type: single
+    level: "B"

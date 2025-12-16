@@ -64,23 +64,56 @@ class LocalFlashcardStorage(BaseFlashcardStorage):
 
     def list_flashcards(self) -> List[FlashcardDocument]:
         documents: List[FlashcardDocument] = []
+        
+        logger.info("🔍 LocalFlashcardStorage: Starting to list flashcards", 
+                   flashcards_dir=str(self.flashcards_dir))
+        
         for pattern in ("*.yaml", "*.yml"):
-            for file_path in self.flashcards_dir.glob(pattern):
+            logger.info("🔍 Searching for pattern", pattern=pattern)
+            matching_files = list(self.flashcards_dir.glob(pattern))
+            logger.info("📋 Found files for pattern", pattern=pattern, count=len(matching_files), files=[f.name for f in matching_files])
+            
+            for file_path in matching_files:
+                logger.info("📄 Processing file", filename=file_path.name, path=str(file_path))
+                
+                if file_path.name == "DBTE_QueryOptimierung.yaml":
+                    logger.warning("🚨 PHANTOM FILE FOUND IN FILESYSTEM", 
+                                 filename=file_path.name, 
+                                 path=str(file_path),
+                                 exists=file_path.exists(),
+                                 size=file_path.stat().st_size if file_path.exists() else "N/A")
+                
                 try:
                     content = file_path.read_text(encoding="utf-8")
-                    documents.append(
-                        FlashcardDocument(
-                            id=file_path.stem,
-                            filename=file_path.name,
-                            content=content,
-                        )
+                    logger.info("✅ Successfully read file content", 
+                              filename=file_path.name, 
+                              content_length=len(content),
+                              content_preview=content[:200] + "..." if len(content) > 200 else content)
+                    
+                    document = FlashcardDocument(
+                        id=file_path.stem,
+                        filename=file_path.name,
+                        content=content,
                     )
+                    
+                    if document.id == "DBTE_QueryOptimierung":
+                        logger.warning("🚨 PHANTOM DOCUMENT CREATED", 
+                                     document_id=document.id,
+                                     filename=document.filename,
+                                     content_preview=document.content[:500] if document.content else "[NO_CONTENT]")
+                    
+                    documents.append(document)
+                    
                 except Exception as exc:  # noqa: BLE001
                     logger.warning(
                         "Failed to read flashcard file",
                         filename=file_path.name,
                         error=str(exc),
                     )
+        
+        logger.info("✅ LocalFlashcardStorage: Completed listing flashcards", 
+                   total_documents=len(documents))
+        
         return documents
 
     def get_flashcard(self, flashcard_id: str) -> Optional[FlashcardDocument]:

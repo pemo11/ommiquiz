@@ -1,10 +1,11 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File, APIRouter, Form, Depends
+from fastapi import FastAPI, HTTPException, UploadFile, File, APIRouter, Form, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 from pydantic import BaseModel
 import yaml
 import re
-from datetime import datetime
+import json
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, Any, Optional, List, Tuple
 
@@ -141,12 +142,53 @@ def _extract_flashcard_metadata(document: FlashcardDocument) -> Dict[str, Any]:
 def collect_flashcard_metadata() -> List[Dict[str, Any]]:
     """Collect metadata for all flashcard YAML files"""
     flashcard_files: List[Dict[str, Any]] = []
-
-    for document in storage.list_flashcards():
+    
+    logger.info("🔍 Starting flashcard metadata collection")
+    
+    all_documents = storage.list_flashcards()
+    logger.info("📋 Storage returned documents", count=len(all_documents))
+    
+    for index, document in enumerate(all_documents):
+        logger.info("🔍 Processing document", 
+                   index=index + 1, 
+                   filename=document.filename, 
+                   id=document.id,
+                   content_length=len(document.content) if document.content else 0)
+        
         if document.filename == CATALOG_FILENAME:
-            logger.debug("Skipping catalog file during metadata collection", filename=document.filename)
+            logger.debug("⏭️ Skipping catalog file during metadata collection", filename=document.filename)
             continue
-        flashcard_files.append(_extract_flashcard_metadata(document))
+            
+        # Add detailed logging before processing each file
+        logger.info("📄 About to extract metadata from", 
+                   filename=document.filename,
+                   has_content=bool(document.content))
+        
+        metadata = _extract_flashcard_metadata(document)
+        
+        # Log the extracted metadata with special attention to phantom modules
+        logger.info("📊 Extracted metadata", 
+                   filename=document.filename,
+                   metadata=metadata,
+                   is_empty_module=not metadata.get("module"),
+                   is_query_optimierung=metadata.get("id") == "DBTE_QueryOptimierung")
+        
+        if metadata.get("id") == "DBTE_QueryOptimierung":
+            logger.warning("🚨 PHANTOM MODULE DETECTED IN BACKEND", 
+                          filename=document.filename,
+                          full_metadata=metadata,
+                          content_preview=document.content[:500] if document.content else "[NO_CONTENT]")
+        
+        flashcard_files.append(metadata)
+    
+    logger.info("✅ Flashcard metadata collection complete", total_count=len(flashcard_files))
+    
+    # Final analysis of collected metadata
+    phantom_modules = [f for f in flashcard_files if not f.get("title") and not f.get("description")]
+    if phantom_modules:
+        logger.warning("🚨 Found phantom modules in collection", 
+                      count=len(phantom_modules), 
+                      phantom_modules=phantom_modules)
 
     return flashcard_files
 
@@ -649,6 +691,231 @@ async def validate_flashcard_file(file: UploadFile = File(...)):
             "topics": data.get("topics", [])
         } if validation["valid"] else None
     }
+
+@api_router.get("/logs")
+async def query_logs(
+    start_time: Optional[datetime] = Query(None, description="Start time for log filtering (ISO format)"),
+    end_time: Optional[datetime] = Query(None, description="End time for log filtering (ISO format)"), 
+    level: Optional[str] = Query(None, description="Log level filter (DEBUG, INFO, WARNING, ERROR)"),
+    message_contains: Optional[str] = Query(None, description="Filter logs containing this text"),
+    limit: int = Query(100, description="Maximum number of log entries to return"),
+    offset: int = Query(0, description="Number of log entries to skip")
+):
+    """Query and filter log entries from application logs"""
+    logger.info("Querying logs", 
+               start_time=start_time, 
+               end_time=end_time, 
+               level=level, 
+               message_contains=message_contains,
+               limit=limit,
+               offset=offset)
+
+    try:
+        # Support both Docker and local development paths for logs
+        if Path("/app/logs").exists():
+            logs_dir = Path("/app/logs")
+        else:
+            logs_dir = Path(__file__).parent.parent / "logs"
+            
+        if not logs_dir.exists():
+            logger.warning("Logs directory not found", logs_dir=str(logs_dir))
+            raise HTTPException(status_code=404, detail="Logs directory not found")
+
+        log_entries = []
+        
+        # Get all log files sorted by modification time (newest first)
+        log_files = sorted(logs_dir.glob("*.log"), key=lambda x: x.stat().st_mtime, reverse=True)
+        
+        if not log_files:
+            logger.warning("No log files found", logs_dir=str(logs_dir))
+            return {"logs": [], "total": 0, "filtered": 0}
+
+        # Process log files (limit to last 7 days to avoid performance issues)
+        recent_files = log_files[:7]  # Last 7 log files
+        
+        for log_file in recent_files:
+            try:
+                with open(log_file, 'r', encoding='utf-8') as f:
+                    for line_num, line in enumerate(f, 1):
+                        line = line.strip()
+                        if not line:
+                            continue
+                            
+                        try:
+                            # Try to parse as JSON (structured log)
+                            log_data = json.loads(line)
+                            
+                            # Normalize timestamp field
+                            timestamp_str = log_data.get("timestamp") or log_data.get("asctime") or log_data.get("dt")
+                            if timestamp_str:
+                                # Parse ISO format timestamp
+                                try:
+                                    if timestamp_str.endswith('Z'):
+                                        timestamp_str = timestamp_str[:-1] + '+00:00'
+                                    log_timestamp = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+                                except:
+                                    # Fallback parsing
+                                    log_timestamp = datetime.now()
+                            else:
+                                log_timestamp = datetime.now()
+                            
+                            entry = {
+                                "timestamp": log_timestamp.isoformat(),
+                                "level": log_data.get("level") or log_data.get("levelname", "INFO"),
+                                "message": log_data.get("message", ""),
+                                "logger": log_data.get("logger") or log_data.get("name", ""),
+                                "file": log_file.name,
+                                "line_number": line_num,
+                                "extra": {k: v for k, v in log_data.items() 
+                                        if k not in ["timestamp", "level", "message", "logger", "name", "asctime", "dt"]}
+                            }
+                            
+                        except json.JSONDecodeError:
+                            # Handle plain text logs (fallback)
+                            # Try to extract basic info from text format
+                            parts = line.split(" - ", 3)
+                            if len(parts) >= 4:
+                                timestamp_part = parts[0]
+                                level_part = parts[2] 
+                                message_part = " - ".join(parts[3:])
+                            else:
+                                timestamp_part = datetime.now().isoformat()
+                                level_part = "INFO"
+                                message_part = line
+                                
+                            entry = {
+                                "timestamp": timestamp_part,
+                                "level": level_part,
+                                "message": message_part,
+                                "logger": "unknown",
+                                "file": log_file.name,
+                                "line_number": line_num,
+                                "extra": {}
+                            }
+                        
+                        log_entries.append(entry)
+                        
+            except Exception as e:
+                logger.warning("Failed to read log file", file=log_file.name, error=str(e))
+                continue
+        
+        # Sort by timestamp (newest first)
+        log_entries.sort(key=lambda x: x["timestamp"], reverse=True)
+        
+        total_entries = len(log_entries)
+        
+        # Apply filters
+        filtered_logs = []
+        for entry in log_entries:
+            # Time range filter
+            if start_time:
+                entry_time = datetime.fromisoformat(entry["timestamp"].replace('Z', '+00:00'))
+                if entry_time < start_time:
+                    continue
+            if end_time:
+                entry_time = datetime.fromisoformat(entry["timestamp"].replace('Z', '+00:00'))
+                if entry_time > end_time:
+                    continue
+                    
+            # Level filter
+            if level and entry["level"].upper() != level.upper():
+                continue
+                
+            # Message content filter
+            if message_contains and message_contains.lower() not in entry["message"].lower():
+                continue
+                
+            filtered_logs.append(entry)
+        
+        # Apply pagination
+        paginated_logs = filtered_logs[offset:offset + limit]
+        
+        logger.info("Logs queried successfully", 
+                   total=total_entries,
+                   filtered=len(filtered_logs), 
+                   returned=len(paginated_logs))
+        
+        return {
+            "logs": paginated_logs,
+            "total": total_entries,
+            "filtered": len(filtered_logs),
+            "returned": len(paginated_logs),
+            "offset": offset,
+            "limit": limit
+        }
+        
+    except Exception as e:
+        logger.error("Failed to query logs", error=str(e))
+        raise HTTPException(status_code=500, detail=f"Failed to query logs: {str(e)}")
+
+
+@api_router.get("/logs/files")
+async def list_log_files():
+    """List available log files"""
+    logger.info("Listing log files")
+    
+    try:
+        # Support both Docker and local development paths for logs
+        if Path("/app/logs").exists():
+            logs_dir = Path("/app/logs")
+        else:
+            logs_dir = Path(__file__).parent.parent / "logs"
+            
+        if not logs_dir.exists():
+            raise HTTPException(status_code=404, detail="Logs directory not found")
+
+        log_files = []
+        for log_file in sorted(logs_dir.glob("*.log"), key=lambda x: x.stat().st_mtime, reverse=True):
+            stat = log_file.stat()
+            log_files.append({
+                "filename": log_file.name,
+                "size": stat.st_size,
+                "modified": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+                "size_mb": round(stat.st_size / 1024 / 1024, 2)
+            })
+        
+        logger.info("Log files listed successfully", count=len(log_files))
+        return {"log_files": log_files}
+        
+    except Exception as e:
+        logger.error("Failed to list log files", error=str(e))
+        raise HTTPException(status_code=500, detail=f"Failed to list log files: {str(e)}")
+
+
+@api_router.get("/logs/download/{filename}")
+async def download_log_file(filename: str):
+    """Download a specific log file"""
+    logger.info("Downloading log file", filename=filename)
+    
+    # Validate filename to prevent path traversal
+    if not re.match(r'^[a-zA-Z0-9_-]+\.log$', filename):
+        raise HTTPException(status_code=400, detail="Invalid log filename")
+    
+    try:
+        # Support both Docker and local development paths for logs
+        if Path("/app/logs").exists():
+            logs_dir = Path("/app/logs")
+        else:
+            logs_dir = Path(__file__).parent.parent / "logs"
+            
+        log_file_path = logs_dir / filename
+        
+        if not log_file_path.exists():
+            raise HTTPException(status_code=404, detail="Log file not found")
+        
+        logger.info("Log file download initiated", filename=filename, size=log_file_path.stat().st_size)
+        
+        return FileResponse(
+            path=log_file_path,
+            media_type="text/plain",
+            filename=filename,
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+        
+    except Exception as e:
+        logger.error("Failed to download log file", filename=filename, error=str(e))
+        raise HTTPException(status_code=500, detail=f"Failed to download log file: {str(e)}")
+
 
 # Include the API router with all endpoints
 app.include_router(api_router)

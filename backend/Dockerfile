@@ -14,7 +14,7 @@ COPY app/ ./app/
 COPY flashcards/ ./flashcards/
 
 # Set environment variables for logging
-ENV LOG_FILE_PATH=/app/logs/app.log
+# Remove hardcoded LOG_FILE_PATH to allow date-stamped filenames
 ENV LOG_LEVEL=INFO
 ENV LOG_FORMAT=json
 

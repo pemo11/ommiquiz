@@ -143,16 +143,33 @@ function AdminPanel({ onBack }) {
   const fetchFlashcard = async (flashcardId) => {
     try {
       setLoading(true);
+      console.log('AdminPanel - Fetching flashcard:', flashcardId);
       const response = await fetch(`${API_URL}/flashcards/${flashcardId}`);
+      
+      console.log('AdminPanel - Fetch response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch flashcard');
+        // Get more detailed error information
+        let errorMessage = `Failed to fetch flashcard: ${response.status} ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.detail || errorData.message || errorMessage;
+        } catch (parseError) {
+          // If we can't parse the error response, use the status text
+          console.error('AdminPanel - Error parsing error response:', parseError);
+        }
+        console.error('AdminPanel - Fetch flashcard error:', errorMessage);
+        throw new Error(errorMessage);
       }
+      
       const data = await response.json();
       setSelectedFlashcard(data);
       setEditingFlashcard({ ...data });
       setError(null);
+      console.log('AdminPanel - Flashcard fetched successfully:', flashcardId);
     } catch (err) {
-      setError(err.message);
+      console.error('AdminPanel - Fetch flashcard failed:', err);
+      setError(`Unable to load flashcard '${flashcardId}': ${err.message}`);
     } finally {
       setLoading(false);
     }
