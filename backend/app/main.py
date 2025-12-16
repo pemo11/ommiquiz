@@ -385,10 +385,10 @@ class FlashcardUpdateRequest(BaseModel):
 
 @api_router.put("/flashcards/{flashcard_id}")
 async def update_flashcard(flashcard_id: str, request: FlashcardUpdateRequest):
-    """Update an existing flashcard file"""
-    
+    """Create or update a flashcard file"""
+
     logger.info("Updating flashcard", flashcard_id=flashcard_id)
-    
+
     # Validate ID format
     if not VALID_ID_PATTERN.match(flashcard_id):
         logger.warning("Invalid flashcard ID for update", flashcard_id=flashcard_id)
@@ -396,16 +396,7 @@ async def update_flashcard(flashcard_id: str, request: FlashcardUpdateRequest):
             status_code=400,
             detail="Invalid flashcard ID format. Use only letters, numbers, hyphens, and underscores"
         )
-    
-    document = get_flashcard_document(flashcard_id)
 
-    if document is None:
-        logger.error("Flashcard not found for update", flashcard_id=flashcard_id)
-        raise HTTPException(
-            status_code=404,
-            detail=f"Flashcard '{flashcard_id}' not found"
-        )
-    
     # Parse YAML content
     try:
         data = yaml.safe_load(request.content)
@@ -415,12 +406,12 @@ async def update_flashcard(flashcard_id: str, request: FlashcardUpdateRequest):
             status_code=400,
             detail=f"Invalid YAML format: {str(e)}"
         )
-    
+
     # Validate flashcard structure
     validation = validate_flashcard_yaml(data)
     if not validation["valid"]:
-        logger.warning("Flashcard validation failed during update", 
-                      flashcard_id=flashcard_id, 
+        logger.warning("Flashcard validation failed during update",
+                      flashcard_id=flashcard_id,
                       errors=validation["errors"])
         return JSONResponse(
             status_code=400,
@@ -431,33 +422,57 @@ async def update_flashcard(flashcard_id: str, request: FlashcardUpdateRequest):
                 "warnings": validation["warnings"]
             }
         )
-    
+
     # Verify that the ID in the content matches the URL parameter
     if data.get("id") != flashcard_id:
-        logger.error("ID mismatch in update request", 
-                    flashcard_id=flashcard_id, 
+        logger.error("ID mismatch in update request",
+                    flashcard_id=flashcard_id,
                     content_id=data.get("id"))
         raise HTTPException(
             status_code=400,
             detail=f"ID mismatch: URL specifies '{flashcard_id}' but content has '{data.get('id')}'"
         )
-    
-    # Update the file
+
+    # Determine whether we're creating or updating the file
+    document = get_flashcard_document(flashcard_id)
+    is_new_document = document is None
+
+    if is_new_document and storage.flashcard_exists(flashcard_id):
+        logger.error("Flashcard exists but could not be read", flashcard_id=flashcard_id)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Flashcard '{flashcard_id}' exists but could not be read"
+        )
+
+    filename = (request.filename or "").strip() or f"{flashcard_id}.yaml"
+    overwrite = True
+
+    if is_new_document:
+        logger.info("Flashcard not found, creating new file",
+                    flashcard_id=flashcard_id,
+                    filename=filename)
+        overwrite = False
+    else:
+        filename = document.filename
+
+    # Update or create the file
     try:
         updated_content = yaml.dump(
             data, default_flow_style=False, allow_unicode=True, sort_keys=False
         )
         saved_document = storage.save_flashcard(
-            document.filename, updated_content, overwrite=True
+            filename, updated_content, overwrite=overwrite
         )
 
-        logger.info("Flashcard updated successfully",
+        action = "created" if is_new_document else "updated"
+        logger.info(f"Flashcard {action} successfully",
                    flashcard_id=flashcard_id,
+                   filename=filename,
                    cards_count=len(data.get("flashcards", [])))
 
         return {
             "success": True,
-            "message": f"Flashcard '{flashcard_id}' updated successfully",
+            "message": f"Flashcard '{flashcard_id}' {action} successfully",
             "filename": saved_document.filename,
             "flashcard_id": flashcard_id,
             "warnings": validation["warnings"],
@@ -468,10 +483,19 @@ async def update_flashcard(flashcard_id: str, request: FlashcardUpdateRequest):
                 "topics": data.get("topics", [])
             }
         }
-    
+
+    except FileExistsError as e:
+        logger.warning("Flashcard already exists and overwrite not allowed",
+                      flashcard_id=flashcard_id,
+                      filename=filename,
+                      error=str(e))
+        raise HTTPException(
+            status_code=409,
+            detail=str(e)
+        )
     except Exception as e:
-        logger.error("Failed to update flashcard file", 
-                    flashcard_id=flashcard_id, 
+        logger.error("Failed to update flashcard file",
+                    flashcard_id=flashcard_id,
                     error=str(e))
         raise HTTPException(
             status_code=500,
