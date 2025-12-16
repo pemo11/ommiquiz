@@ -1,0 +1,126 @@
+id: esa1_flashcards
+author: Pemo
+title: Datenbanktechnologien - ESA1
+description: Flashcards ausschließlich auf Basis der ESA1-Aufgaben (Markdown-Datei)
+createDate: 2025-12-16
+language: de
+module: Datenbanktechnologien
+semester: WS 2025/26
+institution: HS Emden Leer
+studycourse: Medieninformatik Master
+topics:
+- Relationale Datenbanken
+- SQL
+- Anfrageoptimierung
+- Ausführungspläne
+- Relationale Algebra
+- Datenmodellierung
+keywords:
+- Selektion
+- Projektion
+- Join
+- Tautologie
+- Ausführungsplan
+flashcards:
+
+- question: Was ist eine Selektion in SQL?
+  answer: Eine Einschränkung der Ergebniszeilen durch ein WHERE-Prädikat.
+
+- question: Wann ist ein Prädikat in SQL eine Tautologie?
+  answer: Wenn es für jede mögliche Zeile immer wahr ist.
+
+- question: Nenne ein Beispiel für eine SQL-Tautologie.
+  answer: WHERE 1 = 1
+
+- question: Was passiert mit einer Selektion mit Tautologie im Ausführungsplan?
+  answer: Sie wird vom Optimierer entfernt oder ignoriert.
+
+- question: Warum ist eine Tautologie in einer SQL-Abfrage problematisch?
+  answer: Sie ist redundant und kann die Lesbarkeit und Optimierung verschlechtern.
+
+- question: Was beschreibt ein Ausführungsplan?
+  answer: Die konkrete Strategie, mit der ein DBMS eine SQL-Abfrage ausführt.
+
+- question: Was bedeutet Seq Scan?
+  answer: Die Tabelle wird vollständig Zeile für Zeile gelesen.
+
+- question: Wann verwendet ein DBMS einen Seq Scan?
+  answer: Wenn kein geeigneter Index existiert oder ein Großteil der Tabelle gelesen werden muss.
+
+- question: Was ist ein Index Scan?
+  answer: Zugriff auf Tabellenzeilen über einen Index.
+
+- question: Was ist ein Bitmap Index Scan?
+  answer: Ein Scan, der Treffer im Index sammelt und anschließend gemeinsam liest.
+
+- question: Was ist ein Bitmap Heap Scan?
+  answer: Das Nachladen der tatsächlichen Tupel anhand der Bitmap.
+
+- question: Was bedeutet cost im Ausführungsplan?
+  answer: Eine interne Kostenschätzung des DBMS, keine Zeitangabe.
+
+- question: Was bedeutet width im Ausführungsplan?
+  answer: Geschätzte durchschnittliche Größe einer Ergebniszeile in Byte.
+
+- question: Was ist ein Hash Join?
+  answer: Ein Join-Verfahren, bei dem eine Tabelle gehasht und die andere dagegen geprüft wird.
+
+- question: Welche Tabelle wird beim Hash Join typischerweise gehasht?
+  answer: Die kleinere Tabelle.
+
+- question: Was ist ein Nested Loop Join?
+  answer: Für jede Zeile der äußeren Tabelle wird die innere Tabelle durchsucht.
+
+- question: Wann ist ein Nested Loop Join sinnvoll?
+  answer: Bei kleinen Tabellen oder stark eingeschränkten Ergebnissen.
+
+- question: Was ist ein Merge Join?
+  answer: Ein Join zweier sortierter Eingaben.
+
+- question: Was bedeutet Join-Reihenfolge-Optimierung?
+  answer: Der Optimierer wählt die Reihenfolge der Joins so, dass Kosten minimiert werden.
+
+- question: Warum werden Subqueries häufig in Joins umgeschrieben?
+  answer: Weil Joins oft effizienter optimiert werden können.
+
+- question: Was ist eine Projektion in der relationalen Algebra?
+  answer: Auswahl bestimmter Attribute aus einer Relation.
+
+- question: Was entspricht der Projektion in SQL?
+  answer: Die Spaltenliste im SELECT-Teil.
+
+- question: Was ist ein kartesisches Produkt?
+  answer: Jede Zeile der einen Relation wird mit jeder der anderen kombiniert.
+
+- question: Warum ist ein kartesisches Produkt meist problematisch?
+  answer: Es erzeugt sehr große Ergebnismengen.
+
+- question: Was ist ein Join aus algebraischer Sicht?
+  answer: Eine Selektion auf dem kartesischen Produkt.
+
+- question: Was bedeutet AND in einer WHERE-Klausel logisch?
+  answer: Beide Bedingungen müssen wahr sein.
+
+- question: Was bedeutet OR in einer WHERE-Klausel logisch?
+  answer: Mindestens eine der Bedingungen muss wahr sein.
+
+- question: Warum können OR-Bedingungen Abfragen verlangsamen?
+  answer: Sie verhindern oft die Nutzung von Indizes.
+
+- question: Was ist eine Anfrageoptimierung?
+  answer: Die automatische oder manuelle Verbesserung der Abfrageausführung.
+
+- question: Was macht der Query Optimizer?
+  answer: Er wählt den günstigsten Ausführungsplan.
+
+- question: Warum ist SELECT * oft ungünstig?
+  answer: Es liest mehr Daten als nötig und verhindert Optimierungen.
+
+- question: Was ist ein Shard?
+  answer: Ein horizontaler Teil einer Datenmenge.
+
+- question: Was ist horizontale Skalierung?
+  answer: Verteilung von Daten auf mehrere Systeme.
+
+- question: Warum ist Sharding komplex?
+  answer: Abfragen über mehrere Shards müssen koordiniert werden.
