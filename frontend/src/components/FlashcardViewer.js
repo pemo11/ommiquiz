@@ -13,6 +13,8 @@ function FlashcardViewer({ flashcard, onBack }) {
   const [showSummary, setShowSummary] = useState(false);
   const [currentCardAnswered, setCurrentCardAnswered] = useState(false);
   const [swipeDirection, setSwipeDirection] = useState(null);
+  const [postponedQueue, setPostponedQueue] = useState([]);
+  const [showCelebration, setShowCelebration] = useState(false);
   const touchStartRef = useRef(null);
   const gestureHandledRef = useRef(false);
 
@@ -50,8 +52,14 @@ function FlashcardViewer({ flashcard, onBack }) {
   // Reset selections when card changes
   useEffect(() => {
     const cardResult = cardResults[currentCardIndex];
-    
+
     if (cardResult) {
+      if (cardResult.correct === false) {
+        setSelectedAnswers([]);
+        setShowCorrectAnswers(false);
+        setCurrentCardAnswered(false);
+        return;
+      }
       // Card was previously answered - restore the state
       if (cardResult.type === 'multiple' && cardResult.selectedAnswers) {
         setSelectedAnswers(cardResult.selectedAnswers);
@@ -82,6 +90,31 @@ function FlashcardViewer({ flashcard, onBack }) {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const proceedToNextCard = () => {
+    const isLastMainCard = currentCardIndex >= cards.length - 1;
+
+    if (!isLastMainCard) {
+      setCurrentCardIndex(currentCardIndex + 1);
+      setIsFlipped(false);
+      setSwipeDirection(null);
+      return;
+    }
+
+    setPostponedQueue(prevQueue => {
+      if (prevQueue.length === 0) {
+        setShowCelebration(true);
+        setShowSummary(true);
+        return prevQueue;
+      }
+
+      const [nextIndex, ...rest] = prevQueue;
+      setCurrentCardIndex(nextIndex);
+      setIsFlipped(false);
+      setSwipeDirection(null);
+      return rest;
+    });
   };
 
   const handleCardClick = () => {
@@ -148,6 +181,12 @@ function FlashcardViewer({ flashcard, onBack }) {
       setSwipeDirection(isCorrect ? 'right' : 'left');
     }
 
+    if (!isCorrect) {
+      setPostponedQueue(prev => prev.includes(currentCardIndex) ? prev : [...prev, currentCardIndex]);
+    } else {
+      setPostponedQueue(prev => prev.filter(idx => idx !== currentCardIndex));
+    }
+
     setCardResults(prev => ({
       ...prev,
       [currentCardIndex]: {
@@ -159,15 +198,10 @@ function FlashcardViewer({ flashcard, onBack }) {
       }
     }));
     setCurrentCardAnswered(true);
-    
+
     // Automatically proceed to next card after a short delay
     setTimeout(() => {
-      if (currentCardIndex < cards.length - 1) {
-        setCurrentCardIndex(currentCardIndex + 1);
-        setIsFlipped(false);
-      } else {
-        setShowSummary(true);
-      }
+      proceedToNextCard();
     }, 500);
 
     setTimeout(() => setSwipeDirection(null), 600);
@@ -185,15 +219,9 @@ function FlashcardViewer({ flashcard, onBack }) {
         userAnswer: 'Skipped'
       }
     }));
-    
+
     // Immediately proceed to next card without showing intermediate state
-    if (currentCardIndex < cards.length - 1) {
-      setCurrentCardIndex(currentCardIndex + 1);
-      setIsFlipped(false);
-      setSwipeDirection(null);
-    } else {
-      setShowSummary(true);
-    }
+    proceedToNextCard();
   };
 
   // Enhanced function to handle multiple choice evaluation
@@ -236,7 +264,13 @@ function FlashcardViewer({ flashcard, onBack }) {
       }
       
       console.log('Final evaluation:', isCorrect);
-      
+
+      if (isCorrect === false) {
+        setPostponedQueue(prev => prev.includes(currentCardIndex) ? prev : [...prev, currentCardIndex]);
+      } else if (isCorrect === true) {
+        setPostponedQueue(prev => prev.filter(idx => idx !== currentCardIndex));
+      }
+
       setCardResults(prev => ({
         ...prev,
         [currentCardIndex]: {
@@ -271,16 +305,7 @@ function FlashcardViewer({ flashcard, onBack }) {
   };
 
   const handleNext = () => {
-    if (currentCardIndex < cards.length - 1) {
-      setCurrentCardIndex(currentCardIndex + 1);
-      setIsFlipped(false);
-      setSwipeDirection(null);
-    } else {
-      // We're on the last card, show summary if there are any results
-      if (Object.keys(cardResults).length > 0) {
-        setShowSummary(true);
-      }
-    }
+    proceedToNextCard();
   };
 
   const handlePrevious = () => {
@@ -311,6 +336,8 @@ function FlashcardViewer({ flashcard, onBack }) {
     setShowSummary(false);
     setCurrentCardAnswered(false);
     setSwipeDirection(null);
+    setPostponedQueue([]);
+    setShowCelebration(false);
   };
 
   if (showSummary) {
@@ -321,6 +348,14 @@ function FlashcardViewer({ flashcard, onBack }) {
         <div className="quiz-summary">
           <div className="summary-header">
             <h2>🎉 Quiz Complete!</h2>
+            {showCelebration && (
+              <div className="celebration">
+                <div className="firework firework-1" />
+                <div className="firework firework-2" />
+                <div className="firework firework-3" />
+                <p className="celebration-message">You cleared every postponed card!</p>
+              </div>
+            )}
             <div className="summary-stats">
               <div className="stat-card">
                 <div className="stat-number">{stats.correct}/{stats.total}</div>
@@ -414,6 +449,16 @@ function FlashcardViewer({ flashcard, onBack }) {
           <span className="stat-value">{formatTime(elapsedTime)}</span>
         </div>
       </div>
+
+      {postponedQueue.length > 0 && (
+        <div className="postponed-banner">
+          <span className="postponed-icon">🔁</span>
+          <div>
+            <div className="postponed-title">Postponed cards in queue</div>
+            <div className="postponed-subtitle">{postponedQueue.length} left to retry</div>
+          </div>
+        </div>
+      )}
 
       {currentCard.type === 'single' ? (
         // Single answer card (flip-style)
