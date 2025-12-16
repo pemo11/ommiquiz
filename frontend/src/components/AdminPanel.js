@@ -183,7 +183,11 @@ function AdminPanel({ onBack }) {
       description: '',
       createDate: new Date().toISOString().split('T')[0],
       language: 'en',
+      module: '',
       level: 'beginner',
+      semester: '',
+      institution: '',
+      studycourse: '',
       topics: [],
       keywords: [],
       flashcards: [
@@ -223,7 +227,11 @@ function AdminPanel({ onBack }) {
         description: '',
         createDate: '',
         language: 'en',
+        module: '',
         level: 'beginner',
+        semester: '',
+        institution: '',
+        studycourse: '',
         topics: [],
         keywords: [],
         flashcards: []
@@ -575,7 +583,11 @@ function AdminPanel({ onBack }) {
     yamlLines.push(`description: ${data.description || ''}`);
     yamlLines.push(`createDate: ${data.createDate}`);
     yamlLines.push(`language: ${data.language}`);
+    yamlLines.push(`module: ${data.module || ''}`);
     yamlLines.push(`level: ${data.level}`);
+    yamlLines.push(`semester: ${data.semester || ''}`);
+    yamlLines.push(`institution: ${data.institution || ''}`);
+    yamlLines.push(`studycourse: ${data.studycourse || ''}`);
 
     const topics = toArray(data.topics);
     if (topics.length > 0) {
@@ -1093,6 +1105,15 @@ flashcards:
                   </select>
                 </div>
                 <div className="form-row">
+                  <label>Module:</label>
+                  <input
+                    type="text"
+                    value={editingFlashcard.module || ''}
+                    onChange={(e) => updateFlashcardField('module', e.target.value)}
+                    placeholder="e.g. Databases, Frontend Development"
+                  />
+                </div>
+                <div className="form-row">
                   <label>Level:</label>
                   <select
                     value={editingFlashcard.level}
@@ -1103,6 +1124,33 @@ flashcards:
                     <option value="advanced">Advanced</option>
                     <option value="expert">Expert</option>
                   </select>
+                </div>
+                <div className="form-row">
+                  <label>Semester:</label>
+                  <input
+                    type="text"
+                    value={editingFlashcard.semester || ''}
+                    onChange={(e) => updateFlashcardField('semester', e.target.value)}
+                    placeholder="e.g. WS 2025/26"
+                  />
+                </div>
+                <div className="form-row">
+                  <label>Institution:</label>
+                  <input
+                    type="text"
+                    value={editingFlashcard.institution || ''}
+                    onChange={(e) => updateFlashcardField('institution', e.target.value)}
+                    placeholder="e.g. HS Emden Leer"
+                  />
+                </div>
+                <div className="form-row">
+                  <label>Study Course:</label>
+                  <input
+                    type="text"
+                    value={editingFlashcard.studycourse || ''}
+                    onChange={(e) => updateFlashcardField('studycourse', e.target.value)}
+                    placeholder="e.g. Medieninformatik Master"
+                  />
                 </div>
                 <div className="form-row">
                   <label>Topics (comma-separated):</label>
