@@ -396,7 +396,9 @@ function AdminPanel({ onBack }) {
       }
     }
 
-    const isUpdatingExisting = selectedFlashcard && selectedFlashcard.id === editingFlashcard.id;
+    const isUpdatingExisting = !isCreatingNew &&
+      selectedFlashcard &&
+      selectedFlashcard.id === editingFlashcard.id;
     const isNewButExists = isCreatingNew && flashcards.some(fc => fc.id === editingFlashcard.id);
 
     if (isNewButExists && !forceOverwrite) {
@@ -439,8 +441,31 @@ function AdminPanel({ onBack }) {
       }
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to save flashcard');
+        let errorMessage = 'Failed to save flashcard';
+
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData?.message || errorData?.detail || errorMessage;
+
+          if (errorData?.errors?.length) {
+            errorMessage += `: ${errorData.errors.join('; ')}`;
+          }
+        } catch (parseError) {
+          try {
+            const errorText = await response.text();
+            if (errorText) {
+              errorMessage += `: ${errorText}`;
+            }
+          } catch {
+            // Ignore secondary parsing errors
+          }
+          // Surface the original parse failure to the console for debugging while
+          // keeping a user-friendly message in the UI.
+          // eslint-disable-next-line no-console
+          console.error('Failed to parse error response from flashcard save', parseError);
+        }
+
+        throw new Error(errorMessage);
       }
 
       await response.json();
