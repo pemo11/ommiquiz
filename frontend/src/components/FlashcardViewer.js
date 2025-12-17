@@ -57,13 +57,6 @@ function FlashcardViewer({ flashcard, onBack }) {
 
   // Reset selections when card changes
   useEffect(() => {
-    if (cardOrder.length === 0 && cards.length > 0) {
-      const initialOrder = cards.map((_, idx) => idx);
-      setCardOrder(initialOrder);
-      setCurrentOrderIndex(0);
-      setCurrentCardIndex(initialOrder[0] ?? 0);
-    }
-
     const cardResult = cardResults[currentCardIndex];
 
     if (cardResult) {
