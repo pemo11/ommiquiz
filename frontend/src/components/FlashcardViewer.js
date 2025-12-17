@@ -343,6 +343,12 @@ function FlashcardViewer({ flashcard, onBack }) {
     }
   };
 
+  // Helper function to check if a card result is postponed
+  const isPostponedResult = (result) => {
+    return result.userAnswer === 'Postponed (not evaluated)' || 
+           result.userAnswer === 'No answer selected (postponed)';
+  };
+
   // Calculate statistics
   const calculateStats = () => {
     const orderedResults = cardOrder
@@ -353,10 +359,7 @@ function FlashcardViewer({ flashcard, onBack }) {
     const total = cardOrder.length;
     const percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
     // Count only cards that were actually postponed (skipped or not evaluated)
-    const postponedCount = orderedResults.filter(r => 
-      r.userAnswer === 'Postponed (not evaluated)' || 
-      r.userAnswer === 'No answer selected (postponed)'
-    ).length;
+    const postponedCount = orderedResults.filter(isPostponedResult).length;
     const levels = orderedResults.reduce((acc, result) => {
       const levelKey = result.level || 'Unspecified';
       if (!acc[levelKey]) {
@@ -364,7 +367,7 @@ function FlashcardViewer({ flashcard, onBack }) {
       }
       if (result.correct) {
         acc[levelKey].done += 1;
-      } else if (result.userAnswer === 'Postponed (not evaluated)' || result.userAnswer === 'No answer selected (postponed)') {
+      } else if (isPostponedResult(result)) {
         acc[levelKey].postponed += 1;
       }
       return acc;
@@ -427,10 +430,7 @@ function FlashcardViewer({ flashcard, onBack }) {
 
   const handleRepeatPostponed = () => {
     const postponedOnly = Object.entries(cardResults)
-      .filter(([, result]) => 
-        result.userAnswer === 'Postponed (not evaluated)' || 
-        result.userAnswer === 'No answer selected (postponed)'
-      )
+      .filter(([, result]) => isPostponedResult(result))
       .map(([idx]) => Number(idx));
 
     const nextOrder = postponedOnly.length > 0 ? postponedOnly : cards.map((_, idx) => idx);
