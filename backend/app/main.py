@@ -21,7 +21,7 @@ setup_logging()
 # Get application logger
 logger = get_logger("ommiquiz.main")
 
-app = FastAPI(title="Ommiquiz API", version="1.0.5")
+app = FastAPI(title="Ommiquiz API", version="1.0.6")
 
 # Add logging middleware first
 app.add_middleware(LoggingMiddleware)
@@ -291,7 +291,7 @@ async def get_version():
     """Get API version and system information"""
     logger.debug("Version endpoint requested")
     return {
-        "api_version": "1.0.5",
+        "api_version": "1.0.6",
         "service_name": "Ommiquiz API",
         "status": "running"
     }

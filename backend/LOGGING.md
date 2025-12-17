@@ -42,7 +42,7 @@ All logging configuration is controlled through environment variables:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `APP_NAME` | `ommiquiz-backend` | Application name in logs |
-| `APP_VERSION` | `1.0.5` | Application version |
+| `APP_VERSION` | `1.0.6` | Application version |
 | `ENVIRONMENT` | `development` | Environment (development/staging/production) |
 
 ## Usage Examples
@@ -95,7 +95,7 @@ docker-compose up
   "message": "Getting flashcard",
   "flashcard_id": "python-basics",
   "app_name": "ommiquiz-backend",
-  "app_version": "1.0.5",
+  "app_version": "1.0.6",
   "environment": "development"
 }
 ```
