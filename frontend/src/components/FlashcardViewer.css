@@ -805,7 +805,7 @@
 
 .restart-button:disabled {
   background-color: #cbd5e1;
-  color: #475569;
+  color: #0f172a;
   cursor: not-allowed;
   box-shadow: none;
   transform: none;
