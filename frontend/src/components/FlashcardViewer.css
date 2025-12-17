@@ -38,6 +38,107 @@
   font-size: 0.95rem;
 }
 
+.level-mix-panel {
+  background-color: rgba(255, 255, 255, 0.95);
+  padding: 1.25rem;
+  border-radius: 10px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.level-mix-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.level-mix-subtitle {
+  color: #666;
+  margin: 0.2rem 0 0;
+}
+
+.level-availability {
+  display: flex;
+  gap: 0.75rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.level-mix-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.level-mix-input {
+  flex: 1;
+  min-width: 220px;
+  padding: 0.75rem 1rem;
+  border: 1px solid #d2d6dc;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.level-mix-input:focus {
+  outline: 2px solid #667eea;
+  border-color: #667eea;
+}
+
+.level-mix-apply,
+.level-mix-reset {
+  background-color: #667eea;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+}
+
+.level-mix-reset {
+  background-color: #e2e8f0;
+  color: #2d3748;
+}
+
+.level-mix-apply:hover,
+.level-mix-reset:hover {
+  transform: translateY(-1px);
+}
+
+.level-mix-apply:hover {
+  background-color: #5568d3;
+}
+
+.level-mix-reset:hover {
+  background-color: #cbd5e0;
+}
+
+.level-mix-error {
+  color: #c53030;
+  background: #fff5f5;
+  border: 1px solid #feb2b2;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+}
+
+.level-mix-warnings {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: #b7791f;
+}
+
+.level-mix-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  color: #2d3748;
+  font-weight: 600;
+}
+
 .stats-bar {
   background-color: rgba(255, 255, 255, 0.95);
   padding: 1rem 2rem;
