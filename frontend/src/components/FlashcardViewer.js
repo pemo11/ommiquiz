@@ -13,6 +13,8 @@ function FlashcardViewer({ flashcard, onBack }) {
   const [showSummary, setShowSummary] = useState(false);
   const [currentCardAnswered, setCurrentCardAnswered] = useState(false);
   const [swipeDirection, setSwipeDirection] = useState(null);
+  const [postponedQueue, setPostponedQueue] = useState([]);
+  const [showCelebration, setShowCelebration] = useState(false);
   const touchStartRef = useRef(null);
   const gestureHandledRef = useRef(false);
 
@@ -23,6 +25,8 @@ function FlashcardViewer({ flashcard, onBack }) {
   console.log('Cards length:', cards.length);
 
   const currentCard = cards[currentCardIndex];
+  const rawCardType = currentCard?.type || (Array.isArray(currentCard?.correctAnswers) ? 'multiple' : 'single');
+  const cardType = (typeof rawCardType === 'string' ? rawCardType.toLowerCase() : rawCardType) || 'single';
 
   const getBitmapSrc = (bitmap) => {
     if (!bitmap) return null;
@@ -50,8 +54,14 @@ function FlashcardViewer({ flashcard, onBack }) {
   // Reset selections when card changes
   useEffect(() => {
     const cardResult = cardResults[currentCardIndex];
-    
+
     if (cardResult) {
+      if (cardResult.correct === false) {
+        setSelectedAnswers([]);
+        setShowCorrectAnswers(false);
+        setCurrentCardAnswered(false);
+        return;
+      }
       // Card was previously answered - restore the state
       if (cardResult.type === 'multiple' && cardResult.selectedAnswers) {
         setSelectedAnswers(cardResult.selectedAnswers);
@@ -84,13 +94,38 @@ function FlashcardViewer({ flashcard, onBack }) {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const proceedToNextCard = () => {
+    const isLastMainCard = currentCardIndex >= cards.length - 1;
+
+    if (!isLastMainCard) {
+      setCurrentCardIndex(currentCardIndex + 1);
+      setIsFlipped(false);
+      setSwipeDirection(null);
+      return;
+    }
+
+    setPostponedQueue(prevQueue => {
+      if (prevQueue.length === 0) {
+        setShowCelebration(true);
+        setShowSummary(true);
+        return prevQueue;
+      }
+
+      const [nextIndex, ...rest] = prevQueue;
+      setCurrentCardIndex(nextIndex);
+      setIsFlipped(false);
+      setSwipeDirection(null);
+      return rest;
+    });
+  };
+
   const handleCardClick = () => {
     if (gestureHandledRef.current) {
       gestureHandledRef.current = false;
       return;
     }
 
-    if (currentCard.type === 'single' && !currentCardAnswered) {
+    if (cardType === 'single' && !currentCardAnswered) {
       setIsFlipped(!isFlipped);
     }
   };
@@ -105,7 +140,7 @@ function FlashcardViewer({ flashcard, onBack }) {
   };
 
   const handleTouchEnd = (event) => {
-    if (!touchStartRef.current || currentCard.type !== 'single' || currentCardAnswered) {
+    if (!touchStartRef.current || cardType !== 'single' || currentCardAnswered) {
       return;
     }
 
@@ -131,7 +166,7 @@ function FlashcardViewer({ flashcard, onBack }) {
   };
 
   const handleAnswerSelect = (answerIndex) => {
-    if (currentCard.type === 'multiple' && !currentCardAnswered) {
+    if (cardType === 'multiple' && !currentCardAnswered) {
       setSelectedAnswers(prev => {
         if (prev.includes(answerIndex)) {
           return prev.filter(idx => idx !== answerIndex);
@@ -144,8 +179,14 @@ function FlashcardViewer({ flashcard, onBack }) {
 
   // New function to handle single-answer card evaluation
   const handleSingleAnswerEvaluation = (isCorrect) => {
-    if (swipeDirection === null && currentCard.type === 'single' && !currentCardAnswered) {
+    if (swipeDirection === null && cardType === 'single' && !currentCardAnswered) {
       setSwipeDirection(isCorrect ? 'right' : 'left');
+    }
+
+    if (!isCorrect) {
+      setPostponedQueue(prev => prev.includes(currentCardIndex) ? prev : [...prev, currentCardIndex]);
+    } else {
+      setPostponedQueue(prev => prev.filter(idx => idx !== currentCardIndex));
     }
 
     setCardResults(prev => ({
@@ -159,46 +200,18 @@ function FlashcardViewer({ flashcard, onBack }) {
       }
     }));
     setCurrentCardAnswered(true);
-    
+
     // Automatically proceed to next card after a short delay
     setTimeout(() => {
-      if (currentCardIndex < cards.length - 1) {
-        setCurrentCardIndex(currentCardIndex + 1);
-        setIsFlipped(false);
-      } else {
-        setShowSummary(true);
-      }
+      proceedToNextCard();
     }, 500);
 
     setTimeout(() => setSwipeDirection(null), 600);
   };
 
-  // New function to handle skip action
-  const handleSkip = () => {
-    setCardResults(prev => ({
-      ...prev,
-      [currentCardIndex]: {
-        type: currentCard.type,
-        correct: null, // null indicates skipped
-        question: currentCard.question,
-        answer: currentCard.type === 'single' ? currentCard.answer : currentCard.answers.filter((_, idx) => currentCard.correctAnswers[idx]).join(', '),
-        userAnswer: 'Skipped'
-      }
-    }));
-    
-    // Immediately proceed to next card without showing intermediate state
-    if (currentCardIndex < cards.length - 1) {
-      setCurrentCardIndex(currentCardIndex + 1);
-      setIsFlipped(false);
-      setSwipeDirection(null);
-    } else {
-      setShowSummary(true);
-    }
-  };
-
   // Enhanced function to handle multiple choice evaluation
   const handleShowAnswers = () => {
-    if (currentCard.type === 'multiple' && !currentCardAnswered) {
+    if (cardType === 'multiple' && !currentCardAnswered) {
       setShowCorrectAnswers(true);
       
       // Calculate if the answer is correct
@@ -220,9 +233,9 @@ function FlashcardViewer({ flashcard, onBack }) {
       let userAnswer;
       
       if (selectedAnswers.length === 0) {
-        // No answers selected - treat as "just viewing"
-        isCorrect = null; // null indicates "just viewing/learning"
-        userAnswer = 'No answer selected (viewing only)';
+        // No answers selected - treat as postponed
+        isCorrect = false;
+        userAnswer = 'No answer selected (postponed)';
       } else {
         // Answer is correct ONLY if user selected ALL correct answers and NO incorrect ones
         if (userIncorrectCount === 0 && userCorrectCount === totalCorrectAnswers) {
@@ -236,7 +249,13 @@ function FlashcardViewer({ flashcard, onBack }) {
       }
       
       console.log('Final evaluation:', isCorrect);
-      
+
+      if (isCorrect === false) {
+        setPostponedQueue(prev => prev.includes(currentCardIndex) ? prev : [...prev, currentCardIndex]);
+      } else if (isCorrect === true) {
+        setPostponedQueue(prev => prev.filter(idx => idx !== currentCardIndex));
+      }
+
       setCardResults(prev => ({
         ...prev,
         [currentCardIndex]: {
@@ -271,16 +290,7 @@ function FlashcardViewer({ flashcard, onBack }) {
   };
 
   const handleNext = () => {
-    if (currentCardIndex < cards.length - 1) {
-      setCurrentCardIndex(currentCardIndex + 1);
-      setIsFlipped(false);
-      setSwipeDirection(null);
-    } else {
-      // We're on the last card, show summary if there are any results
-      if (Object.keys(cardResults).length > 0) {
-        setShowSummary(true);
-      }
-    }
+    proceedToNextCard();
   };
 
   const handlePrevious = () => {
@@ -311,6 +321,8 @@ function FlashcardViewer({ flashcard, onBack }) {
     setShowSummary(false);
     setCurrentCardAnswered(false);
     setSwipeDirection(null);
+    setPostponedQueue([]);
+    setShowCelebration(false);
   };
 
   if (showSummary) {
@@ -321,6 +333,14 @@ function FlashcardViewer({ flashcard, onBack }) {
         <div className="quiz-summary">
           <div className="summary-header">
             <h2>🎉 Quiz Complete!</h2>
+            {showCelebration && (
+              <div className="celebration">
+                <div className="firework firework-1" />
+                <div className="firework firework-2" />
+                <div className="firework firework-3" />
+                <p className="celebration-message">You cleared every postponed card!</p>
+              </div>
+            )}
             <div className="summary-stats">
               <div className="stat-card">
                 <div className="stat-number">{stats.correct}/{stats.total}</div>
@@ -340,10 +360,10 @@ function FlashcardViewer({ flashcard, onBack }) {
           <div className="detailed-results">
             <h3>Detailed Results</h3>
             {stats.results.map((result, index) => (
-              <div key={index} className={`result-item ${result.correct === null ? 'skipped-result' : result.correct ? 'correct-result' : 'incorrect-result'}`}>
+              <div key={index} className={`result-item ${result.correct ? 'correct-result' : 'incorrect-result'}`}>
                 <div className="result-header">
                   <span className="result-indicator">
-                    {result.correct === null ? '⏭️' : result.correct ? '✅' : '❌'}
+                    {result.correct ? '✅' : '❌'}
                   </span>
                   <span className="result-question">Q{index + 1}: {result.question}</span>
                 </div>
@@ -415,7 +435,17 @@ function FlashcardViewer({ flashcard, onBack }) {
         </div>
       </div>
 
-      {currentCard.type === 'single' ? (
+      {postponedQueue.length > 0 && (
+        <div className="postponed-banner">
+          <span className="postponed-icon">🔁</span>
+          <div>
+            <div className="postponed-title">Postponed cards in queue</div>
+            <div className="postponed-subtitle">{postponedQueue.length} left to retry</div>
+          </div>
+        </div>
+      )}
+
+      {cardType === 'single' ? (
         // Single answer card (flip-style)
         <div className="card-container">
           <div
@@ -450,12 +480,6 @@ function FlashcardViewer({ flashcard, onBack }) {
                     📤 Postpone
                   </button>
                   <button 
-                    onClick={(e) => { e.stopPropagation(); handleSkip(); }}
-                    className="eval-button skip-button"
-                  >
-                    ⏭️ Skip
-                  </button>
-                  <button 
                     onClick={(e) => { e.stopPropagation(); handleSingleAnswerEvaluation(true); }}
                     className="eval-button correct-button"
                   >
@@ -465,9 +489,7 @@ function FlashcardViewer({ flashcard, onBack }) {
               )}
               {currentCardAnswered && (
                 <div className="answered-indicator">
-                  {cardResults[currentCardIndex]?.correct === null ? (
-                    <span className="skip-indicator">⏭️ Skipped</span>
-                  ) : cardResults[currentCardIndex]?.correct ? (
+                  {cardResults[currentCardIndex]?.correct ? (
                     <span className="correct-indicator">✅ Marked as Done</span>
                   ) : (
                     <span className="incorrect-indicator">📤 Postponed</span>
@@ -545,32 +567,17 @@ function FlashcardViewer({ flashcard, onBack }) {
                 >
                   Show Correct Answers
                 </button>
-                <button 
-                  onClick={handleSkip}
-                  className="eval-button skip-button"
-                  style={{ padding: '1rem 2rem', fontSize: '1rem', borderRadius: '10px' }}
-                >
-                  ⏭️ Skip
-                </button>
               </div>
             )}
             
             {showCorrectAnswers && (
               <div className="evaluation-result">
-                {cardResults[currentCardIndex]?.correct === null ? (
-                  <div className="answered-indicator">
-                    <span className="skip-indicator">💡 Viewing answers for learning</span>
-                  </div>
-                ) : cardResults[currentCardIndex]?.correct ? (
+                {cardResults[currentCardIndex]?.correct ? (
                   <div className="correct-evaluation">✅ Correct! You got it right!</div>
-                ) : cardResults[currentCardIndex]?.correct === false ? (
+                ) : (
                   <div className="incorrect-evaluation">
                     ❌ Incorrect. Review the correct answers above.
                     <button onClick={handleTryAgain} className="try-again-button">🔄 Try Again</button>
-                  </div>
-                ) : (
-                  <div className="answered-indicator">
-                    <span className="skip-indicator">💡 Viewing answers for learning</span>
                   </div>
                 )}
               </div>
