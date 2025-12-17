@@ -1,195 +1,195 @@
-id: esa2_datawarehouse_quiz
-author: Pemo
-title: Datenbanktechnologien ESA 2 – Data Warehouse & Data Mining
-description: Flashcard-Quiz zu Sternschema, OLAP-Abfragen und Assoziationsregeln auf Basis der ESA2-Aufgaben und Lösungen
-createDate: 2025-12-16
-language: de
-module: Datenbanktechnologien
-semester: WS 2025/26
-institution: HS Emden Leer
-studycourse: Medieninformatik Master
+id: "esa2_datawarehouse_quiz"
+author: "Pemo"
+title: "Datenbanktechnologien ESA 2 – Data Warehouse & Data Mining"
+description: "Flashcard-Quiz zu Sternschema, OLAP-Abfragen und Assoziationsregeln auf Basis der ESA2-Aufgaben und Lösungen"
+createDate: "2025-12-16"
+language: "de"
+module: "Datenbanktechnologien"
+semester: "WS 2025/26"
+institution: "HS Emden Leer"
+studycourse: "Medieninformatik Master"
 topics:
-- Data Warehouse
-- Sternschema
-- OLAP
-- Aggregationen
-- Data Mining
-- Marktkorbanalyse
+  - "Data Warehouse"
+  - "Sternschema"
+  - "OLAP"
+  - "Aggregationen"
+  - "Data Mining"
+  - "Marktkorbanalyse"
 keywords:
-- Faktentabelle
-- Dimension
-- Sternschema
-- Support
-- Confidence
-- Lift
+  - "Faktentabelle"
+  - "Dimension"
+  - "Sternschema"
+  - "Support"
+  - "Confidence"
+  - "Lift"
 flashcards:
 
-- question: Was ist das Hauptziel eines Data Warehouses?
-  answer: Analyse großer Datenmengen zur Entscheidungsunterstützung.
-  level: A
+  - question: "Was ist das Hauptziel eines Data Warehouses?"
+    answer: "Analyse großer Datenmengen zur Entscheidungsunterstützung."
+    level: "A"
 
-- question: Welche Art von Workloads stehen im Fokus eines Data Warehouses?
-  answer: Analytische Abfragen (OLAP).
-  level: A
+  - question: "Welche Art von Workloads stehen im Fokus eines Data Warehouses?"
+    answer: "Analytische Abfragen (OLAP)."
+    level: "A"
 
-- question: Was ist eine Faktentabelle?
-  answer: Eine Tabelle, die messbare Kennzahlen wie Umsatz oder Menge enthält.
-  level: A
+  - question: "Was ist eine Faktentabelle?"
+    answer: "Eine Tabelle, die messbare Kennzahlen wie Umsatz oder Menge enthält."
+    level: "A"
 
-- question: Was sind Dimensionstabellen?
-  answer: Tabellen, die Kontextinformationen für Fakten liefern.
-  level: A
+  - question: "Was sind Dimensionstabellen?"
+    answer: "Tabellen, die Kontextinformationen für Fakten liefern."
+    level: "A"
 
-- question: Welche Tabellen stehen im Zentrum des Sternschemas?
-  answer: Die Faktentabellen.
-  level: A
+  - question: "Welche Tabellen stehen im Zentrum des Sternschemas?"
+    answer: "Die Faktentabellen."
+    level: "A"
 
-- question: Welche Dimensionen wurden im ESA2-Beispiel verwendet?
-  answers:
-    - Produkt
-    - Filiale
-    - Zeit
-    - Kunde
-  correctAnswers:
-    - true
-    - true
-    - true
-    - false
-  type: multiple
-  level: A
+  - question: "Welche Dimensionen wurden im ESA2-Beispiel verwendet?"
+    answers:
+      - "Produkt"
+      - "Filiale"
+      - "Zeit"
+      - "Kunde"
+    correctAnswers:
+      - true
+      - true
+      - true
+      - false
+    type: "multiple"
+    level: "A"
 
-- question: Warum ist das Sternschema bewusst denormalisiert?
-  answer: Um analytische Abfragen mit wenigen Joins effizient auszuführen.
-  level: A
+  - question: "Warum ist das Sternschema bewusst denormalisiert?"
+    answer: "Um analytische Abfragen mit wenigen Joins effizient auszuführen."
+    level: "A"
 
-- question: Welche Vorteile bietet das Sternschema?
-  answers:
-    - Einfache Abfragen
-    - Gute Performance bei Aggregationen
-    - Optimiert für OLTP
-    - Gute Verständlichkeit
-  correctAnswers:
-    - true
-    - true
-    - false
-    - true
-  type: multiple
-  level: A
+  - question: "Welche Vorteile bietet das Sternschema?"
+    answers:
+      - "Einfache Abfragen"
+      - "Gute Performance bei Aggregationen"
+      - "Optimiert für OLTP"
+      - "Gute Verständlichkeit"
+    correctAnswers:
+      - true
+      - true
+      - false
+      - true
+    type: "multiple"
+    level: "A"
 
-- question: Welche Rolle spielen Fremdschlüssel in der Faktentabelle?
-  answer: Sie verbinden die Fakten mit den Dimensionen.
-  level: A
+  - question: "Welche Rolle spielen Fremdschlüssel in der Faktentabelle?"
+    answer: "Sie verbinden die Fakten mit den Dimensionen."
+    level: "A"
 
-- question: Warum ist die Faktentabelle oft sehr groß?
-  answer: Weil sie Ereignisse wie einzelne Verkäufe enthält.
-  level: A
+  - question: "Warum ist die Faktentabelle oft sehr groß?"
+    answer: "Weil sie Ereignisse wie einzelne Verkäufe enthält."
+    level: "A"
 
-- question: Welche Kennzahlen enthält die Faktentabelle fact_sales?
-  answer: quantity und revenue.
-  level: A
+  - question: "Welche Kennzahlen enthält die Faktentabelle fact_sales?"
+    answer: "quantity und revenue."
+    level: "A"
 
-- question: Warum eignen sich Faktentabellen gut für Partitionierung?
-  answer: Weil sie schlank sind und große Datenmengen enthalten.
-  level: B
+  - question: "Warum eignen sich Faktentabellen gut für Partitionierung?"
+    answer: "Weil sie schlank sind und große Datenmengen enthalten."
+    level: "B"
 
-- question: Was ist eine typische OLAP-Abfrage?
-  answer: Umsatz pro Region und Jahr.
-  level: A
+  - question: "Was ist eine typische OLAP-Abfrage?"
+    answer: "Umsatz pro Region und Jahr."
+    level: "A"
 
-- question: Welche Operation wird bei OLAP-Abfragen häufig verwendet?
-  answer: Aggregation.
-  level: A
+  - question: "Welche Operation wird bei OLAP-Abfragen häufig verwendet?"
+    answer: "Aggregation."
+    level: "A"
 
-- question: Was bedeutet Roll-up in der Zeitdimension?
-  answer: Aggregation von Daten auf eine höhere Zeitebene.
-  level: B
+  - question: "Was bedeutet Roll-up in der Zeitdimension?"
+    answer: "Aggregation von Daten auf eine höhere Zeitebene."
+    level: "B"
 
-- question: Welche Zeitattribute enthält die Zeitdimension?
-  answers:
-    - Tag
-    - Monat
-    - Jahr
-    - Uhrzeit
-  correctAnswers:
-    - true
-    - true
-    - true
-    - false
-  type: multiple
-  level: A
+  - question: "Welche Zeitattribute enthält die Zeitdimension?"
+    answers:
+      - "Tag"
+      - "Monat"
+      - "Jahr"
+      - "Uhrzeit"
+    correctAnswers:
+      - true
+      - true
+      - true
+      - false
+    type: "multiple"
+    level: "A"
 
-- question: Warum sind BI-Tools gut mit Sternschemata kompatibel?
-  answer: Weil Struktur und Abfragen klar und standardisiert sind.
-  level: A
+  - question: "Warum sind BI-Tools gut mit Sternschemata kompatibel?"
+    answer: "Weil Struktur und Abfragen klar und standardisiert sind."
+    level: "A"
 
-- question: Was ist eine Marktkorbanalyse?
-  answer: Analyse häufig gemeinsam gekaufter Produkte.
-  level: A
+  - question: "Was ist eine Marktkorbanalyse?"
+    answer: "Analyse häufig gemeinsam gekaufter Produkte."
+    level: "A"
 
-- question: Was bedeutet Support bei Assoziationsregeln?
-  answer: Anteil aller Transaktionen, die die Produktkombination enthalten.
-  level: A
+  - question: "Was bedeutet Support bei Assoziationsregeln?"
+    answer: "Anteil aller Transaktionen, die die Produktkombination enthalten."
+    level: "A"
 
-- question: Was bedeutet Confidence bei Assoziationsregeln?
-  answer: Wahrscheinlichkeit, dass Produkt B gekauft wird, wenn Produkt A gekauft wird.
-  level: A
+  - question: "Was bedeutet Confidence bei Assoziationsregeln?"
+    answer: "Wahrscheinlichkeit, dass Produkt B gekauft wird, wenn Produkt A gekauft wird."
+    level: "A"
 
-- question: Wie ist die Regel {Chips} → {Bier} mit Support 12 % zu interpretieren?
-  answer: 12 % aller Einkäufe enthalten Chips und Bier.
-  level: A
+  - question: "Wie ist die Regel {Chips} → {Bier} mit Support 12 % zu interpretieren?"
+    answer: "12 % aller Einkäufe enthalten Chips und Bier."
+    level: "A"
 
-- question: Wie ist die Confidence von 70 % zu interpretieren?
-  answer: 70 % der Chips-Käufer kaufen auch Bier.
-  level: A
+  - question: "Wie ist die Confidence von 70 % zu interpretieren?"
+    answer: "70 % der Chips-Käufer kaufen auch Bier."
+    level: "A"
 
-- question: Welche Aussage ist korrekt?
-  answers:
-    - Chips sind ein starker Hinweis auf Bierkauf
-    - Bier verursacht den Kauf von Chips
-    - Die Regel ist symmetrisch
-    - Die Regel ist gerichtet
-  correctAnswers:
-    - true
-    - false
-    - false
-    - true
-  type: multiple
-  level: B
+  - question: "Welche Aussage ist korrekt?"
+    answers:
+      - "Chips sind ein starker Hinweis auf Bierkauf"
+      - "Bier verursacht den Kauf von Chips"
+      - "Die Regel ist symmetrisch"
+      - "Die Regel ist gerichtet"
+    correctAnswers:
+      - true
+      - false
+      - false
+      - true
+    type: "multiple"
+    level: "B"
 
-- question: Welche Maßnahmen lassen sich aus der Regel ableiten?
-  answers:
-    - Gemeinsame Platzierung
-    - Cross-Selling
-    - Erhöhung der Bierbestände
-    - Abschaffung von Bier
-  correctAnswers:
-    - true
-    - true
-    - true
-    - false
-  type: multiple
-  level: A
+  - question: "Welche Maßnahmen lassen sich aus der Regel ableiten?"
+    answers:
+      - "Gemeinsame Platzierung"
+      - "Cross-Selling"
+      - "Erhöhung der Bierbestände"
+      - "Abschaffung von Bier"
+    correctAnswers:
+      - true
+      - true
+      - true
+      - false
+    type: "multiple"
+    level: "A"
 
-- question: Warum reicht Confidence allein nicht zur Bewertung einer Regel?
-  answer: Weil sie die Grundhäufigkeit der Produkte nicht berücksichtigt.
-  level: B
+  - question: "Warum reicht Confidence allein nicht zur Bewertung einer Regel?"
+    answer: "Weil sie die Grundhäufigkeit der Produkte nicht berücksichtigt."
+    level: "B"
 
-- question: Was misst der Lift-Effekt?
-  answer: Ob zwei Produkte häufiger gemeinsam gekauft werden als zufällig erwartet.
-  level: B
+  - question: "Was misst der Lift-Effekt?"
+    answer: "Ob zwei Produkte häufiger gemeinsam gekauft werden als zufällig erwartet."
+    level: "B"
 
-- question: Wann ist eine Assoziationsregel besonders interessant?
-  answer: Bei hohem Support, hoher Confidence und Lift > 1.
-  level: B
+  - question: "Wann ist eine Assoziationsregel besonders interessant?"
+    answer: "Bei hohem Support, hoher Confidence und Lift > 1."
+    level: "B"
 
-- question: Warum ist das Sternschema gut für große Datenmengen geeignet?
-  answer: Wegen einfacher Joins und effizienter Aggregationen.
-  level: A
+  - question: "Warum ist das Sternschema gut für große Datenmengen geeignet?"
+    answer: "Wegen einfacher Joins und effizienter Aggregationen."
+    level: "A"
 
-- question: Welche Abteilung profitiert besonders von den ESA2-Analysen?
-  answer: Marketing und Management.
-  level: A
+  - question: "Welche Abteilung profitiert besonders von den ESA2-Analysen?"
+    answer: "Marketing und Management."
+    level: "A"
 
-- question: Wofür können die Ergebnisse der Marktkorbanalyse genutzt werden?
-  answer: Entscheidungsunterstützung im Handel.
-  level: A
+  - question: "Wofür können die Ergebnisse der Marktkorbanalyse genutzt werden?"
+    answer: "Entscheidungsunterstützung im Handel."
+    level: "A"

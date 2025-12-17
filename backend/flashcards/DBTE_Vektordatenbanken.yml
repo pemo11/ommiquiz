@@ -1,171 +1,171 @@
-id: vfhdbte_kapitel9_quiz
-author: Pemo
-title: Exkurs – Vektordatenbanken
-description: Lern- und Verständnisfragen zu Kapitel 9 der VFH-Unterlage „Datenbanktechnologien“
-createDate: 2025-11-12
-language: de
-module: Datenbanktechnologien
-semester: WS 2025/26
-institution: HS Emden Leer
-studycourse: Medieninformatik Master
+id: "vfhdbte_kapitel9_quiz"
+author: "Pemo"
+title: "Exkurs – Vektordatenbanken"
+description: "Lern- und Verständnisfragen zu Kapitel 9 der VFH-Unterlage „Datenbanktechnologien“"
+createDate: "2025-11-12"
+language: "de"
+module: "Datenbanktechnologien"
+semester: "WS 2025/26"
+institution: "HS Emden Leer"
+studycourse: "Medieninformatik Master"
 topics:
-- vektordatenbanken
-- embeddings
-- similarity_search
-- milvus
-- weaviate
+  - "vektordatenbanken"
+  - "embeddings"
+  - "similarity_search"
+  - "milvus"
+  - "weaviate"
 keywords:
-- Vektor;Embedding;Cosine_Similarity;FAISS;Pinecone;Weaviate;Milvus;RAG
+  - "Vektor;Embedding;Cosine_Similarity;FAISS;Pinecone;Weaviate;Milvus;RAG"
 flashcards:
-- question: Was ist eine Vektordatenbank?
-  answer: Eine Datenbank, die Objekte in Form numerischer Vektoren speichert und Ähnlichkeiten zwischen ihnen effizient berechnet.
-  type: single
-  level: "A"
+  - question: "Was ist eine Vektordatenbank?"
+    answer: "Eine Datenbank, die Objekte in Form numerischer Vektoren speichert und Ähnlichkeiten zwischen ihnen effizient berechnet."
+    type: "single"
+    level: "A"
 
-- question: Wofür werden Vektordatenbanken hauptsächlich verwendet?
-  answers:
-  - Semantische Suche
-  - Empfehlungssysteme
-  - Clustering
-  - KI-gestützte Ähnlichkeitsanalyse
-  correctAnswers:
-  - true
-  - true
-  - true
-  - true
-  type: multiple
-  level: "A"
+  - question: "Wofür werden Vektordatenbanken hauptsächlich verwendet?"
+    answers:
+      - "Semantische Suche"
+      - "Empfehlungssysteme"
+      - "Clustering"
+      - "KI-gestützte Ähnlichkeitsanalyse"
+    correctAnswers:
+      - true
+      - true
+      - true
+      - true
+    type: "multiple"
+    level: "A"
 
-- question: Was ist ein Embedding?
-  answer: Eine numerische Repräsentation eines Objekts (z. B. Text, Bild oder Audio) in einem hochdimensionalen Raum.
-  type: single
-  level: "A"
+  - question: "Was ist ein Embedding?"
+    answer: "Eine numerische Repräsentation eines Objekts (z. B. Text, Bild oder Audio) in einem hochdimensionalen Raum."
+    type: "single"
+    level: "A"
 
-- question: Welche Distanzmaße werden typischerweise in Vektordatenbanken verwendet?
-  answers:
-  - Kosinus-Ähnlichkeit
-  - Euklidische Distanz
-  - Manhattan-Distanz
-  correctAnswers:
-  - true
-  - true
-  - true
-  type: multiple
-  level: "A"
+  - question: "Welche Distanzmaße werden typischerweise in Vektordatenbanken verwendet?"
+    answers:
+      - "Kosinus-Ähnlichkeit"
+      - "Euklidische Distanz"
+      - "Manhattan-Distanz"
+    correctAnswers:
+      - true
+      - true
+      - true
+    type: "multiple"
+    level: "A"
 
-- question: Was misst die Kosinus-Ähnlichkeit?
-  answer: Den Winkel zwischen zwei Vektoren, um deren inhaltliche Ähnlichkeit zu bestimmen.
-  type: single
-  level: "A"
+  - question: "Was misst die Kosinus-Ähnlichkeit?"
+    answer: "Den Winkel zwischen zwei Vektoren, um deren inhaltliche Ähnlichkeit zu bestimmen."
+    type: "single"
+    level: "A"
 
-- question: Wie unterscheidet sich eine Vektorsuche von einer klassischen SQL-Abfrage?
-  answer: Die Suche basiert nicht auf exakter Übereinstimmung, sondern auf semantischer Ähnlichkeit zwischen Vektoren.
-  type: single
-  level: "A"
+  - question: "Wie unterscheidet sich eine Vektorsuche von einer klassischen SQL-Abfrage?"
+    answer: "Die Suche basiert nicht auf exakter Übereinstimmung, sondern auf semantischer Ähnlichkeit zwischen Vektoren."
+    type: "single"
+    level: "A"
 
-- question: Was bedeutet der Begriff „Top-k Query“ im Kontext von Vektordatenbanken?
-  answer: Eine Abfrage, die die k ähnlichsten Ergebnisse zu einem gegebenen Vektor zurückliefert.
-  type: single
-  level: "A"
+  - question: "Was bedeutet der Begriff „Top-k Query“ im Kontext von Vektordatenbanken?"
+    answer: "Eine Abfrage, die die k ähnlichsten Ergebnisse zu einem gegebenen Vektor zurückliefert."
+    type: "single"
+    level: "A"
 
-- question: Nenne drei bekannte Open-Source-Vektordatenbanken.
-  answers:
-  - Milvus
-  - Weaviate
-  - Qdrant
-  correctAnswers:
-  - true
-  - true
-  - true
-  type: multiple
-  level: "A"
+  - question: "Nenne drei bekannte Open-Source-Vektordatenbanken."
+    answers:
+      - "Milvus"
+      - "Weaviate"
+      - "Qdrant"
+    correctAnswers:
+      - true
+      - true
+      - true
+    type: "multiple"
+    level: "A"
 
-- question: Welche kommerziellen Anbieter bieten Vektordatenbanken als Cloud-Service an?
-  answers:
-  - Pinecone
-  - ChromaDB Cloud
-  - Elastic Vector
-  correctAnswers:
-  - true
-  - true
-  - true
-  type: multiple
-  level: "A"
+  - question: "Welche kommerziellen Anbieter bieten Vektordatenbanken als Cloud-Service an?"
+    answers:
+      - "Pinecone"
+      - "ChromaDB Cloud"
+      - "Elastic Vector"
+    correctAnswers:
+      - true
+      - true
+      - true
+    type: "multiple"
+    level: "A"
 
-- question: Was ist FAISS?
-  answer: Eine von Facebook entwickelte Bibliothek zur schnellen Ähnlichkeitssuche und Clustering großer Vektormengen.
-  type: single
-  level: "A"
+  - question: "Was ist FAISS?"
+    answer: "Eine von Facebook entwickelte Bibliothek zur schnellen Ähnlichkeitssuche und Clustering großer Vektormengen."
+    type: "single"
+    level: "A"
 
-- question: Wie integriert man Vektordatenbanken häufig in KI-Systeme?
-  answer: Über RAG-Architekturen (Retrieval Augmented Generation), um relevante Informationen aus Vektorspeichern abzurufen.
-  type: single
-  level: "A"
+  - question: "Wie integriert man Vektordatenbanken häufig in KI-Systeme?"
+    answer: "Über RAG-Architekturen (Retrieval Augmented Generation), um relevante Informationen aus Vektorspeichern abzurufen."
+    type: "single"
+    level: "A"
 
-- question: Welche Schritte sind nötig, um eine semantische Suche mit Embeddings zu realisieren?
-  answers:
-  - Erstellen von Embeddings
-  - Speichern der Vektoren in einer Vektordatenbank
-  - Durchführen einer Ähnlichkeitssuche
-  correctAnswers:
-  - true
-  - true
-  - true
-  type: multiple
-  level: "A"
+  - question: "Welche Schritte sind nötig, um eine semantische Suche mit Embeddings zu realisieren?"
+    answers:
+      - "Erstellen von Embeddings"
+      - "Speichern der Vektoren in einer Vektordatenbank"
+      - "Durchführen einer Ähnlichkeitssuche"
+    correctAnswers:
+      - true
+      - true
+      - true
+    type: "multiple"
+    level: "A"
 
-- question: Welche Vorteile haben Vektordatenbanken gegenüber Schlüssel-Wert-Systemen?
-  answer: Sie ermöglichen das Auffinden ähnlicher Objekte ohne exakten Schlüsselabgleich.
-  type: single
-  level: "A"
+  - question: "Welche Vorteile haben Vektordatenbanken gegenüber Schlüssel-Wert-Systemen?"
+    answer: "Sie ermöglichen das Auffinden ähnlicher Objekte ohne exakten Schlüsselabgleich."
+    type: "single"
+    level: "A"
 
-- question: Was beschreibt Approximate Nearest Neighbor (ANN)?
-  answer: Ein Verfahren zur schnellen Annäherung an die nächsten Nachbarn in sehr großen Vektorräumen.
-  type: single
-  level: "A"
+  - question: "Was beschreibt Approximate Nearest Neighbor (ANN)?"
+    answer: "Ein Verfahren zur schnellen Annäherung an die nächsten Nachbarn in sehr großen Vektorräumen."
+    type: "single"
+    level: "A"
 
-- question: Welche Optimierungen nutzen moderne Vektordatenbanken für schnelle Abfragen?
-  answers:
-  - Quantisierung
-  - Indexstrukturen wie HNSW
-  - GPU-Beschleunigung
-  correctAnswers:
-  - true
-  - true
-  - true
-  type: multiple
-  level: "A"
+  - question: "Welche Optimierungen nutzen moderne Vektordatenbanken für schnelle Abfragen?"
+    answers:
+      - "Quantisierung"
+      - "Indexstrukturen wie HNSW"
+      - "GPU-Beschleunigung"
+    correctAnswers:
+      - true
+      - true
+      - true
+    type: "multiple"
+    level: "A"
 
-- question: Welche Dimensionen haben Text-Embeddings typischerweise?
-  answer: Zwischen 256 und 1536, je nach Modell.
-  type: single
-  level: "A"
+  - question: "Welche Dimensionen haben Text-Embeddings typischerweise?"
+    answer: "Zwischen 256 und 1536, je nach Modell."
+    type: "single"
+    level: "A"
 
-- question: Wie kann eine Vektordatenbank mit einem LLM zusammenarbeiten?
-  answer: Sie liefert semantisch ähnliche Dokumente, die das LLM in seine Antwort einbezieht.
-  type: single
-  level: "A"
+  - question: "Wie kann eine Vektordatenbank mit einem LLM zusammenarbeiten?"
+    answer: "Sie liefert semantisch ähnliche Dokumente, die das LLM in seine Antwort einbezieht."
+    type: "single"
+    level: "A"
 
-- question: Was ist der Hauptunterschied zwischen Weaviate und Milvus?
-  answer: Weaviate integriert semantische Ontologien und Graph-Beziehungen, Milvus fokussiert auf Performance und Skalierbarkeit.
-  type: single
-  level: "A"
+  - question: "Was ist der Hauptunterschied zwischen Weaviate und Milvus?"
+    answer: "Weaviate integriert semantische Ontologien und Graph-Beziehungen, Milvus fokussiert auf Performance und Skalierbarkeit."
+    type: "single"
+    level: "A"
 
-- question: Was versteht man unter „Vector Indexing“?
-  answer: Das Erstellen einer Datenstruktur, die die Ähnlichkeitssuche im Vektorraum beschleunigt.
-  type: single
-  level: "A"
+  - question: "Was versteht man unter „Vector Indexing“?"
+    answer: "Das Erstellen einer Datenstruktur, die die Ähnlichkeitssuche im Vektorraum beschleunigt."
+    type: "single"
+    level: "A"
 
-- question: Welche Anwendungstypen profitieren besonders von Vektordatenbanken?
-  answers:
-  - Chatbots mit Wissensabruf
-  - Personalisierte Empfehlungen
-  - Bilderkennung
-  - Anomalieerkennung
-  correctAnswers:
-  - true
-  - true
-  - true
-  - true
-  type: multiple
-  level: "A"
+  - question: "Welche Anwendungstypen profitieren besonders von Vektordatenbanken?"
+    answers:
+      - "Chatbots mit Wissensabruf"
+      - "Personalisierte Empfehlungen"
+      - "Bilderkennung"
+      - "Anomalieerkennung"
+    correctAnswers:
+      - true
+      - true
+      - true
+      - true
+    type: "multiple"
+    level: "A"

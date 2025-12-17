@@ -1,115 +1,115 @@
-id: quant_basic1
-author: Claude & Peter Monadjemi
-title: Allgemeine Grundlagen der Quantencomputer
-description: Fragen und Antworten zu allgemeinen Grundlagen der Quantencomputer, einschließlich Qubits, Superposition, Verschränkung und wichtigen Quantengattern.
-createDate: 2025-11-09
-language: de
-module: Quantencomputer
-semester: WS 2025/26
-institution: HS Emden Leer
-studycourse: Medieninformatik Master
+id: "quant_basic1"
+author: "Claude & Peter Monadjemi"
+title: "Allgemeine Grundlagen der Quantencomputer"
+description: "Fragen und Antworten zu allgemeinen Grundlagen der Quantencomputer, einschließlich Qubits, Superposition, Verschränkung und wichtigen Quantengattern."
+createDate: "2025-11-09"
+language: "de"
+module: "Quantencomputer"
+semester: "WS 2025/26"
+institution: "HS Emden Leer"
+studycourse: "Medieninformatik Master"
 topics:
-  -Quantencomputer
+  - "Quantencomputer"
 keywords:
-  - qubit, Superposition, Verschränkung, Quantengatter, Hadamard, Pauli-X, Pauli-Z, CNOT, Bell-Zustände
+  - "qubit, Superposition, Verschränkung, Quantengatter, Hadamard, Pauli-X, Pauli-Z, CNOT, Bell-Zustände"
 
 flashcards:
   - question: "Was ist ein Qubit?"
     answer: "Ein Qubit (Quantum Bit) ist die grundlegende Informationseinheit in der Quanteninformatik. Anders als ein klassisches Bit kann es sich durch Superposition gleichzeitig im Zustand |0⟩ und |1⟩ befinden."
-    type: single
+    type: "single"
     level: "A"
   
   - question: "Was bedeutet Superposition in der Quantenmechanik?"
     answer: "Superposition bedeutet, dass sich ein Quantensystem gleichzeitig in mehreren Zuständen befinden kann, bis eine Messung durchgeführt wird. Ein Qubit kann z.B. gleichzeitig |0⟩ und |1⟩ sein."
-    type: single
+    type: "single"
     level: "A"
   
   - question: "Was ist Verschränkung (Entanglement)?"
     answer: "Verschränkung ist ein Quantenphänomen, bei dem zwei oder mehr Qubits so miteinander korreliert sind, dass der Zustand eines Qubits nicht unabhängig vom anderen beschrieben werden kann. Eine Messung an einem Qubit beeinflusst sofort das andere."
-    type: single
+    type: "single"
     level: "A"
   
   - question: "Was macht das Hadamard-Gate (H)?"
     answer: "Das Hadamard-Gate erzeugt eine gleichmäßige Superposition. Es transformiert |0⟩ in (|0⟩ + |1⟩)/√2 und |1⟩ in (|0⟩ - |1⟩)/√2."
-    type: single
+    type: "single"
     level: "A"
   
   - question: "Was ist das Pauli-X-Gate?"
     answer: "Das Pauli-X-Gate ist das Quantenäquivalent zum klassischen NOT-Gate. Es vertauscht |0⟩ und |1⟩: X|0⟩ = |1⟩ und X|1⟩ = |0⟩."
-    type: single
+    type: "single"
     level: "A"
   
   - question: "Was macht das Pauli-Z-Gate?"
     answer: "Das Pauli-Z-Gate lässt |0⟩ unverändert und kehrt das Vorzeichen von |1⟩ um: Z|0⟩ = |0⟩ und Z|1⟩ = -|1⟩. Es führt eine Phasenverschiebung durch."
-    type: single
+    type: "single"
     level: "A"
   
   - question: "Was ist ein CNOT-Gate?"
     answer: "CNOT (Controlled NOT) ist ein Zwei-Qubit-Gate. Es flippt das Target-Qubit nur dann, wenn das Control-Qubit im Zustand |1⟩ ist. Es wird oft zur Erzeugung von Verschränkung verwendet."
-    type: single
+    type: "single"
     level: "A"
   
   - question: "Was sind die Bell-Zustände?"
     answer: "Die Bell-Zustände sind vier maximal verschränkte Zwei-Qubit-Zustände: |Φ⁺⟩, |Φ⁻⟩, |Ψ⁺⟩, |Ψ⁻⟩. Sie sind fundamental für Quantenkommunikation und Quantenteleportation."
-    type: single
+    type: "single"
     level: "A"
   
   - question: "Wie wird die Wahrscheinlichkeit einer Messung berechnet?"
     answer: "Für einen Zustand α|0⟩ + β|1⟩ gilt: P(|0⟩) = |α|² und P(|1⟩) = |β|². Die Gesamtwahrscheinlichkeit muss 1 sein (normierter Zustand)."
-    type: single
+    type: "single"
     level: "A"
   
   - question: "Was bedeutet 'normierter Zustand'?"
     answer: "Ein Zustand ist normiert, wenn die Summe aller Wahrscheinlichkeiten 1 ergibt: |α|² + |β|² = 1. Dies ist eine Grundvoraussetzung für gültige Quantenzustände."
-    type: single
+    type: "single"
     level: "A"
   
   - question: "Was ist das Tensor-Produkt (⊗)?"
     answer: "Das Tensor-Produkt kombiniert Qubits zu einem größeren System. Für |ψ⟩ ⊗ |φ⟩ werden alle Kombinationen der Basiskomponenten multipliziert. Beispiel: |0⟩ ⊗ |1⟩ = |01⟩."
-    type: single
+    type: "single"
     level: "A"
   
   - question: "Was ist der |+⟩-Zustand?"
     answer: "Der |+⟩-Zustand ist eine gleichmäßige Superposition: |+⟩ = (|0⟩ + |1⟩)/√2. Er entsteht durch Anwendung des Hadamard-Gates auf |0⟩."
-    type: single
+    type: "single"
     level: "A"
   
   - question: "Was ist der |-⟩-Zustand?"
     answer: "Der |-⟩-Zustand ist: |-⟩ = (|0⟩ - |1⟩)/√2. Er entsteht durch Anwendung des Hadamard-Gates auf |1⟩ und unterscheidet sich von |+⟩ durch eine relative Phase."
-    type: single
+    type: "single"
     level: "A"
   
   - question: "Was ist Dekohärenz?"
     answer: "Dekohärenz beschreibt den Verlust von Quanteneigenschaften durch Wechselwirkung mit der Umgebung. Sie ist eine der größten Herausforderungen beim Bau von Quantencomputern."
-    type: single
+    type: "single"
     level: "A"
   
   - question: "Was ist ein Quantengatter?"
     answer: "Ein Quantengatter ist eine Operation, die auf Qubits angewendet wird. Es wird durch eine unitäre Matrix dargestellt und transformiert den Zustand reversibel."
-    type: single
+    type: "single"
     level: "A"
   
   - question: "Warum sind Quantengatter reversibel?"
     answer: "Quantengatter sind unitär und damit reversibel, weil sie die Unitaritätsbedingung erfüllen (U†U = I). Dies folgt aus den Grundprinzipien der Quantenmechanik."
-    type: single
+    type: "single"
     level: "A"
   
   - question: "Was ist das No-Cloning-Theorem?"
     answer: "Das No-Cloning-Theorem besagt, dass es unmöglich ist, einen unbekannten Quantenzustand perfekt zu kopieren. Dies ist ein fundamentales Prinzip der Quantenmechanik."
-    type: single
+    type: "single"
     level: "A"
   
   - question: "Was ist Quantenparallelismus?"
     answer: "Quantenparallelismus nutzt Superposition, um viele Berechnungen gleichzeitig durchzuführen. Ein Quantencomputer mit n Qubits kann 2ⁿ Zustände parallel verarbeiten."
-    type: single
+    type: "single"
     level: "A"
   
   - question: "Was ist das Pauli-Y-Gate?"
     answer: "Das Pauli-Y-Gate kombiniert einen Bit-Flip mit einer Phasenverschiebung: Y|0⟩ = i|1⟩ und Y|1⟩ = -i|0⟩. Es ist die Kombination aus X und Z."
-    type: single
+    type: "single"
     level: "A"
   
   - question: "Was ist Quantenfehlerkorrektur?"
     answer: "Quantenfehlerkorrektur verwendet mehrere physikalische Qubits zur Codierung eines logischen Qubits, um Fehler durch Dekohärenz zu erkennen und zu korrigieren, ohne den Zustand zu messen."
-    type: single
+    type: "single"
     level: "A"

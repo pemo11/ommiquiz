@@ -135,7 +135,7 @@ def validate_all_flashcards(flashcards_dir: Path, schema_path: Path) -> Dict[str
     total_files = len(results)
     valid_files = len([r for r in results if r["valid"]])
     invalid_files = total_files - valid_files
-    total_cards = sum(r["stats"]["total_cards"] for r in results)
+    total_cards = sum(r.get("stats", {}).get("total_cards", 0) for r in results)
     
     return {
         "success": True,
@@ -156,7 +156,7 @@ def main():
     # Set up paths
     current_dir = Path(__file__).parent
     flashcards_dir = current_dir / "flashcards"
-    schema_path = flashcards_dir / "ommiquiz.schema.yaml"
+    schema_path = current_dir.parent / "ommiquiz.schema.yaml"  # Schema is in parent directory
     
     print(f"📁 Flashcards directory: {flashcards_dir}")
     print(f"📋 Schema file: {schema_path}")
@@ -174,25 +174,24 @@ def main():
     # Run validation
     validation_result = validate_all_flashcards(flashcards_dir, schema_path)
     
-    if not validation_result["success"]:
-        print(f"❌ Validation failed: {validation_result['error']}")
-        sys.exit(1)
+    # The validate_all_flashcards function always returns success=True, so no need to check for error
     
     print("-" * 60)
     
     # Print detailed results
     for result in validation_result["results"]:
         status = "✅" if result["valid"] else "❌"
+        stats = result.get("stats", {"total_cards": 0, "has_metadata": False})
         print(f"\n{status} {result['filename']}")
-        print(f"   📊 Cards: {result['stats']['total_cards']}")
-        print(f"   📝 Has metadata: {'Yes' if result['stats']['has_metadata'] else 'No'}")
+        print(f"   📊 Cards: {stats['total_cards']}")
+        print(f"   📝 Has metadata: {'Yes' if stats['has_metadata'] else 'No'}")
         
-        if result["errors"]:
+        if result.get("errors"):
             print("   🚨 Schema Errors:")
             for error in result["errors"]:
                 print(f"      • {error}")
         
-        if result["warnings"]:
+        if result.get("warnings"):
             print("   ⚠️  Warnings:")
             for warning in result["warnings"]:
                 print(f"      • {warning}")

@@ -1,160 +1,160 @@
-id: esa1_flashcards
-author: Pemo
-title: Datenbanktechnologien - ESA1 Query-OptimierungA
-description: Flashcard-Quiz zum Thema Query-Optimierung basierend auf den ESA1-Aufgaben und Lösungen
-createDate: 2025-12-16
-language: de
-module: Datenbanktechnologien
-semester: WS 2025/26
-institution: HS Emden Leer
-studycourse: Medieninformatik Master
+id: "esa1_flashcards"
+author: "Pemo"
+title: "Datenbanktechnologien - ESA1 Query-OptimierungA"
+description: "Flashcard-Quiz zum Thema Query-Optimierung basierend auf den ESA1-Aufgaben und Lösungen"
+createDate: "2025-12-16"
+language: "de"
+module: "Datenbanktechnologien"
+semester: "WS 2025/26"
+institution: "HS Emden Leer"
+studycourse: "Medieninformatik Master"
 topics:
-- SQL
-- Anfrageoptimierung
-- Ausführungspläne
-- Relationale Algebra
-- Datenmodellierung
+  - "SQL"
+  - "Anfrageoptimierung"
+  - "Ausführungspläne"
+  - "Relationale Algebra"
+  - "Datenmodellierung"
 keywords:
-- Selektion
-- Projektion
-- Join
-- Tautologie
-- Ausführungsplan
+  - "Selektion"
+  - "Projektion"
+  - "Join"
+  - "Tautologie"
+  - "Ausführungsplan"
 
 flashcards:
 
-- question: Was ist eine Selektion in SQL?
-  answer: Eine Einschränkung der Ergebniszeilen durch ein WHERE-Prädikat.
-  level: A
+- question: "Was ist eine Selektion in SQL?"
+  answer: "Eine Einschränkung der Ergebniszeilen durch ein WHERE-Prädikat."
+  level: "A"
 
-- question: Wann ist ein Prädikat in SQL eine Tautologie?
-  answer: Wenn es für jede mögliche Zeile immer wahr ist.
-  level: A
+- question: "Wann ist ein Prädikat in SQL eine Tautologie?"
+  answer: "Wenn es für jede mögliche Zeile immer wahr ist."
+  level: "A"
 
-- question: Nenne ein Beispiel für eine SQL-Tautologie.
-  answer: WHERE 1 = 1
-  level: A
+- question: "Nenne ein Beispiel für eine SQL-Tautologie."
+  answer: "WHERE 1 = 1"
+  level: "A"
 
-- question: Was passiert mit einer Selektion mit Tautologie im Ausführungsplan?
-  answer: Sie wird vom Optimierer entfernt oder ignoriert.
-  level: A
+- question: "Was passiert mit einer Selektion mit Tautologie im Ausführungsplan?"
+  answer: "Sie wird vom Optimierer entfernt oder ignoriert."
+  level: "A"
 
-- question: Warum ist eine Tautologie in einer SQL-Abfrage problematisch?
-  answer: Sie ist redundant und kann die Lesbarkeit und Optimierung verschlechtern.
-  level: A
+- question: "Warum ist eine Tautologie in einer SQL-Abfrage problematisch?"
+  answer: "Sie ist redundant und kann die Lesbarkeit und Optimierung verschlechtern."
+  level: "A"
 
-- question: Was beschreibt ein Ausführungsplan?
-  answer: Die konkrete Strategie, mit der ein DBMS eine SQL-Abfrage ausführt.
-  level: A
+- question: "Was beschreibt ein Ausführungsplan?"
+  answer: "Die konkrete Strategie, mit der ein DBMS eine SQL-Abfrage ausführt."
+  level: "A"
 
-- question: Was bedeutet Seq Scan?
-  answer: Die Tabelle wird vollständig Zeile für Zeile gelesen.
-  level: A
+- question: "Was bedeutet Seq Scan?"
+  answer: "Die Tabelle wird vollständig Zeile für Zeile gelesen."
+  level: "A"
 
-- question: Wann verwendet ein DBMS einen Seq Scan?
-  answer: Wenn kein geeigneter Index existiert oder ein Großteil der Tabelle gelesen werden muss.
-  level: A
+- question: "Wann verwendet ein DBMS einen Seq Scan?"
+  answer: "Wenn kein geeigneter Index existiert oder ein Großteil der Tabelle gelesen werden muss."
+  level: "A"
 
-- question: Was ist ein Index Scan?
-  answer: Zugriff auf Tabellenzeilen über einen Index.
-  level: A
+- question: "Was ist ein Index Scan?"
+  answer: "Zugriff auf Tabellenzeilen über einen Index."
+  level: "A"
 
-- question: Was ist ein Bitmap Index Scan?
-  answer: Ein Scan, der Treffer im Index sammelt und anschließend gemeinsam liest.
-  level: A
+- question: "Was ist ein Bitmap Index Scan?"
+  answer: "Ein Scan, der Treffer im Index sammelt und anschließend gemeinsam liest."
+  level: "A"
 
-- question: Was ist ein Bitmap Heap Scan?
-  answer: Das Nachladen der tatsächlichen Tupel anhand der Bitmap.
-  level: A
+- question: "Was ist ein Bitmap Heap Scan?"
+  answer: "Das Nachladen der tatsächlichen Tupel anhand der Bitmap."
+  level: "A"
 
-- question: Was bedeutet cost im Ausführungsplan?
-  answer: Eine interne Kostenschätzung des DBMS, keine Zeitangabe.
-  level: A
+- question: "Was bedeutet cost im Ausführungsplan?"
+  answer: "Eine interne Kostenschätzung des DBMS, keine Zeitangabe."
+  level: "A"
 
-- question: Was bedeutet width im Ausführungsplan?
-  answer: Geschätzte durchschnittliche Größe einer Ergebniszeile in Byte.
-  level: A
+- question: "Was bedeutet width im Ausführungsplan?"
+  answer: "Geschätzte durchschnittliche Größe einer Ergebniszeile in Byte."
+  level: "A"
 
-- question: Was ist ein Hash Join?
-  answer: Ein Join-Verfahren, bei dem eine Tabelle gehasht und die andere dagegen geprüft wird.
-  level: A
+- question: "Was ist ein Hash Join?"
+  answer: "Ein Join-Verfahren, bei dem eine Tabelle gehasht und die andere dagegen geprüft wird."
+  level: "A"
 
-- question: Welche Tabelle wird beim Hash Join typischerweise gehasht?
-  answer: Die kleinere Tabelle.
-  level: A
+- question: "Welche Tabelle wird beim Hash Join typischerweise gehasht?"
+  answer: "Die kleinere Tabelle."
+  level: "A"
 
-- question: Was ist ein Nested Loop Join?
-  answer: Für jede Zeile der äußeren Tabelle wird die innere Tabelle durchsucht.
-  level: A
+- question: "Was ist ein Nested Loop Join?"
+  answer: "Für jede Zeile der äußeren Tabelle wird die innere Tabelle durchsucht."
+  level: "A"
 
-- question: Wann ist ein Nested Loop Join sinnvoll?
-  answer: Bei kleinen Tabellen oder stark eingeschränkten Ergebnissen.
-  level: A
+- question: "Wann ist ein Nested Loop Join sinnvoll?"
+  answer: "Bei kleinen Tabellen oder stark eingeschränkten Ergebnissen."
+  level: "A"
 
-- question: Was ist ein Merge Join?
-  answer: Ein Join zweier sortierter Eingaben.
-  level: A
+- question: "Was ist ein Merge Join?"
+  answer: "Ein Join zweier sortierter Eingaben."
+  level: "A"
 
-- question: Was bedeutet Join-Reihenfolge-Optimierung?
-  answer: Der Optimierer wählt die Reihenfolge der Joins so, dass Kosten minimiert werden.
-  level: A
+- question: "Was bedeutet Join-Reihenfolge-Optimierung?"
+  answer: "Der Optimierer wählt die Reihenfolge der Joins so, dass Kosten minimiert werden."
+  level: "A"
 
-- question: Warum werden Subqueries häufig in Joins umgeschrieben?
-  answer: Weil Joins oft effizienter optimiert werden können.
-  level: A
+- question: "Warum werden Subqueries häufig in Joins umgeschrieben?"
+  answer: "Weil Joins oft effizienter optimiert werden können."
+  level: "A"
 
-- question: Was ist eine Projektion in der relationalen Algebra?
-  answer: Auswahl bestimmter Attribute aus einer Relation.
-  level: A
+- question: "Was ist eine Projektion in der relationalen Algebra?"
+  answer: "Auswahl bestimmter Attribute aus einer Relation."
+  level: "A"
 
-- question: Was entspricht der Projektion in SQL?
-  answer: Die Spaltenliste im SELECT-Teil.
-  level: A
+- question: "Was entspricht der Projektion in SQL?"
+  answer: "Die Spaltenliste im SELECT-Teil."
+  level: "A"
 
-- question: Was ist ein kartesisches Produkt?
-  answer: Jede Zeile der einen Relation wird mit jeder der anderen kombiniert.
-  level: A
+- question: "Was ist ein kartesisches Produkt?"
+  answer: "Jede Zeile der einen Relation wird mit jeder der anderen kombiniert."
+  level: "A"
 
-- question: Warum ist ein kartesisches Produkt meist problematisch?
-  answer: Es erzeugt sehr große Ergebnismengen.
-  level: A
+- question: "Warum ist ein kartesisches Produkt meist problematisch?"
+  answer: "Es erzeugt sehr große Ergebnismengen."
+  level: "A"
 
-- question: Was ist ein Join aus algebraischer Sicht?
-  answer: Eine Selektion auf dem kartesischen Produkt.
-  level: A
+- question: "Was ist ein Join aus algebraischer Sicht?"
+  answer: "Eine Selektion auf dem kartesischen Produkt."
+  level: "A"
 
-- question: Was bedeutet AND in einer WHERE-Klausel logisch?
-  answer: Beide Bedingungen müssen wahr sein.
-  level: A
+- question: "Was bedeutet AND in einer WHERE-Klausel logisch?"
+  answer: "Beide Bedingungen müssen wahr sein."
+  level: "A"
 
-- question: Was bedeutet OR in einer WHERE-Klausel logisch?
-  answer: Mindestens eine der Bedingungen muss wahr sein.
-  level: A
+- question: "Was bedeutet OR in einer WHERE-Klausel logisch?"
+  answer: "Mindestens eine der Bedingungen muss wahr sein."
+  level: "A"
 
-- question: Warum können OR-Bedingungen Abfragen verlangsamen?
-  answer: Sie verhindern oft die Nutzung von Indizes.
-  level: A
+- question: "Warum können OR-Bedingungen Abfragen verlangsamen?"
+  answer: "Sie verhindern oft die Nutzung von Indizes."
+  level: "A"
 
-- question: Was ist eine Anfrageoptimierung?
-  answer: Die automatische oder manuelle Verbesserung der Abfrageausführung.
-  level: A
+- question: "Was ist eine Anfrageoptimierung?"
+  answer: "Die automatische oder manuelle Verbesserung der Abfrageausführung."
+  level: "A"
 
-- question: Was macht der Query Optimizer?
-  answer: Er wählt den günstigsten Ausführungsplan.
-  level: A
+- question: "Was macht der Query Optimizer?"
+  answer: "Er wählt den günstigsten Ausführungsplan."
+  level: "A"
 
-- question: Warum ist SELECT * oft ungünstig?
-  answer: Es liest mehr Daten als nötig und verhindert Optimierungen.
-  level: A
+- question: "Warum ist SELECT * oft ungünstig?"
+  answer: "Es liest mehr Daten als nötig und verhindert Optimierungen."
+  level: "A"
 
-- question: Was ist ein Shard?
-  answer: Ein horizontaler Teil einer Datenmenge.
-  level: A
+- question: "Was ist ein Shard?"
+  answer: "Ein horizontaler Teil einer Datenmenge."
+  level: "A"
 
-- question: Was ist horizontale Skalierung?
-  answer: Verteilung von Daten auf mehrere Systeme.
-  level: A
+- question: "Was ist horizontale Skalierung?"
+  answer: "Verteilung von Daten auf mehrere Systeme."
+  level: "A"
 
-- question: Warum ist Sharding komplex?
-  answer: Abfragen über mehrere Shards müssen koordiniert werden.
-  level: A
+- question: "Warum ist Sharding komplex?"
+  answer: "Abfragen über mehrere Shards müssen koordiniert werden."
+  level: "A"
