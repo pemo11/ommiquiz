@@ -3,10 +3,14 @@ import './FlashcardViewer.css';
 
 function FlashcardViewer({ flashcard, onBack }) {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [cardOrder, setCardOrder] = useState([]);
+  const [currentOrderIndex, setCurrentOrderIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [selectedAnswers, setSelectedAnswers] = useState([]);
   const [showCorrectAnswers, setShowCorrectAnswers] = useState(false);
-  const [startTime] = useState(Date.now());  const [elapsedTime, setElapsedTime] = useState(0);
+  const [startTime, setStartTime] = useState(Date.now());
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [sessionType, setSessionType] = useState('full');
 
   // New state for quiz tracking
   const [cardResults, setCardResults] = useState({});
@@ -53,6 +57,13 @@ function FlashcardViewer({ flashcard, onBack }) {
 
   // Reset selections when card changes
   useEffect(() => {
+    if (cardOrder.length === 0 && cards.length > 0) {
+      const initialOrder = cards.map((_, idx) => idx);
+      setCardOrder(initialOrder);
+      setCurrentOrderIndex(0);
+      setCurrentCardIndex(initialOrder[0] ?? 0);
+    }
+
     const cardResult = cardResults[currentCardIndex];
 
     if (cardResult) {
@@ -94,29 +105,41 @@ function FlashcardViewer({ flashcard, onBack }) {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const proceedToNextCard = () => {
-    const isLastMainCard = currentCardIndex >= cards.length - 1;
+  // Re-initialize when flashcard changes
+  useEffect(() => {
+    const initialOrder = cards.map((_, idx) => idx);
+    setCardOrder(initialOrder);
+    setCurrentOrderIndex(0);
+    setCurrentCardIndex(initialOrder[0] ?? 0);
+    setIsFlipped(false);
+    setSelectedAnswers([]);
+    setShowCorrectAnswers(false);
+    setCurrentCardAnswered(false);
+    setSwipeDirection(null);
+    setPostponedQueue([]);
+    setShowCelebration(false);
+    setShowSummary(false);
+    setCardResults({});
+    setElapsedTime(0);
+    setStartTime(Date.now());
+    setSessionType('full');
+  }, [flashcard]);
 
-    if (!isLastMainCard) {
-      setCurrentCardIndex(currentCardIndex + 1);
+  const proceedToNextCard = () => {
+    const isLastCardInSession = currentOrderIndex >= cardOrder.length - 1;
+
+    if (!isLastCardInSession) {
+      const nextOrderIndex = currentOrderIndex + 1;
+      const nextCardIndex = cardOrder[nextOrderIndex];
+      setCurrentOrderIndex(nextOrderIndex);
+      setCurrentCardIndex(nextCardIndex);
       setIsFlipped(false);
       setSwipeDirection(null);
       return;
     }
 
-    setPostponedQueue(prevQueue => {
-      if (prevQueue.length === 0) {
-        setShowCelebration(true);
-        setShowSummary(true);
-        return prevQueue;
-      }
-
-      const [nextIndex, ...rest] = prevQueue;
-      setCurrentCardIndex(nextIndex);
-      setIsFlipped(false);
-      setSwipeDirection(null);
-      return rest;
-    });
+    setShowCelebration(postponedQueue.length === 0);
+    setShowSummary(true);
   };
 
   const handleCardClick = () => {
@@ -196,7 +219,8 @@ function FlashcardViewer({ flashcard, onBack }) {
         correct: isCorrect,
         question: currentCard.question,
         answer: currentCard.answer,
-        userAnswer: isCorrect ? 'Correct' : 'Incorrect'
+        userAnswer: isCorrect ? 'Correct' : 'Incorrect',
+        level: currentCard.level
       }
     }));
     setCurrentCardAnswered(true);
@@ -265,7 +289,8 @@ function FlashcardViewer({ flashcard, onBack }) {
           answer: currentCard.answers.filter((_, idx) => correctAnswers[idx]).join(', '),
           userAnswer: userAnswer,
           selectedAnswers,
-          correctAnswers
+          correctAnswers,
+          level: currentCard.level
         }
       }));
       setCurrentCardAnswered(true);
@@ -282,6 +307,7 @@ function FlashcardViewer({ flashcard, onBack }) {
       delete newResults[currentCardIndex];
       return newResults;
     });
+    setPostponedQueue(prev => prev.filter(idx => idx !== currentCardIndex));
     
     // Reset the card state to allow new attempt
     setSelectedAnswers([]);
@@ -290,12 +316,35 @@ function FlashcardViewer({ flashcard, onBack }) {
   };
 
   const handleNext = () => {
+    if (!cardResults[currentCardIndex]) {
+      const correctAnswers = currentCard?.correctAnswers || [];
+      setCardResults(prev => ({
+        ...prev,
+        [currentCardIndex]: {
+          type: cardType,
+          correct: false,
+          question: currentCard?.question,
+          answer: cardType === 'multiple'
+            ? currentCard?.answers?.filter((_, idx) => correctAnswers[idx]).join(', ')
+            : currentCard?.answer,
+          userAnswer: 'Postponed (not evaluated)',
+          selectedAnswers: cardType === 'multiple' ? [] : undefined,
+          correctAnswers,
+          level: currentCard?.level
+        }
+      }));
+      setPostponedQueue(prev => prev.includes(currentCardIndex) ? prev : [...prev, currentCardIndex]);
+    }
+
     proceedToNextCard();
   };
 
   const handlePrevious = () => {
-    if (currentCardIndex > 0) {
-      setCurrentCardIndex(currentCardIndex - 1);
+    if (currentOrderIndex > 0) {
+      const previousOrderIndex = currentOrderIndex - 1;
+      const previousCardIndex = cardOrder[previousOrderIndex];
+      setCurrentOrderIndex(previousOrderIndex);
+      setCurrentCardIndex(previousCardIndex);
       setIsFlipped(false);
       setSwipeDirection(null);
     }
@@ -303,18 +352,69 @@ function FlashcardViewer({ flashcard, onBack }) {
 
   // Calculate statistics
   const calculateStats = () => {
-    const results = Object.values(cardResults);
-    const correct = results.filter(r => r.correct).length;
-    const total = results.length;
+    const orderedResults = cardOrder
+      .map(idx => cardResults[idx] ? { ...cardResults[idx], cardIndex: idx, level: cardResults[idx].level || cards[idx]?.level } : null)
+      .filter(Boolean);
+
+    const correct = orderedResults.filter(r => r.correct).length;
+    const total = cardOrder.length;
     const percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
+    const postponedCount = Math.max(total - correct, 0);
+    const levels = orderedResults.reduce((acc, result) => {
+      const levelKey = result.level || 'Unspecified';
+      if (!acc[levelKey]) {
+        acc[levelKey] = { done: 0, postponed: 0 };
+      }
+      if (result.correct) {
+        acc[levelKey].done += 1;
+      } else {
+        acc[levelKey].postponed += 1;
+      }
+      return acc;
+    }, {});
     
-    return { correct, total, percentage, results };
+    return { correct, total, percentage, results: orderedResults, postponedCount, levels };
+  };
+
+  const buildLearningEvaluation = (stats) => {
+    const total = stats.total || cardOrder.length;
+    const postponedCount = stats.postponedCount ?? Math.max(total - stats.correct, 0);
+    const progress = total > 0 ? Math.round((stats.correct / total) * 100) : 0;
+    const cardsPerMinute = elapsedTime > 0 ? (stats.correct / (elapsedTime / 60)) : null;
+    const etaMinutes = cardsPerMinute && postponedCount > 0 ? Math.ceil(postponedCount / cardsPerMinute) : null;
+
+    let headline = 'Keep going!';
+    if (progress === 100) {
+      headline = 'Outstanding, you mastered every card!';
+    } else if (progress >= 75) {
+      headline = 'Great work, you are close to mastery!';
+    } else if (progress >= 50) {
+      headline = 'You are halfway there!';
+    }
+
+    const levelInsights = Object.entries(stats.levels || {}).map(([level, breakdown]) => {
+      return `${level}: ${breakdown.done} done${breakdown.postponed ? `, ${breakdown.postponed} postponed` : ''}`;
+    });
+
+    const etaMessage = etaMinutes !== null
+      ? `At your current pace you can clear the remaining cards in about ${etaMinutes} minute${etaMinutes === 1 ? '' : 's'}.`
+      : 'Complete a few cards to estimate how long the remaining set will take.';
+
+    return {
+      headline,
+      progressLine: `You finished ${stats.correct} of ${total} cards (${progress}%). ${postponedCount === 0 ? 'Everything is marked as done.' : `${postponedCount} card${postponedCount === 1 ? '' : 's'} are postponed.`}`,
+      levelLine: levelInsights.length > 0 ? levelInsights.join(' • ') : 'No level data available for these cards.',
+      etaMessage
+    };
   };
 
   // Reset quiz function
   const handleRestartQuiz = () => {
+    const fullOrder = cards.map((_, idx) => idx);
+    setCardOrder(fullOrder);
+    setCurrentOrderIndex(0);
     setCardResults({});
-    setCurrentCardIndex(0);
+    setCurrentCardIndex(fullOrder[0] ?? 0);
     setIsFlipped(false);
     setSelectedAnswers([]);
     setShowCorrectAnswers(false);
@@ -323,16 +423,45 @@ function FlashcardViewer({ flashcard, onBack }) {
     setSwipeDirection(null);
     setPostponedQueue([]);
     setShowCelebration(false);
+    setElapsedTime(0);
+    setStartTime(Date.now());
+    setSessionType('full');
+  };
+
+  const handleRepeatPostponed = () => {
+    const postponedOnly = Object.entries(cardResults)
+      .filter(([, result]) => result.correct === false)
+      .map(([idx]) => Number(idx));
+
+    const nextOrder = postponedOnly.length > 0 ? postponedOnly : cards.map((_, idx) => idx);
+
+    setCardOrder(nextOrder);
+    setCurrentOrderIndex(0);
+    setCurrentCardIndex(nextOrder[0] ?? 0);
+    setCardResults({});
+    setIsFlipped(false);
+    setSelectedAnswers([]);
+    setShowCorrectAnswers(false);
+    setShowSummary(false);
+    setCurrentCardAnswered(false);
+    setSwipeDirection(null);
+    setPostponedQueue([]);
+    setShowCelebration(false);
+    setElapsedTime(0);
+    setStartTime(Date.now());
+    setSessionType(postponedOnly.length > 0 ? 'postponed' : 'full');
   };
 
   if (showSummary) {
     const stats = calculateStats();
+    const evaluation = buildLearningEvaluation(stats);
     
     return (
       <div className="viewer-container">
         <div className="quiz-summary">
           <div className="summary-header">
             <h2>🎉 Quiz Complete!</h2>
+            <div className="session-label">Session: {sessionType === 'postponed' ? 'Postponed review' : 'Full quiz'}</div>
             {showCelebration && (
               <div className="celebration">
                 <div className="firework firework-1" />
@@ -354,8 +483,33 @@ function FlashcardViewer({ flashcard, onBack }) {
                 <div className="stat-number">{formatTime(elapsedTime)}</div>
                 <div className="stat-label">Time Taken</div>
               </div>
+              <div className="stat-card">
+                <div className="stat-number">{stats.postponedCount}</div>
+                <div className="stat-label">Postponed</div>
+              </div>
             </div>
           </div>
+
+          <div className="learning-evaluation">
+            <h3>{evaluation.headline}</h3>
+            <p className="evaluation-line">{evaluation.progressLine}</p>
+            <p className="evaluation-line">{evaluation.levelLine}</p>
+            <p className="evaluation-line subtle">{evaluation.etaMessage}</p>
+          </div>
+
+          {Object.keys(stats.levels || {}).length > 0 && (
+            <div className="level-breakdown">
+              {Object.entries(stats.levels).map(([level, breakdown]) => (
+                <div key={level} className="level-chip">
+                  <span className="level-title">Level {level}</span>
+                  <span className="level-counts">{breakdown.done} done</span>
+                  {breakdown.postponed > 0 && (
+                    <span className="level-counts postponed">{breakdown.postponed} postponed</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="detailed-results">
             <h3>Detailed Results</h3>
@@ -380,11 +534,14 @@ function FlashcardViewer({ flashcard, onBack }) {
           </div>
 
           <div className="summary-actions">
-            <button onClick={handleRestartQuiz} className="restart-button">
-              🔄 Restart Quiz
+            <button onClick={handleRepeatPostponed} className="restart-button" disabled={stats.postponedCount === 0}>
+              🔁 Repeat Postponed Cards
+            </button>
+            <button onClick={handleRestartQuiz} className="restart-button secondary-button">
+              🔄 Restart Full Quiz
             </button>
             <button onClick={onBack} className="back-button">
-              ← Back to Selection
+              Exit to Selection
             </button>
           </div>
         </div>
@@ -402,6 +559,9 @@ function FlashcardViewer({ flashcard, onBack }) {
   }
 
   const progress = Object.keys(cardResults).length;
+  const totalCards = cardOrder.length || cards.length;
+  const safeTotalCards = totalCards || 1;
+  const currentCardPosition = totalCards > 0 ? currentOrderIndex + 1 : 0;
 
   return (
     <div className="viewer-container">
@@ -423,15 +583,19 @@ function FlashcardViewer({ flashcard, onBack }) {
       <div className="stats-bar">
         <div className="stat">
           <span className="stat-label">Card:</span>
-          <span className="stat-value">{currentCardIndex + 1} / {cards.length}</span>
+          <span className="stat-value">{currentCardPosition} / {totalCards}</span>
         </div>
         <div className="stat">
           <span className="stat-label">Progress:</span>
-          <span className="stat-value">{progress} / {cards.length} answered</span>
+          <span className="stat-value">{Math.min(progress, totalCards)} / {totalCards} answered</span>
         </div>
         <div className="stat">
           <span className="stat-label">Time:</span>
           <span className="stat-value">{formatTime(elapsedTime)}</span>
+        </div>
+        <div className="stat">
+          <span className="stat-label">Session:</span>
+          <span className="stat-value">{sessionType === 'postponed' ? 'Postponed review' : 'Full quiz'}</span>
         </div>
       </div>
 
@@ -589,14 +753,14 @@ function FlashcardViewer({ flashcard, onBack }) {
       <div className="navigation-buttons">
         <button
           onClick={handleNext}
-          disabled={false}
+          disabled={cardOrder.length === 0}
           className="nav-button"
         >
-          {currentCardIndex === cards.length - 1 ? 'Show Results' : 'Next →'}
+          {currentOrderIndex === cardOrder.length - 1 ? 'Show Results' : 'Next →'}
         </button>
         <button
           onClick={handlePrevious}
-          disabled={currentCardIndex === 0}
+          disabled={currentOrderIndex === 0}
           className="nav-button"
         >
           ← Previous
@@ -606,7 +770,7 @@ function FlashcardViewer({ flashcard, onBack }) {
       {/* Progress indicator */}
       <div className="progress-indicator">
         <div className="progress-text">
-          {progress > 0 && `${Math.round((progress / cards.length) * 100)}% Complete`}
+          {progress > 0 && `${Math.round((Math.min(progress, totalCards) / safeTotalCards) * 100)}% Complete`}
         </div>
       </div>
     </div>
