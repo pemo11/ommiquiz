@@ -427,7 +427,10 @@ function FlashcardViewer({ flashcard, onBack }) {
 
   const handleRepeatPostponed = () => {
     const postponedOnly = Object.entries(cardResults)
-      .filter(([, result]) => result.correct === false)
+      .filter(([, result]) => 
+        result.userAnswer === 'Postponed (not evaluated)' || 
+        result.userAnswer === 'No answer selected (postponed)'
+      )
       .map(([idx]) => Number(idx));
 
     const nextOrder = postponedOnly.length > 0 ? postponedOnly : cards.map((_, idx) => idx);
