@@ -506,13 +506,6 @@
   font-size: 1.1rem;
 }
 
-.skip-indicator {
-  background-color: rgba(255, 152, 0, 0.1);
-  color: #ff9800;
-  font-weight: bold;
-  font-size: 1.1rem;
-}
-
 .evaluation-result {
   text-align: center;
   margin-top: 1rem;
@@ -689,11 +682,6 @@
   background-color: #fff8f8;
 }
 
-.skipped-result {
-  border-left-color: #ff9800;
-  background-color: #fff8f0;
-}
-
 .result-header {
   display: flex;
   align-items: center;
@@ -752,17 +740,6 @@
   background-color: #45a049;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
-}
-
-.skip-button {
-  background-color: #ff9800;
-  color: white;
-}
-
-.skip-button:hover {
-  background-color: #f57c00;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
 }
 
 @media (max-width: 768px) {
