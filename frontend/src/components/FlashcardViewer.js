@@ -1,12 +1,226 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import './FlashcardViewer.css';
 
+const normalizeLevel = (level) => {
+  const normalized = (level || '').toString().trim().toUpperCase();
+  return ['A', 'B', 'C'].includes(normalized) ? normalized : 'A';
+};
+
+const countCardLevels = (cards = []) => {
+  return cards.reduce(
+    (acc, card) => {
+      const level = normalizeLevel(card.level);
+      acc[level] = (acc[level] || 0) + 1;
+      return acc;
+    },
+    { A: 0, B: 0, C: 0 }
+  );
+};
+
+const formatMixDescription = (mix) => {
+  const parts = [];
+  ['A', 'B', 'C'].forEach((level) => {
+    if (mix[level]) {
+      const value = mix[level];
+      const formatted = Number.isInteger(value) ? value : Number(value).toFixed(1).replace(/\.0$/, '');
+      parts.push(`${level}${formatted}%`);
+    }
+  });
+  return parts.join(' / ') || 'All levels';
+};
+
+const parseLevelMixInput = (rawInput) => {
+  if (!rawInput || !rawInput.trim()) {
+    return { mix: null };
+  }
+
+  const mix = { A: 0, B: 0, C: 0 };
+  const cleaned = rawInput.replace(/\s+/g, '');
+  const parts = cleaned.split(',').filter(Boolean);
+
+  for (const part of parts) {
+    const match = part.match(/^([ABCabc])(\d+)?$/);
+    if (!match) {
+      return { error: 'Use formats like "A", "B", "C" or "A60,B30,C10".' };
+    }
+
+    const level = match[1].toUpperCase();
+    const value = match[2] ? parseInt(match[2], 10) : null;
+
+    if (value === null) {
+      if (parts.length > 1) {
+        return { error: 'Please provide percentages for every level when mixing (e.g., A60,B30,C10).' };
+      }
+      mix[level] = 100;
+    } else {
+      mix[level] += value;
+    }
+  }
+
+  const total = mix.A + mix.B + mix.C;
+  if (total === 0) {
+    return { error: 'Please provide at least one level percentage.' };
+  }
+
+  return { mix };
+};
+
+const calculateTargets = (totalCards, mix) => {
+  if (!mix) {
+    return {
+      targets: { A: totalCards, B: 0, C: 0 },
+      requestedMix: { A: 0, B: 0, C: 0 }
+    };
+  }
+
+  const totalWeight = mix.A + mix.B + mix.C;
+  const requestedMix = {
+    A: (mix.A / totalWeight) * 100,
+    B: (mix.B / totalWeight) * 100,
+    C: (mix.C / totalWeight) * 100
+  };
+
+  const rawTargets = {
+    A: (requestedMix.A / 100) * totalCards,
+    B: (requestedMix.B / 100) * totalCards,
+    C: (requestedMix.C / 100) * totalCards
+  };
+
+  const baseTargets = {
+    A: Math.floor(rawTargets.A),
+    B: Math.floor(rawTargets.B),
+    C: Math.floor(rawTargets.C)
+  };
+
+  let remainder = totalCards - (baseTargets.A + baseTargets.B + baseTargets.C);
+  const fractions = [
+    { level: 'A', fraction: rawTargets.A - baseTargets.A },
+    { level: 'B', fraction: rawTargets.B - baseTargets.B },
+    { level: 'C', fraction: rawTargets.C - baseTargets.C }
+  ].sort((a, b) => b.fraction - a.fraction);
+
+  let index = 0;
+  while (remainder > 0) {
+    baseTargets[fractions[index].level] += 1;
+    remainder -= 1;
+    index = (index + 1) % fractions.length;
+  }
+
+  return { targets: baseTargets, requestedMix };
+};
+
+const selectCardsWithFallback = (cards, targets) => {
+  const availableCounts = countCardLevels(cards);
+  const adjustedTargets = { ...targets };
+  const warnings = [];
+
+  const redistributeDeficit = (fromLevel, toLevels) => {
+    const deficit = Math.max(0, adjustedTargets[fromLevel] - availableCounts[fromLevel]);
+    if (deficit === 0) {
+      return { deficit: 0, transfers: [] };
+    }
+
+    adjustedTargets[fromLevel] -= deficit;
+    let remaining = deficit;
+    const transfers = [];
+
+    toLevels.forEach((level) => {
+      if (remaining <= 0) return;
+      const spare = availableCounts[level] - adjustedTargets[level];
+      if (spare > 0) {
+        const transfer = Math.min(remaining, spare);
+        adjustedTargets[level] += transfer;
+        remaining -= transfer;
+        transfers.push({ level, count: transfer });
+      }
+    });
+
+    return { deficit, transfers, remaining };
+  };
+
+  const cAdjustment = redistributeDeficit('C', ['B', 'A']);
+  if (cAdjustment.deficit > 0) {
+    const fromB = cAdjustment.transfers.find((t) => t.level === 'B')?.count || 0;
+    const fromA = cAdjustment.transfers.find((t) => t.level === 'A')?.count || 0;
+    warnings.push(
+      `Requested ${targets.C} level C cards, but only ${availableCounts.C} exist. Filled ${fromB} from level B and ${fromA} from level A.`
+    );
+  }
+
+  const bAdjustment = redistributeDeficit('B', ['A']);
+  if (bAdjustment.deficit > 0) {
+    const fromA = bAdjustment.transfers.find((t) => t.level === 'A')?.count || 0;
+    warnings.push(
+      `Requested ${targets.B} level B cards, but only ${availableCounts.B} exist. Filled ${fromA} from level A.`
+    );
+  }
+
+  const aAdjustment = redistributeDeficit('A', ['B', 'C']);
+  if (aAdjustment.deficit > 0) {
+    const fromB = aAdjustment.transfers.find((t) => t.level === 'B')?.count || 0;
+    const fromC = aAdjustment.transfers.find((t) => t.level === 'C')?.count || 0;
+    warnings.push(
+      `Requested ${targets.A} level A cards, but only ${availableCounts.A} exist. Filled ${fromB} from level B and ${fromC} from level C.`
+    );
+  }
+
+  const totalAvailable = cards.length;
+  let totalTargeted = adjustedTargets.A + adjustedTargets.B + adjustedTargets.C;
+  if (totalTargeted < totalAvailable) {
+    let remaining = totalAvailable - totalTargeted;
+    ['A', 'B', 'C'].forEach((level) => {
+      if (remaining <= 0) return;
+      const spare = availableCounts[level] - adjustedTargets[level];
+      if (spare > 0) {
+        const addition = Math.min(spare, remaining);
+        adjustedTargets[level] += addition;
+        remaining -= addition;
+      }
+    });
+  }
+
+  const desiredTotal = adjustedTargets.A + adjustedTargets.B + adjustedTargets.C;
+  const remainingTargets = { ...adjustedTargets };
+  const selectedIndexes = new Set();
+
+  cards.forEach((card, index) => {
+    const level = normalizeLevel(card.level);
+    if (remainingTargets[level] > 0) {
+      selectedIndexes.add(index);
+      remainingTargets[level] -= 1;
+    }
+  });
+
+  if (selectedIndexes.size < desiredTotal) {
+    cards.forEach((_, index) => {
+      if (selectedIndexes.size >= desiredTotal) {
+        return;
+      }
+      if (!selectedIndexes.has(index)) {
+        selectedIndexes.add(index);
+      }
+    });
+  }
+
+  const orderedIndexes = Array.from(selectedIndexes).sort((a, b) => a - b);
+  const selectedCards = orderedIndexes.map((index) => cards[index]);
+  const appliedCounts = countCardLevels(selectedCards);
+
+  return {
+    cards: selectedCards,
+    warnings,
+    appliedCounts
+  };
+};
+
 function FlashcardViewer({ flashcard, onBack }) {
+  const [cards, setCards] = useState(flashcard.cards || []);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [selectedAnswers, setSelectedAnswers] = useState([]);
   const [showCorrectAnswers, setShowCorrectAnswers] = useState(false);
-  const [startTime] = useState(Date.now());  const [elapsedTime, setElapsedTime] = useState(0);
+  const [startTime, setStartTime] = useState(Date.now());
+  const [elapsedTime, setElapsedTime] = useState(0);
 
   // New state for quiz tracking
   const [cardResults, setCardResults] = useState({});
@@ -15,18 +229,24 @@ function FlashcardViewer({ flashcard, onBack }) {
   const [swipeDirection, setSwipeDirection] = useState(null);
   const [postponedQueue, setPostponedQueue] = useState([]);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [levelMixInput, setLevelMixInput] = useState('');
+  const [levelMixError, setLevelMixError] = useState('');
+  const [levelMixWarnings, setLevelMixWarnings] = useState([]);
+  const [appliedMixSummary, setAppliedMixSummary] = useState('All cards (no level mix applied)');
   const touchStartRef = useRef(null);
   const gestureHandledRef = useRef(false);
 
   console.log('FlashcardViewer received flashcard:', flashcard);
   
-  const cards = flashcard.cards || [];
   console.log('Cards array:', cards);
   console.log('Cards length:', cards.length);
 
   const currentCard = cards[currentCardIndex];
   const rawCardType = currentCard?.type || (Array.isArray(currentCard?.correctAnswers) ? 'multiple' : 'single');
   const cardType = (typeof rawCardType === 'string' ? rawCardType.toLowerCase() : rawCardType) || 'single';
+
+  const availableLevelCounts = useMemo(() => countCardLevels(flashcard.cards || []), [flashcard.cards]);
+  const appliedLevelCounts = useMemo(() => countCardLevels(cards), [cards]);
 
   const getBitmapSrc = (bitmap) => {
     if (!bitmap) return null;
@@ -50,6 +270,30 @@ function FlashcardViewer({ flashcard, onBack }) {
       </div>
     );
   };
+
+  const resetQuizState = () => {
+    setCardResults({});
+    setCurrentCardIndex(0);
+    setIsFlipped(false);
+    setSelectedAnswers([]);
+    setShowCorrectAnswers(false);
+    setShowSummary(false);
+    setCurrentCardAnswered(false);
+    setSwipeDirection(null);
+    setPostponedQueue([]);
+    setShowCelebration(false);
+    setElapsedTime(0);
+    setStartTime(Date.now());
+  };
+
+  useEffect(() => {
+    setCards(flashcard.cards || []);
+    setLevelMixInput('');
+    setLevelMixError('');
+    setLevelMixWarnings([]);
+    setAppliedMixSummary('All cards (no level mix applied)');
+    resetQuizState();
+  }, [flashcard]);
 
   // Reset selections when card changes
   useEffect(() => {
@@ -92,6 +336,46 @@ function FlashcardViewer({ flashcard, onBack }) {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleApplyLevelMix = () => {
+    const parsed = parseLevelMixInput(levelMixInput);
+    if (parsed.error) {
+      setLevelMixError(parsed.error);
+      return;
+    }
+
+    const mix = parsed.mix;
+    const totalCards = (flashcard.cards || []).length;
+    if (!mix) {
+      setCards(flashcard.cards || []);
+      setLevelMixError('');
+      setLevelMixWarnings([]);
+      setAppliedMixSummary('All cards (no level mix applied)');
+      resetQuizState();
+      return;
+    }
+    const { targets, requestedMix } = calculateTargets(totalCards, mix);
+    const selection = selectCardsWithFallback(flashcard.cards || [], targets);
+
+    setCards(selection.cards);
+    setLevelMixError('');
+    setLevelMixWarnings(selection.warnings);
+    setAppliedMixSummary(
+      mix
+        ? `Requested ${formatMixDescription(requestedMix)} → showing A:${selection.appliedCounts.A} B:${selection.appliedCounts.B} C:${selection.appliedCounts.C}`
+        : 'All cards (no level mix applied)'
+    );
+    resetQuizState();
+  };
+
+  const handleResetLevelMix = () => {
+    setLevelMixInput('');
+    setLevelMixError('');
+    setLevelMixWarnings([]);
+    setAppliedMixSummary('All cards (no level mix applied)');
+    setCards(flashcard.cards || []);
+    resetQuizState();
   };
 
   const proceedToNextCard = () => {
@@ -313,16 +597,7 @@ function FlashcardViewer({ flashcard, onBack }) {
 
   // Reset quiz function
   const handleRestartQuiz = () => {
-    setCardResults({});
-    setCurrentCardIndex(0);
-    setIsFlipped(false);
-    setSelectedAnswers([]);
-    setShowCorrectAnswers(false);
-    setShowSummary(false);
-    setCurrentCardAnswered(false);
-    setSwipeDirection(null);
-    setPostponedQueue([]);
-    setShowCelebration(false);
+    resetQuizState();
   };
 
   if (showSummary) {
@@ -416,6 +691,54 @@ function FlashcardViewer({ flashcard, onBack }) {
           </div>
           <div className="metadata-item">
             <strong>Language:</strong> {flashcard.language}
+          </div>
+        </div>
+      </div>
+
+      <div className="level-mix-panel">
+        <div className="level-mix-header">
+          <div>
+            <h3>Choose card difficulty mix</h3>
+            <p className="level-mix-subtitle">
+              Enter A, B, or C for a single level or a mix like A60,B30,C10. Missing level C cards are replaced by B, missing B cards by A.
+            </p>
+          </div>
+          <div className="level-availability">
+            <span>Available — A: {availableLevelCounts.A}</span>
+            <span>B: {availableLevelCounts.B}</span>
+            <span>C: {availableLevelCounts.C}</span>
+          </div>
+        </div>
+
+        <div className="level-mix-controls">
+          <input
+            className="level-mix-input"
+            type="text"
+            value={levelMixInput}
+            onChange={(e) => setLevelMixInput(e.target.value)}
+            placeholder="e.g., A, B, C or A60,B30,C10"
+          />
+          <button className="level-mix-apply" onClick={handleApplyLevelMix}>
+            Apply mix
+          </button>
+          <button className="level-mix-reset" onClick={handleResetLevelMix}>
+            Reset
+          </button>
+        </div>
+
+        {levelMixError && <div className="level-mix-error">{levelMixError}</div>}
+        {levelMixWarnings.length > 0 && (
+          <ul className="level-mix-warnings">
+            {levelMixWarnings.map((warning, index) => (
+              <li key={index}>{warning}</li>
+            ))}
+          </ul>
+        )}
+
+        <div className="level-mix-summary">
+          <div>Applied mix: {appliedMixSummary}</div>
+          <div>
+            Showing — A: {appliedLevelCounts.A} • B: {appliedLevelCounts.B} • C: {appliedLevelCounts.C} (Total: {cards.length})
           </div>
         </div>
       </div>
