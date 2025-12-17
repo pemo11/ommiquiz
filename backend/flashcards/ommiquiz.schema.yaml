@@ -1,0 +1,143 @@
+# Flashcard YAML Schema
+$schema: http://json-schema.org/draft-07/schema#
+title: Flashcard YAML Schema
+description: Schema for validating flashcard YAML files
+type: object
+
+required:
+  - id
+  - title
+  - flashcards
+
+properties:
+  # Basic metadata (required)
+  id:
+    type: string
+    description: "Unique identifier for the flashcard set"
+    example: "quant_basic1"
+  
+  title:
+    type: string
+    description: "Title of the flashcard set"
+    example: "Allgemeine Grundlagen der Quantencomputer"
+  
+  flashcards:
+    type: array
+    description: "Array of flashcard objects"
+    minItems: 1
+    items:
+      type: object
+      required:
+        - question
+        - level
+      properties:
+        question:
+          type: string
+          description: "The question text"
+        
+        # Single answer questions
+        answer:
+          type: [string, number]
+          description: "The answer text or number (for single questions)"
+        
+        # Multiple choice questions (actual format used in files)
+        answers:
+          type: array
+          items:
+            type: string
+          description: "Array of answer options (for multiple choice)"
+        
+        correctAnswers:
+          type: array
+          items:
+            type: boolean
+          description: "Boolean array indicating which answers are correct"
+          
+        type:
+          type: string
+          enum: ["single", "multiple"]
+          description: "Type of flashcard - single or multiple choice"
+          
+        level:
+          type: string
+          enum: ["A", "B", "C"]
+          description: "Difficulty level"
+          
+      # Conditional validation based on what properties exist
+      anyOf:
+        - required: ["answer"]  # Single answer question
+        - required: ["answers", "correctAnswers"]  # Multiple choice
+        - required: ["type"]  # Has explicit type field
+  
+  # Optional metadata
+  author:
+    type: string
+    description: "Author(s) of the flashcard set"
+  
+  description:
+    type: string
+    description: "Description of the flashcard content"
+  
+  createDate:
+    description: "Creation date - accepts various formats"
+    # Accept any type for createDate to handle date objects and strings
+    
+  language:
+    type: string
+    description: "Language code"
+    example: "de"
+  
+  module:
+    type: string
+    description: "Module or course name"
+  
+  semester:
+    type: string
+    description: "Semester information"
+  
+  institution:
+    type: string
+    description: "Educational institution"
+  
+  studycourse:
+    type: string
+    description: "Study course or program"
+  
+  topics:
+    description: "List of topics covered - flexible format"
+    # Accept any type for topics (array or string)
+  
+  keywords:
+    type: array
+    items:
+      type: string
+    description: "List of keywords or tags"
+
+  # Allow additional properties at root level
+  level:
+    type: string
+    description: "Overall difficulty level for the set"
+
+# Allow additional properties
+additionalProperties: true
+
+# Example structures
+examples:
+  - # Single answer question
+    id: "example_single"
+    title: "Single Answer Questions"
+    flashcards:
+      - question: "What is 2+2?"
+        answer: "4"
+        type: "single"
+        level: "A"
+        
+  - # Multiple choice question (actual format)
+    id: "example_multiple"
+    title: "Multiple Choice Questions"
+    flashcards:
+      - question: "Which are programming languages?"
+        answers: ["Python", "HTML", "Java", "CSS"]
+        correctAnswers: [true, false, true, false]
+        type: "multiple"
+        level: "B"

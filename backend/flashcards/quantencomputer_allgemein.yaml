@@ -5,11 +5,13 @@ description: Fragen und Antworten zu allgemeinen Grundlagen der Quantencomputer,
 createDate: 2025-11-09
 language: de
 module: Quantencomputer
-semester: none
-institution: none
-studycourse: none
-topics: [Quantencomputer]
-keywords: [Quantencomputer, qubit, superposition, verschränkung, quantengatter, hadamard, pauli-x, pauli-z, cnot, bell-zustände]
+semester: WS 2025/26
+institution: HS Emden Leer
+studycourse: Medieninformatik Master
+topics:
+  -Quantencomputer
+keywords:
+  - qubit, Superposition, Verschränkung, Quantengatter, Hadamard, Pauli-X, Pauli-Z, CNOT, Bell-Zustände
 
 flashcards:
   - question: "Was ist ein Qubit?"
