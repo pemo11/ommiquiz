@@ -367,7 +367,9 @@ function FlashcardViewer({ flashcard, onBack }) {
       }
       if (result.correct) {
         acc[levelKey].done += 1;
-      } else if (isPostponedResult(result)) {
+      } else {
+        // Count all non-correct cards as "postponed" in level breakdown
+        // (meaning "needs review", not literally skipped)
         acc[levelKey].postponed += 1;
       }
       return acc;
