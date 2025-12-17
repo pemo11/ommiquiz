@@ -421,9 +421,32 @@ function FlashcardViewer({ flashcard, onBack }) {
     setSessionType('full');
   };
 
+  const isPostponedResult = (result) => {
+    if (!result) return false;
+
+    // Prefer an explicit postponed flag if present
+    if (result.postponed === true) {
+      return true;
+    }
+
+    const userAnswer = result.userAnswer;
+
+    if (typeof userAnswer === 'string') {
+      return userAnswer.includes('Postponed');
+    }
+
+    if (Array.isArray(userAnswer)) {
+      return userAnswer.some(
+        (ans) => typeof ans === 'string' && ans.includes('Postponed')
+      );
+    }
+
+    return false;
+  };
+
   const handleRepeatPostponed = () => {
     const postponedOnly = Object.entries(cardResults)
-      .filter(([, result]) => result.correct === false)
+      .filter(([, result]) => isPostponedResult(result))
       .map(([idx]) => Number(idx));
 
     const nextOrder = postponedOnly.length > 0 ? postponedOnly : cards.map((_, idx) => idx);
