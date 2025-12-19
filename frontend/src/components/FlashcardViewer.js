@@ -586,6 +586,12 @@ function FlashcardViewer({ flashcard, onBack }) {
     }
   };
 
+  // Helper function to check if a card result is postponed
+  const isPostponedResult = (result) => {
+    return result.userAnswer === 'Postponed (not evaluated)' || 
+           result.userAnswer === 'No answer selected (postponed)';
+  };
+
   // Calculate statistics
   const calculateStats = () => {
     const orderedResults = cardOrder
@@ -595,7 +601,8 @@ function FlashcardViewer({ flashcard, onBack }) {
     const correct = orderedResults.filter(r => r.correct).length;
     const total = cardOrder.length;
     const percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
-    const postponedCount = Math.max(total - correct, 0);
+    // Count only cards that were actually postponed (skipped or not evaluated)
+    const postponedCount = orderedResults.filter(isPostponedResult).length;
     const levels = orderedResults.reduce((acc, result) => {
       const levelKey = result.level || 'Unspecified';
       if (!acc[levelKey]) {
@@ -604,6 +611,8 @@ function FlashcardViewer({ flashcard, onBack }) {
       if (result.correct) {
         acc[levelKey].done += 1;
       } else {
+        // Count all non-correct cards as "postponed" in level breakdown
+        // (meaning "needs review", not literally skipped)
         acc[levelKey].postponed += 1;
       }
       return acc;
@@ -614,7 +623,7 @@ function FlashcardViewer({ flashcard, onBack }) {
 
   const buildLearningEvaluation = (stats) => {
     const total = stats.total || cardOrder.length;
-    const postponedCount = stats.postponedCount ?? Math.max(total - stats.correct, 0);
+    const postponedCount = stats.postponedCount ?? 0;
     const progress = total > 0 ? Math.round((stats.correct / total) * 100) : 0;
     const cardsPerMinute = elapsedTime > 0 ? (stats.correct / (elapsedTime / 60)) : null;
     const etaMinutes = cardsPerMinute && postponedCount > 0 ? Math.ceil(postponedCount / cardsPerMinute) : null;
