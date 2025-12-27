@@ -565,12 +565,10 @@ function FlashcardViewer({ flashcard, onBack }) {
       
       console.log('Final evaluation:', isCorrect);
 
-      if (isCorrect === false) {
-        setPostponedQueue(prev => prev.includes(currentCardIndex) ? prev : [...prev, currentCardIndex]);
-      } else if (isCorrect === true) {
-        setPostponedQueue(prev => prev.filter(idx => idx !== currentCardIndex));
-      }
-
+      // Don't update the postponed queue here - let the user decide with the buttons
+      // We'll update it when they click Done/Postpone
+      
+      // Store the evaluation result but don't mark as answered yet
       setCardResults(prev => ({
         ...prev,
         [currentCardIndex]: {
@@ -581,18 +579,57 @@ function FlashcardViewer({ flashcard, onBack }) {
           userAnswer: userAnswer,
           selectedAnswers,
           correctAnswers,
-          level: currentCard.level
+          level: currentCard.level,
+          // Store the evaluation result for the buttons to use
+          evaluationResult: isCorrect
         }
       }));
-      setCurrentCardAnswered(true);
       
-      // Remove automatic navigation - let user decide when to proceed
+      // Don't set currentCardAnswered to true yet - let the user decide with the buttons
     }
   };
 
-  // New function to allow retrying a question
+  // Handle evaluation of multiple choice answers when user clicks Done/Postpone
+  const handleMultipleChoiceEvaluation = (markAsCorrect) => {
+    const currentResult = cardResults[currentCardIndex];
+    if (!currentResult) return;
+    
+    // Update the postponed queue based on user's choice
+    if (markAsCorrect) {
+      setPostponedQueue(prev => prev.filter(idx => idx !== currentCardIndex));
+    } else {
+      setPostponedQueue(prev => prev.includes(currentCardIndex) ? prev : [...prev, currentCardIndex]);
+    }
+    
+    // Mark the card as answered
+    setCurrentCardAnswered(true);
+    
+    // Update the card result with the final evaluation
+    setCardResults(prev => ({
+      ...prev,
+      [currentCardIndex]: {
+        ...prev[currentCardIndex],
+        correct: markAsCorrect,
+        // Update the userAnswer to reflect the final action
+        userAnswer: markAsCorrect 
+          ? 'Marked as correct by user' 
+          : 'Marked as postponed by user'
+      }
+    }));
+    
+    // Auto-proceed to next card after a short delay
+    setTimeout(() => {
+      proceedToNextCard();
+    }, 500);
+  };
+
+  // Function to allow retrying a question
   const handleTryAgain = () => {
-    // Remove this card from results and reset its state
+    // Reset the UI state for trying again
+    setShowCorrectAnswers(false);
+    setSelectedAnswers([]);
+    
+    // Remove this card from results to reset its state
     setCardResults(prev => {
       const newResults = { ...prev };
       delete newResults[currentCardIndex];
@@ -1135,7 +1172,7 @@ function FlashcardViewer({ flashcard, onBack }) {
             
             {showCorrectAnswers && (
               <div className="evaluation-result">
-                {cardResults[currentCardIndex]?.correct ? (
+                {cardResults[currentCardIndex]?.evaluationResult === true ? (
                   <div className="correct-evaluation">✅ Correct! You got it right!</div>
                 ) : (
                   <div className="incorrect-evaluation">
@@ -1144,28 +1181,71 @@ function FlashcardViewer({ flashcard, onBack }) {
                   </div>
                 )}
                 
-                {/* Add Postpone and Done buttons */}
+                {/* Show Postpone and Done buttons if not already answered */}
                 {!currentCardAnswered && (
-                  <div className="evaluation-buttons" style={{ marginTop: '1rem' }}>
+                  <div className="evaluation-buttons" style={{ 
+                    display: 'flex', 
+                    justifyContent: 'center', 
+                    gap: '1rem',
+                    marginTop: '1.5rem',
+                    padding: '0.5rem 0',
+                    borderTop: '1px solid #eee'
+                  }}>
                     <button 
                       onClick={(e) => { 
                         e.stopPropagation(); 
-                        handleSingleAnswerEvaluation(false); 
+                        handleMultipleChoiceEvaluation(false);
                       }}
                       className="eval-button incorrect-button"
-                      style={{ marginRight: '0.5rem' }}
+                      style={{
+                        padding: '0.75rem 1.5rem',
+                        borderRadius: '8px',
+                        border: '2px solid #ff6b6b',
+                        background: '#fff',
+                        color: '#ff6b6b',
+                        cursor: 'pointer',
+                        fontWeight: '600',
+                        transition: 'all 0.2s ease',
+                        minWidth: '120px'
+                      }}
+                      onMouseOver={(e) => {
+                        e.target.style.background = '#ffebee';
+                        e.target.style.transform = 'translateY(-2px)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.target.style.background = '#fff';
+                        e.target.style.transform = 'none';
+                      }}
                     >
                       📤 Postpone
                     </button>
                     <button 
                       onClick={(e) => { 
                         e.stopPropagation(); 
-                        handleSingleAnswerEvaluation(true); 
+                        handleMultipleChoiceEvaluation(true);
                       }}
                       className="eval-button correct-button"
-                      style={{ marginLeft: '0.5rem' }}
+                      style={{
+                        padding: '0.75rem 1.5rem',
+                        borderRadius: '8px',
+                        border: '2px solid #4caf50',
+                        background: '#fff',
+                        color: '#4caf50',
+                        cursor: 'pointer',
+                        fontWeight: '600',
+                        transition: 'all 0.2s ease',
+                        minWidth: '120px'
+                      }}
+                      onMouseOver={(e) => {
+                        e.target.style.background = '#e8f5e9';
+                        e.target.style.transform = 'translateY(-2px)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.target.style.background = '#fff';
+                        e.target.style.transform = 'none';
+                      }}
                     >
-                      ✅ Done
+                      ✅ Mark as Done
                     </button>
                   </div>
                 )}
