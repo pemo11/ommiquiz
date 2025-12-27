@@ -251,6 +251,57 @@ function FlashcardViewer({ flashcard, onBack }) {
   const availableLevelCounts = useMemo(() => countCardLevels(flashcard.cards || []), [flashcard.cards]);
   const appliedLevelCounts = useMemo(() => countCardLevels(cards), [cards]);
 
+  const handleApplyLevelMix = () => {
+    try {
+      setLevelMixError('');
+      setLevelMixWarnings([]);
+      
+      if (!levelMixInput.trim()) {
+        setLevelMixError('Please enter a level mix (e.g., A, B, C or A60,B30,C10)');
+        return;
+      }
+
+      // Parse the level mix input
+      const mix = parseLevelMixInput(levelMixInput);
+      
+      if (!mix || mix.length === 0) {
+        setLevelMixError('Invalid level mix format. Use A, B, C or A60,B30,C10 format.');
+        return;
+      }
+
+      // Calculate targets based on available cards
+      const targets = calculateTargets(flashcard.cards.length, mix);
+      
+      // Select cards based on the targets
+      const { cards: selectedCards, warnings, appliedCounts } = selectCardsWithFallback(flashcard.cards, targets);
+      
+      // Update state with selected cards
+      setCards(selectedCards);
+      setLevelMixWarnings(warnings);
+      
+      // Generate a summary of the applied mix
+      const summary = formatMixDescription(mix);
+      setAppliedMixSummary(`Applied mix: ${summary}`);
+      
+      // Reset the quiz state with the new cards
+      resetQuizState();
+      
+    } catch (error) {
+      console.error('Error applying level mix:', error);
+      setLevelMixError(error.message || 'Failed to apply level mix. Please check the format and try again.');
+    }
+  };
+
+  const handleResetLevelMix = () => {
+    // Reset to show all cards
+    setCards(flashcard.cards || []);
+    setLevelMixInput('');
+    setLevelMixError('');
+    setLevelMixWarnings([]);
+    setAppliedMixSummary('All cards (no level mix applied)');
+    resetQuizState();
+  };
+
   const getBitmapSrc = (bitmap) => {
     if (!bitmap) return null;
     return bitmap.startsWith('data:') ? bitmap : `data:image/png;base64,${bitmap}`;
