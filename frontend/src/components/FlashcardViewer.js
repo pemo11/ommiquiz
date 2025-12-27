@@ -349,6 +349,16 @@ function FlashcardViewer({ flashcard, onBack }) {
     resetQuizState();
   }, [flashcard]);
 
+  // Debug effect to track state changes
+  useEffect(() => {
+    console.log('--- STATE UPDATE ---');
+    console.log('showCorrectAnswers:', showCorrectAnswers);
+    console.log('currentCardAnswered:', currentCardAnswered);
+    console.log('currentCardIndex:', currentCardIndex);
+    console.log('cardResults for current card:', cardResults[currentCardIndex]);
+    console.log('-------------------');
+  }, [showCorrectAnswers, currentCardAnswered, currentCardIndex, cardResults]);
+
   // Reset selections when card changes
   useEffect(() => {
     const cardResult = cardResults[currentCardIndex];
@@ -434,6 +444,12 @@ function FlashcardViewer({ flashcard, onBack }) {
   };
 
   const handleCardClick = () => {
+    // Don't handle card click if we're showing correct answers for a multiple-choice question
+    if (cardType === 'multiple' && showCorrectAnswers) {
+      console.log('Ignoring card click while showing answers');
+      return;
+    }
+    
     if (gestureHandledRef.current) {
       gestureHandledRef.current = false;
       return;
@@ -536,48 +552,49 @@ function FlashcardViewer({ flashcard, onBack }) {
       const totalCorrectAnswers = correctAnswers.filter(Boolean).length;
       
       // Determine correctness
-      let isCorrect = false;
-      let userAnswer = '';
+      const isCorrect = selectedAnswers.length > 0 && 
+                       userIncorrectCount === 0 && 
+                       userCorrectCount === totalCorrectAnswers;
       
-      if (selectedAnswers.length === 0) {
-        // No answers selected - treat as incorrect
-        isCorrect = false;
-        userAnswer = 'No answer selected';
-      } else {
-        // Answer is correct ONLY if user selected ALL correct answers and NO incorrect ones
-        isCorrect = (userIncorrectCount === 0 && userCorrectCount === totalCorrectAnswers);
-        userAnswer = selectedAnswers.map(idx => currentCard.answers[idx]).join(', ');
-      }
+      const userAnswer = selectedAnswers.length > 0 
+        ? selectedAnswers.map(idx => currentCard.answers[idx]).join(', ')
+        : 'No answer selected';
       
       console.log('Multiple choice evaluation:', { isCorrect, userAnswer });
       
       // Update the card results with the evaluation
-      setCardResults(prev => ({
-        ...prev,
-        [currentCardIndex]: {
-          type: 'multiple',
-          correct: isCorrect,
-          question: currentCard.question,
-          answer: currentCard.answers.filter((_, idx) => correctAnswers[idx]).join(', '),
-          userAnswer: userAnswer,
-          selectedAnswers: [...selectedAnswers],
-          correctAnswers: [...correctAnswers],
-          level: currentCard.level,
-          evaluationResult: isCorrect
-        }
-      }));
+      setCardResults(prev => {
+        const updatedResults = {
+          ...prev,
+          [currentCardIndex]: {
+            ...(prev[currentCardIndex] || {}),
+            type: 'multiple',
+            correct: isCorrect,
+            question: currentCard.question,
+            answer: currentCard.answers.filter((_, idx) => correctAnswers[idx]).join(', '),
+            userAnswer,
+            selectedAnswers: [...selectedAnswers],
+            correctAnswers: [...correctAnswers],
+            level: currentCard.level,
+            evaluationResult: isCorrect
+          }
+        };
+        console.log('Setting card results:', updatedResults);
+        return updatedResults;
+      });
       
       // Show the correct answers and evaluation
+      console.log('Setting showCorrectAnswers to true');
       setShowCorrectAnswers(true);
-      
-      // Important: We don't set currentCardAnswered to true yet
-      // This allows the user to see the evaluation and click Done/Postpone
     }
   };
 
   // Handle evaluation of multiple choice answers when user clicks Done/Postpone
   const handleMultipleChoiceEvaluation = (markAsCorrect) => {
     console.log('handleMultipleChoiceEvaluation called with markAsCorrect:', markAsCorrect);
+    
+    // First, mark the card as answered to prevent any state resets
+    setCurrentCardAnswered(true);
     
     // Update the postponed queue based on user's choice
     if (markAsCorrect) {
@@ -587,9 +604,6 @@ function FlashcardViewer({ flashcard, onBack }) {
         prev.includes(currentCardIndex) ? prev : [...prev, currentCardIndex]
       );
     }
-    
-    // Mark the card as answered
-    setCurrentCardAnswered(true);
     
     // Update the card result with the final evaluation
     setCardResults(prev => {
@@ -601,14 +615,13 @@ function FlashcardViewer({ flashcard, onBack }) {
           userAnswer: markAsCorrect 
             ? 'Marked as correct by user' 
             : 'Marked as postponed by user',
-          // Ensure we have all required fields
           type: 'multiple',
           question: currentCard?.question || '',
           answer: currentCard?.answers?.filter((_, idx) => 
             currentCard.correctAnswers?.[idx]
           )?.join(', ') || '',
-          selectedAnswers: selectedAnswers,
-          correctAnswers: currentCard?.correctAnswers || [],
+          selectedAnswers: [...selectedAnswers],
+          correctAnswers: [...(currentCard?.correctAnswers || [])],
           level: currentCard?.level || 'B',
           evaluationResult: markAsCorrect
         }
@@ -620,8 +633,9 @@ function FlashcardViewer({ flashcard, onBack }) {
     
     // Show a brief confirmation before proceeding
     setTimeout(() => {
+      console.log('Proceeding to next card...');
       proceedToNextCard();
-    }, 300);
+    }, 500);
   };
 
   // Function to allow retrying a question
