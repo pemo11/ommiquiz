@@ -496,15 +496,17 @@ function FlashcardViewer({ flashcard, onBack }) {
   };
 
   const handleAnswerSelect = (answerIndex) => {
-    if (cardType === 'multiple' && !currentCardAnswered) {
-      setSelectedAnswers(prev => {
-        if (prev.includes(answerIndex)) {
-          return prev.filter(idx => idx !== answerIndex);
-        } else {
-          return [...prev, answerIndex];
-        }
-      });
-    }
+    // Don't allow changing answers after showing correct ones or if already answered
+    if (showCorrectAnswers || currentCardAnswered) return;
+    
+    setSelectedAnswers(prev => {
+      const newSelection = prev.includes(answerIndex)
+        ? prev.filter(idx => idx !== answerIndex)
+        : [...prev, answerIndex];
+      
+      console.log('Selected answers updated:', newSelection);
+      return newSelection;
+    });
   };
 
   // New function to handle single-answer card evaluation
@@ -562,28 +564,28 @@ function FlashcardViewer({ flashcard, onBack }) {
       
       console.log('Multiple choice evaluation:', { isCorrect, userAnswer });
       
-      // Update the card results with the evaluation
+      // First, update the card results with the evaluation
       setCardResults(prev => {
-        const updatedResults = {
+        const newResults = {
           ...prev,
           [currentCardIndex]: {
-            ...(prev[currentCardIndex] || {}),
+            ...(prev[currentCardIndex] || {}), // Keep existing data
             type: 'multiple',
             correct: isCorrect,
             question: currentCard.question,
             answer: currentCard.answers.filter((_, idx) => correctAnswers[idx]).join(', '),
-            userAnswer,
-            selectedAnswers: [...selectedAnswers],
+            userAnswer: userAnswer,
+            selectedAnswers: [...selectedAnswers], // Preserve selected answers
             correctAnswers: [...correctAnswers],
             level: currentCard.level,
             evaluationResult: isCorrect
           }
         };
-        console.log('Setting card results:', updatedResults);
-        return updatedResults;
+        console.log('Updated card results:', newResults);
+        return newResults;
       });
       
-      // Show the correct answers and evaluation
+      // Then show the correct answers and evaluation
       console.log('Setting showCorrectAnswers to true');
       setShowCorrectAnswers(true);
     }
@@ -1125,7 +1127,7 @@ function FlashcardViewer({ flashcard, onBack }) {
           </div>
           
           <div className="answers-section">
-            <div className="card-header">Select all correct answers:</div>
+            <div className="card-header">Antworten:</div>
             <div className="answers-list">
               {currentCard.answers && currentCard.answers.map((answer, idx) => {
                 const isCorrectAnswer = currentCard.correctAnswers && currentCard.correctAnswers[idx];
@@ -1133,14 +1135,18 @@ function FlashcardViewer({ flashcard, onBack }) {
                 
                 // Build CSS classes based on state
                 let answerClasses = `answer-option`;
-                if (isSelectedAnswer && !showCorrectAnswers) {
+                
+                // Show selected state if answer is selected
+                if (isSelectedAnswer) {
                   answerClasses += ' selected';
                 }
+                
+                // Show correct/incorrect states when answers are revealed
                 if (showCorrectAnswers) {
                   answerClasses += ' revealed';
                   if (isCorrectAnswer) {
                     answerClasses += ' correct';
-                  } else {
+                  } else if (isSelectedAnswer) {
                     answerClasses += ' incorrect';
                   }
                   // Add selected state for revealed answers
@@ -1180,7 +1186,7 @@ function FlashcardViewer({ flashcard, onBack }) {
                   className="show-answers-button"
                   style={{ margin: 0, maxWidth: 'none', flex: 1 }}
                 >
-                  Show Correct Answers
+                  Antworten überprüfen
                 </button>
               </div>
             )}
