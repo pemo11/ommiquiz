@@ -527,7 +527,7 @@ function FlashcardViewer({ flashcard, onBack }) {
   // Enhanced function to handle multiple choice evaluation
   const handleShowAnswers = () => {
     if (cardType === 'multiple' && !currentCardAnswered) {
-      setShowCorrectAnswers(true);
+      console.log('Showing answers for multiple choice question');
       
       // Calculate if the answer is correct
       const correctAnswers = currentCard.correctAnswers || [];
@@ -535,40 +535,23 @@ function FlashcardViewer({ flashcard, onBack }) {
       const userIncorrectCount = selectedAnswers.filter(idx => !correctAnswers[idx]).length;
       const totalCorrectAnswers = correctAnswers.filter(Boolean).length;
       
-      // Debug logging
-      console.log('Multiple Choice Evaluation:');
-      console.log('Selected answers:', selectedAnswers);
-      console.log('Correct answers array:', correctAnswers);
-      console.log('User correct count:', userCorrectCount);
-      console.log('User incorrect count:', userIncorrectCount);
-      console.log('Total correct answers:', totalCorrectAnswers);
-      
       // Determine correctness
-      let isCorrect;
-      let userAnswer;
+      let isCorrect = false;
+      let userAnswer = '';
       
       if (selectedAnswers.length === 0) {
-        // No answers selected - treat as postponed
+        // No answers selected - treat as incorrect
         isCorrect = false;
-        userAnswer = 'No answer selected (postponed)';
+        userAnswer = 'No answer selected';
       } else {
         // Answer is correct ONLY if user selected ALL correct answers and NO incorrect ones
-        if (userIncorrectCount === 0 && userCorrectCount === totalCorrectAnswers) {
-          // Perfect match: selected all correct answers and no incorrect ones
-          isCorrect = true;
-        } else {
-          // Either selected some wrong answers OR missed some correct answers
-          isCorrect = false;
-        }
+        isCorrect = (userIncorrectCount === 0 && userCorrectCount === totalCorrectAnswers);
         userAnswer = selectedAnswers.map(idx => currentCard.answers[idx]).join(', ');
       }
       
-      console.log('Final evaluation:', isCorrect);
-
-      // Don't update the postponed queue here - let the user decide with the buttons
-      // We'll update it when they click Done/Postpone
+      console.log('Multiple choice evaluation:', { isCorrect, userAnswer });
       
-      // Store the evaluation result but don't mark as answered yet
+      // Update the card results with the evaluation
       setCardResults(prev => ({
         ...prev,
         [currentCardIndex]: {
@@ -577,50 +560,68 @@ function FlashcardViewer({ flashcard, onBack }) {
           question: currentCard.question,
           answer: currentCard.answers.filter((_, idx) => correctAnswers[idx]).join(', '),
           userAnswer: userAnswer,
-          selectedAnswers,
-          correctAnswers,
+          selectedAnswers: [...selectedAnswers],
+          correctAnswers: [...correctAnswers],
           level: currentCard.level,
-          // Store the evaluation result for the buttons to use
           evaluationResult: isCorrect
         }
       }));
       
-      // Don't set currentCardAnswered to true yet - let the user decide with the buttons
+      // Show the correct answers and evaluation
+      setShowCorrectAnswers(true);
+      
+      // Important: We don't set currentCardAnswered to true yet
+      // This allows the user to see the evaluation and click Done/Postpone
     }
   };
 
   // Handle evaluation of multiple choice answers when user clicks Done/Postpone
   const handleMultipleChoiceEvaluation = (markAsCorrect) => {
-    const currentResult = cardResults[currentCardIndex];
-    if (!currentResult) return;
+    console.log('handleMultipleChoiceEvaluation called with markAsCorrect:', markAsCorrect);
     
     // Update the postponed queue based on user's choice
     if (markAsCorrect) {
       setPostponedQueue(prev => prev.filter(idx => idx !== currentCardIndex));
     } else {
-      setPostponedQueue(prev => prev.includes(currentCardIndex) ? prev : [...prev, currentCardIndex]);
+      setPostponedQueue(prev => 
+        prev.includes(currentCardIndex) ? prev : [...prev, currentCardIndex]
+      );
     }
     
     // Mark the card as answered
     setCurrentCardAnswered(true);
     
     // Update the card result with the final evaluation
-    setCardResults(prev => ({
-      ...prev,
-      [currentCardIndex]: {
-        ...prev[currentCardIndex],
-        correct: markAsCorrect,
-        // Update the userAnswer to reflect the final action
-        userAnswer: markAsCorrect 
-          ? 'Marked as correct by user' 
-          : 'Marked as postponed by user'
-      }
-    }));
+    setCardResults(prev => {
+      const updatedResults = {
+        ...prev,
+        [currentCardIndex]: {
+          ...(prev[currentCardIndex] || {}),
+          correct: markAsCorrect,
+          userAnswer: markAsCorrect 
+            ? 'Marked as correct by user' 
+            : 'Marked as postponed by user',
+          // Ensure we have all required fields
+          type: 'multiple',
+          question: currentCard?.question || '',
+          answer: currentCard?.answers?.filter((_, idx) => 
+            currentCard.correctAnswers?.[idx]
+          )?.join(', ') || '',
+          selectedAnswers: selectedAnswers,
+          correctAnswers: currentCard?.correctAnswers || [],
+          level: currentCard?.level || 'B',
+          evaluationResult: markAsCorrect
+        }
+      };
+      
+      console.log('Updated card results:', updatedResults);
+      return updatedResults;
+    });
     
-    // Auto-proceed to next card after a short delay
+    // Show a brief confirmation before proceeding
     setTimeout(() => {
       proceedToNextCard();
-    }, 500);
+    }, 300);
   };
 
   // Function to allow retrying a question
@@ -1267,18 +1268,18 @@ function FlashcardViewer({ flashcard, onBack }) {
 
       <div className="navigation-buttons">
         <button
-          onClick={handleNext}
-          disabled={cardOrder.length === 0}
-          className="nav-button"
-        >
-          {currentOrderIndex === cardOrder.length - 1 ? 'Show Results' : 'Next →'}
-        </button>
-        <button
           onClick={handlePrevious}
           disabled={currentOrderIndex === 0}
           className="nav-button"
         >
           ← Previous
+        </button>
+        <button
+          onClick={handleNext}
+          disabled={cardOrder.length === 0}
+          className="nav-button"
+        >
+          {currentOrderIndex === cardOrder.length - 1 ? 'Show Results' : 'Next →'}
         </button>
       </div>
 
