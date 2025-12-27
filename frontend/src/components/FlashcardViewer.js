@@ -374,8 +374,12 @@ function FlashcardViewer({ flashcard, onBack }) {
       return;
     }
 
-    setShowCelebration(postponedQueue.length === 0);
-    setShowSummary(true);
+    // When we reach the last card, show the summary
+    // Use a timeout to ensure state updates are processed before showing summary
+    setTimeout(() => {
+      setShowCelebration(postponedQueue.length === 0);
+      setShowSummary(true);
+    }, 0);
   };
 
   const handleCardClick = () => {
@@ -793,15 +797,41 @@ function FlashcardViewer({ flashcard, onBack }) {
           </div>
 
           <div className="summary-actions">
-            <button onClick={handleRepeatPostponed} className="restart-button" disabled={stats.postponedCount === 0}>
-              🔁 Repeat Postponed Cards
-            </button>
-            <button onClick={handleRestartQuiz} className="restart-button secondary-button">
-              🔄 Restart Full Quiz
-            </button>
-            <button onClick={onBack} className="back-button">
-              Exit to Selection
-            </button>
+            <div className="action-buttons">
+              <button 
+                onClick={handleRepeatPostponed} 
+                className={`action-button ${stats.postponedCount === 0 ? 'disabled' : ''}`}
+                disabled={stats.postponedCount === 0}
+              >
+                <span className="button-icon">🔁</span>
+                <span className="button-text">Repeat Only Postponed Cards</span>
+                {stats.postponedCount > 0 && (
+                  <span className="badge">{stats.postponedCount}</span>
+                )}
+              </button>
+              
+              <button 
+                onClick={handleRestartQuiz} 
+                className="action-button primary"
+              >
+                <span className="button-icon">🔄</span>
+                <span className="button-text">Reset & Repeat All Cards</span>
+              </button>
+              
+              <button 
+                onClick={onBack} 
+                className="action-button exit"
+              >
+                <span className="button-icon">🚪</span>
+                <span className="button-text">Exit Quiz</span>
+              </button>
+            </div>
+            
+            <div className="action-note">
+              {stats.postponedCount === 0 
+                ? 'Great job! You have no postponed cards.' 
+                : `You have ${stats.postponedCount} card${stats.postponedCount === 1 ? '' : 's'} to review.`}
+            </div>
           </div>
         </div>
       </div>
