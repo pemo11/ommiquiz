@@ -1,4 +1,5 @@
 import packageJson from '../package.json';
 
-// Version updated to 1.0.8 - Force cache refresh
+// This file exports the frontend version from package.json
+// The version can be overridden using the REACT_APP_VERSION environment variable
 export const FRONTEND_VERSION = process.env.REACT_APP_VERSION || packageJson.version;

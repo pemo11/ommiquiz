@@ -1092,6 +1092,42 @@ function FlashcardViewer({ flashcard, onBack }) {
                     <button onClick={handleTryAgain} className="try-again-button">🔄 Try Again</button>
                   </div>
                 )}
+                
+                {/* Add Postpone and Done buttons */}
+                {!currentCardAnswered && (
+                  <div className="evaluation-buttons" style={{ marginTop: '1rem' }}>
+                    <button 
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        handleSingleAnswerEvaluation(false); 
+                      }}
+                      className="eval-button incorrect-button"
+                      style={{ marginRight: '0.5rem' }}
+                    >
+                      📤 Postpone
+                    </button>
+                    <button 
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        handleSingleAnswerEvaluation(true); 
+                      }}
+                      className="eval-button correct-button"
+                      style={{ marginLeft: '0.5rem' }}
+                    >
+                      ✅ Done
+                    </button>
+                  </div>
+                )}
+                
+                {currentCardAnswered && (
+                  <div className="answered-indicator">
+                    {cardResults[currentCardIndex]?.correct ? (
+                      <span className="correct-indicator">✅ Marked as Done</span>
+                    ) : (
+                      <span className="incorrect-indicator">📤 Postponed</span>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
