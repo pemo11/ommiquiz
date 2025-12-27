@@ -711,6 +711,17 @@ function FlashcardViewer({ flashcard, onBack }) {
     setSessionType(postponedOnly.length > 0 ? 'postponed' : 'full');
   };
 
+  // Automatically show the summary when all cards have been processed
+  useEffect(() => {
+    const allCardsProcessed = cardOrder.length > 0 && Object.keys(cardResults).length >= cardOrder.length;
+    const isAtEndOfOrder = currentOrderIndex >= cardOrder.length - 1;
+
+    if (!showSummary && allCardsProcessed && isAtEndOfOrder) {
+      setShowCelebration(postponedQueue.length === 0);
+      setShowSummary(true);
+    }
+  }, [cardResults, cardOrder.length, currentOrderIndex, showSummary, postponedQueue.length]);
+
   if (showSummary) {
     const stats = calculateStats();
     const evaluation = buildLearningEvaluation(stats);
