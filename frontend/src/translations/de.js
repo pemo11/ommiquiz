@@ -17,7 +17,9 @@ export default {
     yourAnswer: 'Deine Antwort:',
     noAnswer: 'Keine Antwort ausgewählt',
     markedAsDone: '✅ Als erledigt markiert',
-    postponed: '📤 Später wiederholen'
+    postponed: '📤 Später wiederholen',
+    selectSet: 'Wähle ein Flashcard-Set',
+    searchSet: 'Suche nach Keyword oder Thema'
   },
   quiz: {
     author: 'Autor:',

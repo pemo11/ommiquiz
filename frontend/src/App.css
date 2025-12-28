@@ -462,3 +462,19 @@
     justify-content: center;
   }
 }
+
+/* Language Selector */
+
+.language-selector {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 1000;
+}
+.language-dropdown {
+  padding: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background-color: white;
+  cursor: pointer;
+}

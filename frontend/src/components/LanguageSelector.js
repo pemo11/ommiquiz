@@ -1,9 +1,16 @@
 // /frontend/src/components/LanguageSelector.js
-import React from 'react';
-import { useTranslation } from '../context/TranslationContext';
+import React, { useContext } from 'react';
+import { TranslationContext } from '../context/TranslationContext';
 
 const LanguageSelector = () => {
-  const { t, language, changeLanguage } = useTranslation();
+  const context = useContext(TranslationContext);
+  
+  if (!context) {
+    console.error('TranslationContext not found. Make sure TranslationProvider is set up correctly.');
+    return null; // or a fallback UI
+  }
+
+  const { t, language, changeLanguage } = context;
 
   return (
     <div className="language-selector">

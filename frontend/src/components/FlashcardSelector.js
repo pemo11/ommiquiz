@@ -1,9 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import './FlashcardSelector.css';
+import { useTranslation } from '../context/TranslationContext';
 
 function FlashcardSelector({ flashcards, onSelect }) {
   const [selectedModule, setSelectedModule] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const { t } = useTranslation();
 
   // Extrahiere alle verfügbaren Module aus den Metadaten
   const availableModules = useMemo(() => {
@@ -69,10 +71,10 @@ function FlashcardSelector({ flashcards, onSelect }) {
 
   return (
     <div className="selector-container">
-      <h2>Select a Flashcard Set</h2>
+      <h2>{t('common.selectSet')}</h2>
 
       <div className="search-section">
-        <label htmlFor="flashcard-search">Search by keyword or topic</label>
+        <label htmlFor="flashcard-search">{t('common.searchSet')}</label>
         <div className="search-input-wrapper">
           <span className="search-icon" aria-hidden="true">🔎</span>
           <input

@@ -5,6 +5,7 @@ import FlashcardSelector from './components/FlashcardSelector';
 import AdminPanel from './components/AdminPanel';
 import AboutModal from './components/AboutModal';
 import { FRONTEND_VERSION } from './version';
+import LanguageSelector from './components/LanguageSelector';
 
 // Add debug logging for version number
 console.log('🔥 === FRONTEND VERSION DEBUG ===');
@@ -309,7 +310,7 @@ function App() {
         <div className="header-content">
           <div className="header-main">
             <div className="title-with-version">
-              <h1>Das OMMI Quiz</h1>
+              <h1>Das große OMMI-Quiz</h1>
               <div className="version-info">v{FRONTEND_VERSION}</div>
             </div>
             <div className="header-actions">
@@ -329,6 +330,7 @@ function App() {
             </div>
           )}
         </div>
+        <LanguageSelector />
       </header>
 
       <main className="App-main">
