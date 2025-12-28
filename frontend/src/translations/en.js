@@ -1,0 +1,48 @@
+export default {
+  common: {
+    back: '← Back',
+    question: 'Question',
+    answer: 'Answer',
+    answers: 'Answers:',
+    checkAnswers: 'Check Answers',
+    correct: 'Correct!',
+    incorrect: 'Incorrect',
+    tryAgain: '🔄 Try Again',
+    next: 'Next',
+    previous: 'Previous',
+    done: 'Done',
+    postpone: 'Postpone',
+    markAsDone: 'Mark as Done',
+    correctAnswer: 'Correct Answer:',
+    yourAnswer: 'Your Answer:',
+    noAnswer: 'No answer selected',
+    markedAsDone: '✅ Marked as Done',
+    postponed: '📤 Postponed'
+  },
+  quiz: {
+    author: 'Author:',
+    level: 'Level:',
+    language: 'Language:',
+    card: 'Card:',
+    progress: 'Progress:',
+    time: 'Time:',
+    session: 'Session:',
+    fullQuiz: 'Full Quiz',
+    postponedReview: 'Postponed Review',
+    repeatOnlyPostponed: '🔁 Repeat Only Postponed Cards',
+    resetAndRepeat: '🔄 Reset & Repeat All Cards',
+    exitQuiz: '🚪 Exit Quiz',
+    greatJob: 'Great job! You have no postponed cards.',
+    cardsToReview: 'You have {count} card{plural} to review.'
+  },
+  levelMix: {
+    title: 'Choose card difficulty mix',
+    subtitle: 'Enter A, B, or C for a single level or a mix like A60,B30,C10. Missing level C cards are replaced by B, missing B cards by A.',
+    applyMix: 'Apply mix',
+    reset: 'Reset',
+    appliedMix: 'Applied mix:',
+    showing: 'Showing — A: {a} • B: {b} • C: {c} (Total: {total})',
+    available: 'Available — A: {a} • B: {b} • C: {c}',
+    defaultSummary: 'All cards (no level mix applied)',
+  }
+};

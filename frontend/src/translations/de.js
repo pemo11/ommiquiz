@@ -1,0 +1,48 @@
+export default {
+  common: {
+    back: '← Zurück',
+    question: 'Frage',
+    answer: 'Antwort',
+    answers: 'Antworten:',
+    checkAnswers: 'Antworten überprüfen',
+    correct: 'Richtig!',
+    incorrect: 'Falsch',
+    tryAgain: '🔄 Nochmal versuchen',
+    next: 'Nächste',
+    previous: 'Vorherige',
+    done: 'Fertig',
+    postpone: 'Später wiederholen',
+    markAsDone: 'Als erledigt markieren',
+    correctAnswer: 'Richtige Antwort:',
+    yourAnswer: 'Deine Antwort:',
+    noAnswer: 'Keine Antwort ausgewählt',
+    markedAsDone: '✅ Als erledigt markiert',
+    postponed: '📤 Später wiederholen'
+  },
+  quiz: {
+    author: 'Autor:',
+    level: 'Niveau:',
+    language: 'Sprache:',
+    card: 'Karte:',
+    progress: 'Fortschritt:',
+    time: 'Zeit:',
+    session: 'Sitzung:',
+    fullQuiz: 'Vollständiges Quiz',
+    postponedReview: 'Aufgeschobene Karten',
+    repeatOnlyPostponed: '🔁 Nur aufgeschobene Karten wiederholen',
+    resetAndRepeat: '🔁 Zurücksetzen & Alle Karten wiederholen',
+    exitQuiz: '🚪 Quiz beenden',
+    greatJob: 'Gut gemacht! Du hast keine aufgeschobenen Karten mehr.',
+    cardsToReview: 'Du hast noch {count} Karte{n} zum Wiederholen.'
+  },
+  levelMix: {
+    title: 'Kartenschwierigkeit auswählen',
+    subtitle: 'Gib A, B oder C für ein einzelnes Level oder eine Mischung wie A60,B30,C10 ein. Fehlende Level-C-Karten werden durch B ersetzt, fehlende B-Karten durch A.',
+    applyMix: 'Mischung anwenden',
+    reset: 'Zurücksetzen',
+    appliedMix: 'Angewendete Mischung:',
+    showing: 'Angezeigt — A: {a} • B: {b} • C: {c} (Gesamt: {total})',
+    available: 'Verfügbar — A: {a} • B: {b} • C: {c}',
+    defaultSummary: 'Alle Karten (keine Mischung angewandt)',
+  }
+};

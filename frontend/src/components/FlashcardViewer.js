@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import './FlashcardViewer.css';
+import { useTranslation } from '../context/TranslationContext';
 
 const normalizeLevel = (level) => {
   const normalized = (level || '').toString().trim().toUpperCase();
@@ -214,6 +215,7 @@ const selectCardsWithFallback = (cards, targets) => {
 };
 
 function FlashcardViewer({ flashcard, onBack }) {
+  const { t } = useTranslation(); 
   const [cards, setCards] = useState(flashcard.cards || []);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [cardOrder, setCardOrder] = useState([]);
@@ -235,7 +237,7 @@ function FlashcardViewer({ flashcard, onBack }) {
   const [levelMixInput, setLevelMixInput] = useState('');
   const [levelMixError, setLevelMixError] = useState('');
   const [levelMixWarnings, setLevelMixWarnings] = useState([]);
-  const [appliedMixSummary, setAppliedMixSummary] = useState('All cards (no level mix applied)');
+  const [appliedMixSummary, setAppliedMixSummary] = useState('levelMix.defaultSummary');
   const touchStartRef = useRef(null);
   const gestureHandledRef = useRef(false);
 
@@ -1072,7 +1074,7 @@ function FlashcardViewer({ flashcard, onBack }) {
             onTouchEnd={handleTouchEnd}
           >
             <div className="flashcard-face flashcard-front">
-              <div className="card-header">Question</div>
+              <div className="card-header">{t('common.question')}</div>
               <div className="card-content">
                 {renderQuestionContent()}
               </div>
@@ -1084,7 +1086,7 @@ function FlashcardViewer({ flashcard, onBack }) {
               )}
             </div>
             <div className="flashcard-face flashcard-back">
-              <div className="card-header">Answer</div>
+              <div className="card-header">{t('common.answer')}</div>
               <div className="card-content">
                 <p>{currentCard.answer}</p>
               </div>
@@ -1127,7 +1129,7 @@ function FlashcardViewer({ flashcard, onBack }) {
           </div>
           
           <div className="answers-section">
-            <div className="card-header">Antworten:</div>
+            <div className="card-header">{t('common.answers')}:</div>
             <div className="answers-list">
               {currentCard.answers && currentCard.answers.map((answer, idx) => {
                 const isCorrectAnswer = currentCard.correctAnswers && currentCard.correctAnswers[idx];
@@ -1186,7 +1188,7 @@ function FlashcardViewer({ flashcard, onBack }) {
                   className="show-answers-button"
                   style={{ margin: 0, maxWidth: 'none', flex: 1 }}
                 >
-                  Antworten überprüfen
+                  {t('common.checkAnswers')}
                 </button>
               </div>
             )}
