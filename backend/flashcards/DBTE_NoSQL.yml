@@ -21,8 +21,7 @@ flashcards:
   - question: "Wofür steht NoSQL?"
     answer: "Not Only SQL – es bezeichnet Datenbanksysteme, die nicht ausschließlich auf SQL basieren."
     type: "single"
-    level: "A"
-
+    level: "A
   - question: "Was sind die drei V’s im Big-Data-Kontext?"
     answers:
       - "Volume"

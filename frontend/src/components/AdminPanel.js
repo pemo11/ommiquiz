@@ -163,6 +163,25 @@ function AdminPanel({ onBack }) {
       }
       
       const data = await response.json();
+
+      // Normalize flashcard data: ensure each card has a type field
+      if (data.flashcards && Array.isArray(data.flashcards)) {
+        data.flashcards = data.flashcards.map(card => {
+          // If type is missing or undefined, infer it from the card structure
+          if (!card.type) {
+            if (card.answers && Array.isArray(card.answers)) {
+              card.type = 'multiple';
+            } else if (card.answer !== undefined) {
+              card.type = 'single';
+            } else {
+              // Default to single if we can't infer
+              card.type = 'single';
+            }
+          }
+          return card;
+        });
+      }
+
       setSelectedFlashcard(data);
       setEditingFlashcard({ ...data });
       setError(null);
@@ -650,7 +669,13 @@ function AdminPanel({ onBack }) {
         yamlLines.push(`    bitmap: "${escapeQuotes(card.bitmap)}"`);
       }
 
-      if (card.type === 'single') {
+      // Infer type if not present
+      let cardType = card.type;
+      if (!cardType) {
+        cardType = (card.answers && Array.isArray(card.answers)) ? 'multiple' : 'single';
+      }
+
+      if (cardType === 'single') {
         yamlLines.push(`    answer: "${escapeQuotes(card.answer || '')}"`);
       } else {
         const answers = toArray(card.answers);
@@ -668,7 +693,12 @@ function AdminPanel({ onBack }) {
         }
       }
 
-      yamlLines.push(`    type: ${card.type}`);
+      yamlLines.push(`    type: "${cardType}"`);
+
+      if (card.level) {
+        yamlLines.push(`    level: "${escapeQuotes(card.level)}"`);
+      }
+
       yamlLines.push('');
     });
 
