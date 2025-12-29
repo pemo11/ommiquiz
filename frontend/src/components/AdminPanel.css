@@ -1034,3 +1034,68 @@
     padding: 1rem;
   }
 }
+
+/* YAML Editor */
+.yaml-editor {
+  padding: 2rem;
+  max-height: 70vh;
+  overflow-y: auto;
+  background-color: #f8f9fa;
+}
+
+.yaml-editor-header {
+  margin-bottom: 1rem;
+}
+
+.yaml-editor-header h4 {
+  color: #667eea;
+  margin: 0 0 0.5rem 0;
+  font-size: 1.2rem;
+}
+
+.yaml-editor-header small {
+  color: #6c757d;
+  font-style: italic;
+}
+
+.yaml-editor-textarea {
+  width: 100%;
+  min-height: 500px;
+  padding: 1rem;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  resize: vertical;
+  background-color: white;
+  transition: border-color 0.3s;
+  box-sizing: border-box;
+}
+
+.yaml-editor-textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.toggle-edit-mode-button {
+  background-color: #6c757d;
+  color: white;
+  border: 1px solid #6c757d;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.toggle-edit-mode-button:hover {
+  background-color: #5a6268;
+  border-color: #545b62;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+}

@@ -49,6 +49,8 @@ function AdminPanel({ onBack }) {
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [deleteError, setDeleteError] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [editMode, setEditMode] = useState('form'); // 'form' or 'yaml'
+  const [yamlEditText, setYamlEditText] = useState('');
   const [showStatistics, setShowStatistics] = useState(false);
   const [catalogData, setCatalogData] = useState(null);
   const [catalogLoading, setCatalogLoading] = useState(false);
@@ -386,6 +388,18 @@ function AdminPanel({ onBack }) {
   };
 
   const saveFlashcard = async (forceOverwrite = false) => {
+    // If in YAML mode, parse the YAML first to get editingFlashcard data
+    if (editMode === 'yaml') {
+      try {
+        switchToFormMode(); // This will parse yamlEditText and update editingFlashcard
+        // Wait a tick for state to update
+        await new Promise(resolve => setTimeout(resolve, 0));
+      } catch (err) {
+        setError(`Invalid YAML: ${err.message}`);
+        return;
+      }
+    }
+
     if (!editingFlashcard) return;
 
     if (!editingFlashcard.id.trim()) {
@@ -404,7 +418,7 @@ function AdminPanel({ onBack }) {
       setError('At least one flashcard is required');
       return;
     }
-    
+
     for (let i = 0; i < editingFlashcard.flashcards.length; i++) {
       const card = editingFlashcard.flashcards[i];
       if (!card.question.trim()) {
@@ -627,23 +641,23 @@ function AdminPanel({ onBack }) {
     const escapeQuotes = (value = '') => value.replace(/"/g, '\\"');
 
     const yamlLines = [];
-    yamlLines.push(`id: ${data.id}`);
-    yamlLines.push(`author: ${data.author}`);
-    yamlLines.push(`title: ${data.title}`);
-    yamlLines.push(`description: ${data.description || ''}`);
-    yamlLines.push(`createDate: ${data.createDate}`);
-    yamlLines.push(`language: ${data.language}`);
-    yamlLines.push(`module: ${data.module || ''}`);
-    yamlLines.push(`level: ${data.level}`);
-    yamlLines.push(`semester: ${data.semester || ''}`);
-    yamlLines.push(`institution: ${data.institution || ''}`);
-    yamlLines.push(`studycourse: ${data.studycourse || ''}`);
+    yamlLines.push(`id: "${escapeQuotes(data.id || '')}"`);
+    yamlLines.push(`author: "${escapeQuotes(data.author || '')}"`);
+    yamlLines.push(`title: "${escapeQuotes(data.title || '')}"`);
+    yamlLines.push(`description: "${escapeQuotes(data.description || '')}"`);
+    yamlLines.push(`createDate: "${escapeQuotes(data.createDate || '')}"`);
+    yamlLines.push(`language: "${escapeQuotes(data.language || '')}"`);
+    yamlLines.push(`module: "${escapeQuotes(data.module || '')}"`);
+    yamlLines.push(`level: "${escapeQuotes(data.level || '')}"`);
+    yamlLines.push(`semester: "${escapeQuotes(data.semester || '')}"`);
+    yamlLines.push(`institution: "${escapeQuotes(data.institution || '')}"`);
+    yamlLines.push(`studycourse: "${escapeQuotes(data.studycourse || '')}"`);
 
     const topics = toArray(data.topics);
     if (topics.length > 0) {
       yamlLines.push('topics:');
       topics.forEach(topic => {
-        yamlLines.push(`  - ${topic}`);
+        yamlLines.push(`  - "${escapeQuotes(topic || '')}"`);
       });
     } else {
       yamlLines.push('topics: []');
@@ -653,7 +667,7 @@ function AdminPanel({ onBack }) {
     if (keywords.length > 0) {
       yamlLines.push('keywords:');
       keywords.forEach(keyword => {
-        yamlLines.push(`  - ${keyword}`);
+        yamlLines.push(`  - "${escapeQuotes(keyword || '')}"`);
       });
     } else {
       yamlLines.push('keywords: []');
@@ -844,6 +858,137 @@ function AdminPanel({ onBack }) {
     setEditingFlashcard(null);
     setIsCreatingNew(false);
     setError(null);
+    setEditMode('form');
+    setYamlEditText('');
+  };
+
+  const switchToYamlMode = () => {
+    if (editingFlashcard) {
+      const yamlText = convertToYAML(editingFlashcard);
+      setYamlEditText(yamlText);
+      setEditMode('yaml');
+      setError(null);
+    }
+  };
+
+  const switchToFormMode = () => {
+    try {
+      // Parse the YAML text and update editingFlashcard
+      const lines = yamlEditText.split('\n');
+      const flashcardData = {
+        id: '',
+        author: '',
+        title: '',
+        description: '',
+        createDate: '',
+        language: 'en',
+        module: '',
+        level: 'beginner',
+        semester: '',
+        institution: '',
+        studycourse: '',
+        topics: [],
+        keywords: [],
+        flashcards: []
+      };
+
+      let currentSection = 'metadata';
+      let currentCard = null;
+      let currentAnswers = [];
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const trimmedLine = line.trim();
+
+        if (!trimmedLine || trimmedLine.startsWith('#')) continue;
+
+        if (trimmedLine === 'flashcards:') {
+          currentSection = 'flashcards';
+          continue;
+        }
+
+        if (currentSection === 'metadata') {
+          const colonIndex = trimmedLine.indexOf(':');
+          if (colonIndex > -1) {
+            const key = trimmedLine.substring(0, colonIndex).trim();
+            const value = trimmedLine.substring(colonIndex + 1).trim();
+
+            if (key === 'topics' || key === 'keywords') {
+              if (value === '[]') {
+                flashcardData[key] = [];
+              } else {
+                const items = [];
+                for (let j = i + 1; j < lines.length; j++) {
+                  const nextLine = lines[j];
+                  if (nextLine.trim().startsWith('- ')) {
+                    items.push(nextLine.trim().substring(2).replace(/^"(.*)"$/, '$1'));
+                    i = j;
+                  } else if (nextLine.trim() && !nextLine.trim().startsWith(' ')) {
+                    break;
+                  }
+                }
+                flashcardData[key] = items;
+              }
+            } else {
+              flashcardData[key] = value.replace(/^"(.*)"$/, '$1');
+            }
+          }
+        }
+
+        if (currentSection === 'flashcards') {
+          if (trimmedLine.startsWith('- question:')) {
+            if (currentCard) {
+              if (currentAnswers.length > 0) {
+                currentCard.answers = currentAnswers;
+                currentCard.type = 'multiple';
+              }
+              flashcardData.flashcards.push(currentCard);
+            }
+
+            currentCard = {
+              question: trimmedLine.substring(trimmedLine.indexOf(':') + 1).trim().replace(/^"(.*)"$/, '$1'),
+              type: 'single'
+            };
+            currentAnswers = [];
+          } else if (trimmedLine.startsWith('bitmap:') && currentCard) {
+            const bitmapValue = trimmedLine.substring(trimmedLine.indexOf(':') + 1).trim().replace(/^"(.*)"$/, '$1');
+            currentCard.bitmap = bitmapValue;
+          } else if (trimmedLine.startsWith('answer:') && currentCard) {
+            currentCard.answer = trimmedLine.substring(trimmedLine.indexOf(':') + 1).trim().replace(/^"(.*)"$/, '$1');
+            currentCard.type = 'single';
+          } else if (trimmedLine === 'answers:' && currentCard) {
+            currentCard.type = 'multiple';
+            currentAnswers = [];
+          } else if (trimmedLine === 'correctAnswers:' && currentCard) {
+            currentCard.correctAnswers = [];
+          } else if (trimmedLine.startsWith('- ') && !trimmedLine.includes(':') && currentCard) {
+            const itemValue = trimmedLine.substring(2).trim();
+            if (currentCard.type === 'multiple' && currentCard.correctAnswers !== undefined) {
+              currentCard.correctAnswers.push(itemValue === 'true');
+            } else if (currentCard.type === 'multiple') {
+              currentAnswers.push(itemValue.replace(/^"(.*)"$/, '$1'));
+            }
+          } else if (trimmedLine.startsWith('type:') && currentCard) {
+            currentCard.type = trimmedLine.substring(trimmedLine.indexOf(':') + 1).trim().replace(/^"(.*)"$/, '$1');
+          } else if (trimmedLine.startsWith('level:') && currentCard) {
+            currentCard.level = trimmedLine.substring(trimmedLine.indexOf(':') + 1).trim().replace(/^"(.*)"$/, '$1');
+          }
+        }
+      }
+
+      if (currentCard) {
+        if (currentAnswers.length > 0) {
+          currentCard.answers = currentAnswers;
+        }
+        flashcardData.flashcards.push(currentCard);
+      }
+
+      setEditingFlashcard(flashcardData);
+      setEditMode('form');
+      setError(null);
+    } catch (err) {
+      setError(`Failed to parse YAML: ${err.message}`);
+    }
   };
 
   return (
@@ -1085,6 +1230,13 @@ flashcards:
             </h3>
             <div className="header-buttons">
               <button
+                onClick={editMode === 'form' ? switchToYamlMode : switchToFormMode}
+                className="toggle-edit-mode-button"
+                title={editMode === 'form' ? 'Switch to YAML editor' : 'Switch to form editor'}
+              >
+                {editMode === 'form' ? '📝 Edit YAML' : '📋 Edit Form'}
+              </button>
+              <button
                 onClick={saveFlashcard}
                 disabled={saving}
                 className="update-yaml-button"
@@ -1108,7 +1260,23 @@ flashcards:
             </div>
           </div>
 
-          {editingFlashcard && (
+          {editingFlashcard && editMode === 'yaml' && (
+            <div className="yaml-editor">
+              <div className="yaml-editor-header">
+                <h4>YAML Editor</h4>
+                <small>Edit the raw YAML content directly. Click "Edit Form" to return to the form view.</small>
+              </div>
+              <textarea
+                value={yamlEditText}
+                onChange={(e) => setYamlEditText(e.target.value)}
+                className="yaml-editor-textarea"
+                spellCheck="false"
+                placeholder="Paste your YAML content here..."
+              />
+            </div>
+          )}
+
+          {editingFlashcard && editMode === 'form' && (
             <div className="editor-form">
               <div className="metadata-section">
                 <h4>Metadata</h4>
@@ -1118,7 +1286,7 @@ flashcards:
                     type="text"
                     value={editingFlashcard.id}
                     onChange={(e) => updateFlashcardField('id', e.target.value)}
-                    pattern="^[a-zA-Z0-9_-]+$"
+                    pattern="^[a-zA-Z0-9_\-]+$"
                     placeholder="e.g. my-flashcard-set"
                     disabled={!isCreatingNew}
                   />
