@@ -1234,28 +1234,28 @@ flashcards:
                 className="toggle-edit-mode-button"
                 title={editMode === 'form' ? 'Switch to YAML editor' : 'Switch to form editor'}
               >
-                {editMode === 'form' ? '📝 Edit YAML' : '📋 Edit Form'}
+                {editMode === 'form' ? '📝 Edit YAML text' : '📋 Edit Flashcardset'}
               </button>
               <button
                 onClick={saveFlashcard}
                 disabled={saving}
                 className="update-yaml-button"
               >
-                {saving ? '🔄 Updating...' : (isCreatingNew ? '📝 Create Flashcard' : '📝 Update Flashcard Set')}
+                {saving ? '🔄 Updating...' : (isCreatingNew ? '📝 Create Flashcard' : (editMode === 'yaml' ? '📝 Update YAML text' : '📝 Update Flashcardset'))}
               </button>
               {!isCreatingNew && (
                 <button
                   onClick={handleDeleteClick}
                   className="delete-flashcard-button"
                 >
-                  🗑️ Delete Flashcard
+                  🗑️ Delete Flashcardset
                 </button>
               )}
               <button
                 onClick={() => exportFlashcard()}
                 className="export-button"
               >
-                📤 Export Yaml File
+                📤 Export YAML text
               </button>
             </div>
           </div>
@@ -1264,7 +1264,7 @@ flashcards:
             <div className="yaml-editor">
               <div className="yaml-editor-header">
                 <h4>YAML Editor</h4>
-                <small>Edit the raw YAML content directly. Click "Edit Form" to return to the form view.</small>
+                <small>Edit the raw YAML content directly. Click "Edit Flashcardset" to return to the form view.</small>
               </div>
               <textarea
                 value={yamlEditText}
@@ -1537,7 +1537,7 @@ flashcards:
       {showDeleteDialog && (
         <div className="confirm-dialog">
           <div className="confirm-dialog-content">
-            <h4>Delete Flashcard</h4>
+            <h4>Delete Flashcardset</h4>
             <div className="delete-id-display">
               <span className="delete-id-label">Flashcard ID:</span>
               <code className="delete-id-value">{selectedFlashcard?.id || 'Unknown'}</code>
