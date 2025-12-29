@@ -366,7 +366,10 @@ function FlashcardViewer({ flashcard, onBack }) {
     const cardResult = cardResults[currentCardIndex];
 
     if (cardResult) {
-      if (cardResult.correct === false) {
+      // If the card has evaluationResult set, it means the user just checked their answers
+      // Don't reset in this case - let the user see the results
+      if (cardResult.correct === false && cardResult.evaluationResult === undefined) {
+        // This card was answered incorrectly in a previous attempt, reset it
         setSelectedAnswers([]);
         setShowCorrectAnswers(false);
         setCurrentCardAnswered(false);
@@ -446,18 +449,19 @@ function FlashcardViewer({ flashcard, onBack }) {
   };
 
   const handleCardClick = () => {
-    // Don't handle card click if we're showing correct answers for a multiple-choice question
-    if (cardType === 'multiple' && showCorrectAnswers) {
-      console.log('Ignoring card click while showing answers');
-      return;
-    }
-    
     if (gestureHandledRef.current) {
       gestureHandledRef.current = false;
       return;
     }
 
-    if (cardType === 'single' && !currentCardAnswered) {
+    // For both single and multiple choice cards, flip if not answered
+    if (!currentCardAnswered) {
+      if (cardType === 'multiple') {
+        // For multiple choice, flipping triggers evaluation
+        if (!isFlipped) {
+          handleShowAnswers();
+        }
+      }
       setIsFlipped(!isFlipped);
     }
   };
@@ -642,28 +646,17 @@ function FlashcardViewer({ flashcard, onBack }) {
     }, 500);
   };
 
-  // Function to allow retrying a question
-  const handleTryAgain = () => {
-    // Reset the UI state for trying again
-    setShowCorrectAnswers(false);
-    setSelectedAnswers([]);
-    
-    // Remove this card from results to reset its state
-    setCardResults(prev => {
-      const newResults = { ...prev };
-      delete newResults[currentCardIndex];
-      return newResults;
-    });
-    setPostponedQueue(prev => prev.filter(idx => idx !== currentCardIndex));
-    
-    // Reset the card state to allow new attempt
-    setSelectedAnswers([]);
-    setShowCorrectAnswers(false);
-    setCurrentCardAnswered(false);
-  };
-
   const handleNext = () => {
-    if (!cardResults[currentCardIndex]) {
+    // If answers are shown but card not yet answered (Done/Postpone not clicked),
+    // clear the evaluation so user can try again when they return
+    if (showCorrectAnswers && !currentCardAnswered) {
+      setCardResults(prev => {
+        const newResults = { ...prev };
+        delete newResults[currentCardIndex];
+        return newResults;
+      });
+    } else if (!cardResults[currentCardIndex]) {
+      // Card was skipped without any interaction
       const correctAnswers = currentCard?.correctAnswers || [];
       setCardResults(prev => ({
         ...prev,
@@ -688,6 +681,16 @@ function FlashcardViewer({ flashcard, onBack }) {
 
   const handlePrevious = () => {
     if (currentOrderIndex > 0) {
+      // If answers are shown but card not yet answered (Done/Postpone not clicked),
+      // clear the evaluation so user can try again when they return
+      if (showCorrectAnswers && !currentCardAnswered) {
+        setCardResults(prev => {
+          const newResults = { ...prev };
+          delete newResults[currentCardIndex];
+          return newResults;
+        });
+      }
+
       const previousOrderIndex = currentOrderIndex - 1;
       const previousCardIndex = cardOrder[previousOrderIndex];
       setCurrentOrderIndex(previousOrderIndex);
@@ -1119,171 +1122,123 @@ function FlashcardViewer({ flashcard, onBack }) {
           </div>
         </div>
       ) : (
-        // Multiple choice card (interactive)
-        <div className="quiz-container">
-          <div className="question-section">
-            <div className="card-header">Question</div>
-            <div className="card-content">
-              {renderQuestionContent()}
-            </div>
-          </div>
-          
-          <div className="answers-section">
-            <div className="card-header">{t('common.answers')}:</div>
-            <div className="answers-list">
-              {currentCard.answers && currentCard.answers.map((answer, idx) => {
-                const isCorrectAnswer = currentCard.correctAnswers && currentCard.correctAnswers[idx];
-                const isSelectedAnswer = selectedAnswers.includes(idx);
-                
-                // Build CSS classes based on state
-                let answerClasses = `answer-option`;
-                
-                // Show selected state if answer is selected
-                if (isSelectedAnswer) {
-                  answerClasses += ' selected';
-                }
-                
-                // Show correct/incorrect states when answers are revealed
-                if (showCorrectAnswers) {
-                  answerClasses += ' revealed';
-                  if (isCorrectAnswer) {
-                    answerClasses += ' correct';
-                  } else if (isSelectedAnswer) {
-                    answerClasses += ' incorrect';
-                  }
-                  // Add selected state for revealed answers
-                  if (isSelectedAnswer) {
-                    answerClasses += ' was-selected';
-                  }
-                }
-                
-                return (
-                  <label key={idx} className={answerClasses}>
-                    <input
-                      type="checkbox"
-                      checked={isSelectedAnswer}
-                      onChange={() => handleAnswerSelect(idx)}
-                      disabled={showCorrectAnswers}
-                    />
-                    <span className="answer-text">{answer}</span>
-                    {showCorrectAnswers && (
-                      <span className={`answer-indicator ${isCorrectAnswer ? 'correct' : 'incorrect'}`}>
-                        {isCorrectAnswer ? '✓' : '✗'}
-                      </span>
-                    )}
-                    {showCorrectAnswers && isSelectedAnswer && (
-                      <span className="selection-indicator">
-                        {isCorrectAnswer ? '👍' : '👎'}
-                      </span>
-                    )}
-                  </label>
-                );
-              })}
-            </div>
-            
-            {!showCorrectAnswers && !currentCardAnswered && (
-              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', alignItems: 'center' }}>
-                <button 
-                  onClick={handleShowAnswers}
-                  className="show-answers-button"
-                  style={{ margin: 0, maxWidth: 'none', flex: 1 }}
-                >
-                  {t('common.checkAnswers')}
-                </button>
+        // Multiple choice card (flip-style like single answer)
+        <div className="card-container">
+          <div
+            className={`flashcard ${isFlipped ? 'flipped' : ''}`}
+            onClick={handleCardClick}
+          >
+            {/* Front side: Question with checkboxes */}
+            <div className="flashcard-face flashcard-front">
+              <div className="card-header">{t('common.question')}</div>
+              <div className="card-content">
+                {renderQuestionContent()}
+
+                <div className="answers-list" style={{ marginTop: '1rem' }}>
+                  {currentCard.answers && currentCard.answers.map((answer, idx) => {
+                    const isSelectedAnswer = selectedAnswers.includes(idx);
+
+                    return (
+                      <label
+                        key={idx}
+                        className={`answer-option ${isSelectedAnswer ? 'selected' : ''}`}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelectedAnswer}
+                          onChange={() => handleAnswerSelect(idx)}
+                          disabled={isFlipped}
+                        />
+                        <span className="answer-text">{answer}</span>
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
-            )}
-            
-            {showCorrectAnswers && (
-              <div className="evaluation-result">
-                {cardResults[currentCardIndex]?.evaluationResult === true ? (
-                  <div className="correct-evaluation">✅ Correct! You got it right!</div>
-                ) : (
-                  <div className="incorrect-evaluation">
-                    ❌ Incorrect. Review the correct answers above.
-                    <button onClick={handleTryAgain} className="try-again-button">🔄 Try Again</button>
-                  </div>
-                )}
-                
-                {/* Show Postpone and Done buttons if not already answered */}
-                {!currentCardAnswered && (
-                  <div className="evaluation-buttons" style={{ 
-                    display: 'flex', 
-                    justifyContent: 'center', 
-                    gap: '1rem',
-                    marginTop: '1.5rem',
-                    padding: '0.5rem 0',
-                    borderTop: '1px solid #eee'
-                  }}>
-                    <button 
-                      onClick={(e) => { 
-                        e.stopPropagation(); 
-                        handleMultipleChoiceEvaluation(false);
-                      }}
-                      className="eval-button incorrect-button"
-                      style={{
-                        padding: '0.75rem 1.5rem',
-                        borderRadius: '8px',
-                        border: '2px solid #ff6b6b',
-                        background: '#fff',
-                        color: '#ff6b6b',
-                        cursor: 'pointer',
-                        fontWeight: '600',
-                        transition: 'all 0.2s ease',
-                        minWidth: '120px'
-                      }}
-                      onMouseOver={(e) => {
-                        e.target.style.background = '#ffebee';
-                        e.target.style.transform = 'translateY(-2px)';
-                      }}
-                      onMouseOut={(e) => {
-                        e.target.style.background = '#fff';
-                        e.target.style.transform = 'none';
-                      }}
-                    >
-                      📤 Postpone
-                    </button>
-                    <button 
-                      onClick={(e) => { 
-                        e.stopPropagation(); 
-                        handleMultipleChoiceEvaluation(true);
-                      }}
-                      className="eval-button correct-button"
-                      style={{
-                        padding: '0.75rem 1.5rem',
-                        borderRadius: '8px',
-                        border: '2px solid #4caf50',
-                        background: '#fff',
-                        color: '#4caf50',
-                        cursor: 'pointer',
-                        fontWeight: '600',
-                        transition: 'all 0.2s ease',
-                        minWidth: '120px'
-                      }}
-                      onMouseOver={(e) => {
-                        e.target.style.background = '#e8f5e9';
-                        e.target.style.transform = 'translateY(-2px)';
-                      }}
-                      onMouseOut={(e) => {
-                        e.target.style.background = '#fff';
-                        e.target.style.transform = 'none';
-                      }}
-                    >
-                      ✅ Mark as Done
-                    </button>
-                  </div>
-                )}
-                
-                {currentCardAnswered && (
-                  <div className="answered-indicator">
-                    {cardResults[currentCardIndex]?.correct ? (
-                      <span className="correct-indicator">✅ Marked as Done</span>
+              {!currentCardAnswered && (
+                <div className="card-hint">
+                  Click to flip and check your answers
+                </div>
+              )}
+            </div>
+
+            {/* Back side: Show correct/incorrect answers */}
+            <div className="flashcard-face flashcard-back">
+              <div className="card-header">{t('common.answers')}</div>
+              <div className="card-content">
+                {renderQuestionContent()}
+
+                <div className="answers-list" style={{ marginTop: '1rem' }}>
+                  {currentCard.answers && currentCard.answers.map((answer, idx) => {
+                    const isCorrectAnswer = currentCard.correctAnswers && currentCard.correctAnswers[idx];
+                    const isSelectedAnswer = selectedAnswers.includes(idx);
+
+                    let answerClasses = `answer-option revealed`;
+                    if (isCorrectAnswer) {
+                      answerClasses += ' correct';
+                    } else if (isSelectedAnswer) {
+                      answerClasses += ' incorrect';
+                    }
+
+                    return (
+                      <div key={idx} className={answerClasses} onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={isSelectedAnswer}
+                          disabled={true}
+                        />
+                        <span className="answer-text">{answer}</span>
+                        <span className={`answer-indicator ${isCorrectAnswer ? 'correct' : 'incorrect'}`}>
+                          {isCorrectAnswer ? '✓' : '✗'}
+                        </span>
+                        {isSelectedAnswer && (
+                          <span className="selection-indicator">
+                            {isCorrectAnswer ? '👍' : '👎'}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {cardResults[currentCardIndex]?.evaluationResult !== undefined && (
+                  <div className="evaluation-result" style={{ marginTop: '1rem' }}>
+                    {cardResults[currentCardIndex]?.evaluationResult === true ? (
+                      <div className="correct-evaluation">✅ Correct! You got it right!</div>
                     ) : (
-                      <span className="incorrect-indicator">📤 Postponed</span>
+                      <div className="incorrect-evaluation">❌ Incorrect. Review the correct answers above.</div>
                     )}
                   </div>
                 )}
               </div>
-            )}
+
+              {!currentCardAnswered && (
+                <div className="evaluation-buttons">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleMultipleChoiceEvaluation(false); }}
+                    className="eval-button incorrect-button"
+                  >
+                    📤 Postpone
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleMultipleChoiceEvaluation(true); }}
+                    className="eval-button correct-button"
+                  >
+                    ✅ Done
+                  </button>
+                </div>
+              )}
+              {currentCardAnswered && (
+                <div className="answered-indicator">
+                  {cardResults[currentCardIndex]?.correct ? (
+                    <span className="correct-indicator">✅ Marked as Done</span>
+                  ) : (
+                    <span className="incorrect-indicator">📤 Postponed</span>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

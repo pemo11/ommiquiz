@@ -238,12 +238,10 @@ flashcards:
     type: "multiple"
     level: "A"
 
-  - question: "Was bezeichnet den Begriff „Polyglot Persistence“ in einem Webshop-Beispiel?"
+  - question: "Was bezeichnet den Begriff „Polyglot Persistence" in einem Webshop-Beispiel?"
     answer: "Unterschiedliche Datenbanktypen (z. B. Key-Value, Document, Graph) werden für verschiedene Aufgaben eingesetzt."
     type: "single"
     level: "A"
-
-flashcards:
 
   - question: "Welche Aussagen zur Query Optimierung in PostgreSQL sind korrekt?"
     answers:

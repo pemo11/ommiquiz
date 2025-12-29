@@ -266,7 +266,7 @@ function AdminPanel({ onBack }) {
                 for (let j = i + 1; j < lines.length; j++) {
                   const nextLine = lines[j];
                   if (nextLine.trim().startsWith('- ')) {
-                    items.push(nextLine.trim().substring(2));
+                    items.push(nextLine.trim().substring(2).replace(/^"(.*)"$/, '$1'));
                     i = j;
                   } else if (nextLine.trim() && !nextLine.trim().startsWith(' ')) {
                     break;
@@ -275,7 +275,7 @@ function AdminPanel({ onBack }) {
                 flashcardData[key] = items;
               }
             } else {
-              flashcardData[key] = value;
+              flashcardData[key] = value.replace(/^"(.*)"$/, '$1');
             }
           }
         }
@@ -306,14 +306,20 @@ function AdminPanel({ onBack }) {
             currentAnswers = [];
           } else if (trimmedLine === 'correctAnswers:' && currentCard) {
             currentCard.correctAnswers = [];
-          } else if (trimmedLine.startsWith('- "') && currentCard && currentCard.type === 'multiple') {
-            currentAnswers.push(trimmedLine.substring(2).trim().replace(/^"(.*)"$/, '$1'));
-          } else if (trimmedLine.startsWith('- true') || trimmedLine.startsWith('- false')) {
-            if (currentCard && currentCard.correctAnswers) {
-              currentCard.correctAnswers.push(trimmedLine.substring(2).trim() === 'true');
+          } else if (trimmedLine.startsWith('- ') && !trimmedLine.includes(':') && currentCard) {
+            // List item without a colon (answer item or boolean, not a field definition like '- question:')
+            const itemValue = trimmedLine.substring(2).trim();
+            if (currentCard.type === 'multiple' && currentCard.correctAnswers !== undefined) {
+              // We're in the correctAnswers section
+              currentCard.correctAnswers.push(itemValue === 'true');
+            } else if (currentCard.type === 'multiple') {
+              // We're in the answers section
+              currentAnswers.push(itemValue.replace(/^"(.*)"$/, '$1'));
             }
           } else if (trimmedLine.startsWith('type:') && currentCard) {
-            currentCard.type = trimmedLine.substring(trimmedLine.indexOf(':') + 1).trim();
+            currentCard.type = trimmedLine.substring(trimmedLine.indexOf(':') + 1).trim().replace(/^"(.*)"$/, '$1');
+          } else if (trimmedLine.startsWith('level:') && currentCard) {
+            currentCard.level = trimmedLine.substring(trimmedLine.indexOf(':') + 1).trim().replace(/^"(.*)"$/, '$1');
           }
         }
       }
