@@ -291,7 +291,7 @@ async def get_version():
     """Get API version and system information"""
     logger.debug("Version endpoint requested")
     return {
-        "api_version": "1.0.9",
+        "api_version": "1.10.0",
         "service_name": "Ommiquiz API",
         "status": "running"
     }

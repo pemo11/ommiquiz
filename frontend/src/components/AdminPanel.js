@@ -1241,7 +1241,7 @@ flashcards:
                 disabled={saving}
                 className="update-yaml-button"
               >
-                {saving ? '🔄 Updating...' : (isCreatingNew ? '📝 Create Flashcard' : '📝 Update YAML File')}
+                {saving ? '🔄 Updating...' : (isCreatingNew ? '📝 Create Flashcard' : '📝 Update Flashcard Set')}
               </button>
               {!isCreatingNew && (
                 <button
