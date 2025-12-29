@@ -11,8 +11,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY app/ ./app/
-# Flashcards directory is mounted as a volume in docker-compose.yml
-# Don't copy it into the image to avoid conflicts with volume mount
+COPY flashcards/ ./flashcards/
 
 # Set environment variables for logging
 # Remove hardcoded LOG_FILE_PATH to allow date-stamped filenames
