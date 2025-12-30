@@ -1,0 +1,156 @@
+id: "wcag22_en301549_bfsg_quiz"
+author: "Pemo"
+title: "WCAG 2.2, EN 301 549 & BFSG – Kombi-Quiz"
+description: "Kombinierte Lern- und Verständnisfragen zu WCAG 2.2, EN 301 549 und dem Barrierefreiheitsstärkungsgesetz (BFSG)"
+createDate: "2025-12-29"
+language: "de"
+module: "Barrierefreiheit"
+semester: "WS 2025/26"
+institution: "HS Emden Leer"
+studycourse: "Medieninformatik Master"
+topics:
+  - "wcag22"
+  - "en301549"
+  - "bfsg"
+  - "accessibility"
+  - "eu_recht"
+keywords:
+  - "WCAG;EN301549;BFSG;EU;Barrierefreiheit;AA;Norm;Gesetz"
+
+flashcards:
+  - question: "Was ist die WCAG 2.2?"
+    answer: "Eine vom W3C veröffentlichte Empfehlung mit testbaren Richtlinien zur barrierefreien Gestaltung digitaler Inhalte."
+    type: "single"
+    level: "A"
+
+  - question: "Ist die WCAG 2.2 rechtlich bindend?"
+    answer: "Nein, sie ist eine Empfehlung, wird aber durch Gesetze und Normen verbindlich gemacht."
+    type: "single"
+    level: "A"
+
+  - question: "Was ist die EN 301 549?"
+    answer: "Eine europäische Norm mit konkreten technischen Anforderungen zur digitalen Barrierefreiheit."
+    type: "single"
+    level: "A"
+
+  - question: "Welche Beziehung besteht zwischen WCAG 2.2 und EN 301 549?"
+    answer: "Die EN 301 549 verweist für Webinhalte direkt auf die WCAG 2.x, meist auf Konformitätsstufe AA."
+    type: "single"
+    level: "A"
+
+  - question: "Was ist das BFSG?"
+    answer: "Ein deutsches Gesetz, das die EU-Richtlinie 2019/882 umsetzt und Barrierefreiheit für bestimmte Produkte und Dienstleistungen vorschreibt."
+    type: "single"
+    level: "A"
+
+  - question: "Welche EU-Richtlinie liegt dem BFSG zugrunde?"
+    answer: "Die EU-Richtlinie 2019/882 (European Accessibility Act)."
+    type: "single"
+    level: "A"
+
+  - question: "Ab wann gilt das BFSG verpflichtend?"
+    answer: "Ab dem 28. Juni 2025."
+    type: "single"
+    level: "A"
+
+  - question: "Für welche Anbieter gilt das BFSG?"
+    answers:
+      - "Private Unternehmen"
+      - "Öffentliche Stellen"
+      - "Hersteller bestimmter Produkte"
+    correctAnswers:
+      - true
+      - false
+      - true
+    type: "multiple"
+    level: "B"
+
+  - question: "Welche digitalen Angebote fallen unter das BFSG?"
+    answers:
+      - "Webshops"
+      - "Bankdienstleistungen"
+      - "E-Book-Reader-Software"
+      - "Private Blogs ohne Geschäftsmodell"
+    correctAnswers:
+      - true
+      - true
+      - true
+      - false
+    type: "multiple"
+    level: "B"
+
+  - question: "Welche WCAG-Konformitätsstufe fordert die EN 301 549 in der Regel?"
+    answer: "WCAG 2.x auf Konformitätsstufe AA."
+    type: "single"
+    level: "A"
+
+  - question: "Welche Rolle spielt WCAG 2.2 im BFSG?"
+    answer: "WCAG 2.2 dient als fachliche Grundlage zur Bewertung der Barrierefreiheit digitaler Angebote."
+    type: "single"
+    level: "B"
+
+  - question: "Ist die EN 301 549 ein Gesetz?"
+    answer: "Nein, sie ist eine Norm, wird aber durch Gesetze wie das BFSG verbindlich."
+    type: "single"
+    level: "A"
+
+  - question: "Welche Aussage ist korrekt?"
+    answers:
+      - "WCAG = Empfehlung"
+      - "EN 301 549 = Norm"
+      - "BFSG = Gesetz"
+    correctAnswers:
+      - true
+      - true
+      - true
+    type: "multiple"
+    level: "A"
+
+  - question: "Wer ist für die Einhaltung des BFSG verantwortlich?"
+    answer: "Unternehmen und Anbieter, die unter den Anwendungsbereich des Gesetzes fallen."
+    type: "single"
+    level: "A"
+
+  - question: "Was passiert bei Verstößen gegen das BFSG?"
+    answer: "Es können Maßnahmen, Nachbesserungen oder Bußgelder angeordnet werden."
+    type: "single"
+    level: "B"
+
+  - question: "Welche Nutzergruppen stehen im Fokus von WCAG, EN 301 549 und BFSG?"
+    answers:
+      - "Menschen mit Behinderungen"
+      - "Ältere Menschen"
+      - "Menschen mit temporären Einschränkungen"
+    correctAnswers:
+      - true
+      - true
+      - true
+    type: "multiple"
+    level: "A"
+
+  - question: "Deckt die EN 301 549 nur Webseiten ab?"
+    answer: "Nein, sie umfasst auch Software, mobile Apps, Hardware und Dokumente."
+    type: "single"
+    level: "A"
+
+  - question: "Warum ist WCAG 2.2 besonders relevant für mobile Geräte?"
+    answer: "Weil neue Kriterien Touch-Bedienung, Fokus-Sichtbarkeit und Zielgrößen verbessern."
+    type: "single"
+    level: "A"
+
+  - question: "Welche Disziplinen müssen zusammenarbeiten, um BFSG-Konformität zu erreichen?"
+    answers:
+      - "UX/UI-Design"
+      - "Frontend-Entwicklung"
+      - "Recht & Compliance"
+    correctAnswers:
+      - true
+      - true
+      - true
+    type: "multiple"
+    level: "B"
+
+  - question: "Was ist das gemeinsame Ziel von WCAG, EN 301 549 und BFSG?"
+    answer: "Die gleichberechtigte Nutzung digitaler Produkte und Dienstleistungen für alle Menschen."
+    type: "single"
+    level: "A"

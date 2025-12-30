@@ -1,0 +1,149 @@
+id: "wcag22_quiz"
+author: "Pemo"
+title: "WCAG 2.2 – Web Content Accessibility Guidelines"
+description: "Lern- und Verständnisfragen zum WCAG-2.2-Standard mit Fokus auf Prinzipien, Konformitätsstufen und Neuerungen"
+createDate: "2025-12-29"
+language: "de"
+module: "Barrierefreiheit"
+semester: "WS 2025/26"
+institution: "HS Emden Leer"
+studycourse: "Medieninformatik Master"
+topics:
+  - "wcag"
+  - "barrierefreiheit"
+  - "accessibility"
+  - "wcag22"
+  - "usability"
+keywords:
+  - "WCAG;W3C;Barrierefreiheit;AA;AAA;ARIA;EN301549;BFSG;Accessibility"
+
+flashcards:
+  - question: "Wofür steht die Abkürzung WCAG?"
+    answer: "Web Content Accessibility Guidelines – Richtlinien zur barrierefreien Gestaltung von Webinhalten."
+    type: "single"
+    level: "A"
+
+  - question: "Welche Organisation veröffentlicht die WCAG?"
+    answer: "Das World Wide Web Consortium (W3C)."
+    type: "single"
+    level: "A"
+
+  - question: "Welche WCAG-Version ist der direkte Vorgänger von WCAG 2.2?"
+    answer: "WCAG 2.1."
+    type: "single"
+    level: "A"
+
+  - question: "Wie viele Grundprinzipien hat die WCAG?"
+    answer: "Vier."
+    type: "single"
+    level: "A"
+
+  - question: "Wie heißen die vier WCAG-Grundprinzipien?"
+    answers:
+      - "Wahrnehmbar"
+      - "Bedienbar"
+      - "Verständlich"
+      - "Robust"
+    correctAnswers:
+      - true
+      - true
+      - true
+      - true
+    type: "multiple"
+    level: "A"
+
+  - question: "Was beschreibt das Prinzip ‚wahrnehmbar‘?"
+    answer: "Informationen müssen für alle Nutzer wahrnehmbar sein, z. B. durch Alternativtexte oder ausreichende Kontraste."
+    type: "single"
+    level: "A"
+
+  - question: "Was bedeutet das Prinzip ‚bedienbar‘?"
+    answer: "Alle Funktionen müssen z. B. mit Tastatur oder alternativen Eingabemethoden nutzbar sein."
+    type: "single"
+    level: "A"
+
+  - question: "Was beschreibt das Prinzip ‚robust‘?"
+    answer: "Inhalte müssen mit verschiedenen Browsern, Assistenztechnologien und zukünftigen Technologien funktionieren."
+    type: "single"
+    level: "A"
+
+  - question: "Welche Konformitätsstufen definiert die WCAG?"
+    answers:
+      - "A"
+      - "AA"
+      - "AAA"
+    correctAnswers:
+      - true
+      - true
+      - true
+    type: "multiple"
+    level: "A"
+
+  - question: "Welche WCAG-Konformitätsstufe wird in der EU in der Regel gefordert?"
+    answer: "AA."
+    type: "single"
+    level: "A"
+
+  - question: "Ist WCAG 2.2 ein Gesetz?"
+    answer: "Nein, WCAG ist eine Empfehlung, die in Gesetzen und Normen referenziert wird."
+    type: "single"
+    level: "A"
+
+  - question: "Welches neue WCAG-2.2-Kriterium betrifft kleine Klick- und Touch-Ziele?"
+    answer: "Target Size (Minimum)."
+    type: "single"
+    level: "B"
+
+  - question: "Welches Erfolgskriterium verbessert die Sichtbarkeit des Tastaturfokus in WCAG 2.2?"
+    answer: "Focus Appearance."
+    type: "single"
+    level: "B"
+
+  - question: "Welche Nutzergruppen profitieren besonders von größeren Bedienelementen?"
+    answers:
+      - "Menschen mit motorischen Einschränkungen"
+      - "Ältere Menschen"
+      - "Menschen mit Tremor"
+    correctAnswers:
+      - true
+      - true
+      - true
+    type: "multiple"
+    level: "B"
+
+  - question: "Welche Eingabemethoden werden in WCAG 2.2 besonders berücksichtigt?"
+    answers:
+      - "Tastatur"
+      - "Maus"
+      - "Touch"
+    correctAnswers:
+      - true
+      - true
+      - true
+    type: "multiple"
+    level: "A"
+
+  - question: "Ersetzt WCAG 2.2 frühere Versionen wie WCAG 2.1?"
+    answer: "Nein, WCAG 2.2 ergänzt WCAG 2.1 um zusätzliche Erfolgskriterien."
+    type: "single"
+    level: "A"
+
+  - question: "Was sind Erfolgskriterien in der WCAG?"
+    answer: "Konkrete, testbare Anforderungen zur Überprüfung der Barrierefreiheit."
+    type: "single"
+    level: "A"
+
+  - question: "Welche Rolle spielt ARIA im Zusammenhang mit WCAG?"
+    answer: "ARIA ergänzt semantisches HTML, wenn native HTML-Elemente nicht ausreichen."
+    type: "single"
+    level: "B"
+
+  - question: "Wer ist für die Einhaltung der WCAG verantwortlich?"
+    answer: "Webseiten- und App-Betreiber."
+    type: "single"
+    level: "A"
+
+  - question: "Warum ist WCAG 2.2 besonders für mobile Nutzung relevant?"
+    answer: "Weil sie verbesserte Anforderungen für Touch-Bedienung, kleine Displays und motorische Einschränkungen enthält."
+    type: "single"
+    level: "A"

@@ -1,6 +1,6 @@
 id: "esa3_nosql_cassandra_quiz"
 author: "Pemo"
-title: "Datenbanktechnologien - ESA 3 NoSQL & Column Stores (Cassandra)"
+title: "Datenbanktechnologien - NoSQL & Column Stores (Cassandra)"
 description: "Flashcard-Quiz zu NoSQL-Datenbanken mit Fokus auf Column Stores und Apache Cassandra (ESA3)"
 createDate: "2025-12-16"
 language: "de"
