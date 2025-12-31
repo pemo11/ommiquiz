@@ -460,6 +460,12 @@ async def update_flashcard(flashcard_id: str, request: FlashcardUpdateRequest):
         updated_content = yaml.dump(
             data, default_flow_style=False, allow_unicode=True, sort_keys=False
         )
+        logger.info("Calling storage.save_flashcard",
+                   flashcard_id=flashcard_id,
+                   filename=filename,
+                   overwrite=overwrite,
+                   content_length=len(updated_content),
+                   storage_type=type(storage).__name__)
         saved_document = storage.save_flashcard(
             filename, updated_content, overwrite=overwrite
         )
