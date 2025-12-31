@@ -39,7 +39,7 @@ services:
       - key: S3_BUCKET
         value: "ommiquiz-flashcards"
       - key: S3_ENDPOINT_URL
-        value: "https://fra1.digitaloceanspaces.com"
+        value: "https://ommiquiz-flashcards.fra1.digitaloceanspaces.com"
       - key: AWS_REGION
         value: "fra1"
     routes:
