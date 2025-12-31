@@ -35,11 +35,12 @@ services:
       - key: AWS_SECRET_ACCESS_KEY
         scope: RUN_TIME
         type: SECRET
-      - key: AWS_S3_BUCKET
+      # storage.py expects these specific variable names:
+      - key: S3_BUCKET
         value: "ommiquiz-flashcards"
-      - key: AWS_S3_ENDPOINT_URL
+      - key: S3_ENDPOINT_URL
         value: "https://fra1.digitaloceanspaces.com"
-      - key: AWS_S3_REGION
+      - key: AWS_REGION
         value: "fra1"
     routes:
       - path: /api
