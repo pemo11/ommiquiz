@@ -26,6 +26,21 @@ services:
         value: "INFO"
       - key: ENVIRONMENT
         value: "production"
+      # S3/Spaces Storage for Flashcards
+      - key: FLASHCARDS_STORAGE
+        value: "s3"
+      - key: AWS_ACCESS_KEY_ID
+        scope: RUN_TIME
+        type: SECRET
+      - key: AWS_SECRET_ACCESS_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: AWS_S3_BUCKET
+        value: "ommiquiz-flashcards"
+      - key: AWS_S3_ENDPOINT_URL
+        value: "https://fra1.digitaloceanspaces.com"
+      - key: AWS_S3_REGION
+        value: "fra1"
     routes:
       - path: /api
 
