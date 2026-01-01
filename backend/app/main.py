@@ -87,6 +87,40 @@ def get_flashcard_document(flashcard_id: str) -> Optional[FlashcardDocument]:
     return document
 
 
+def find_flashcard_filename_by_id(flashcard_id: str) -> Optional[str]:
+    """Find the actual filename for a flashcard by scanning all documents.
+
+    This is needed because filenames may not match IDs (e.g.,
+    DBTE_Kapitel9_Vektordatenbanken.yml contains id: dbte_kapitel9_quiz).
+    """
+    logger.info("Searching for flashcard filename", flashcard_id=flashcard_id)
+
+    # Get all documents from storage
+    all_documents = storage.get_all_flashcards()
+
+    for document in all_documents:
+        # Skip the catalog file
+        if document.filename == CATALOG_FILENAME:
+            continue
+
+        # Parse the YAML to get the ID
+        try:
+            data = yaml.safe_load(document.content)
+            if data and data.get("id") == flashcard_id:
+                logger.info("Found flashcard by ID scan",
+                           flashcard_id=flashcard_id,
+                           actual_filename=document.filename)
+                return document.filename
+        except Exception as e:
+            logger.warning("Failed to parse flashcard during ID search",
+                          filename=document.filename,
+                          error=str(e))
+            continue
+
+    logger.info("No flashcard found with ID", flashcard_id=flashcard_id)
+    return None
+
+
 @api_router.get("/")
 async def api_root():
     """API root endpoint"""
@@ -437,39 +471,42 @@ async def update_flashcard(flashcard_id: str, request: FlashcardUpdateRequest):
         logger.info("Processing flashcard rename",
                    old_id=request.old_id,
                    new_id=flashcard_id)
-        # Check if old flashcard exists
-        old_document = get_flashcard_document(request.old_id)
-        if old_document:
-            # Delete the old file
-            deleted_files = storage.delete_flashcard(request.old_id)
-            logger.info("Deleted old flashcard during rename",
-                       old_id=request.old_id,
-                       deleted_files=deleted_files)
+        # Find and delete the old file by scanning all documents
+        old_filename = find_flashcard_filename_by_id(request.old_id)
+        if old_filename:
+            # Delete the old file using its actual filename
+            try:
+                storage.delete_flashcard_by_filename(old_filename)
+                logger.info("Deleted old flashcard during rename",
+                           old_id=request.old_id,
+                           old_filename=old_filename)
+            except Exception as e:
+                logger.warning("Failed to delete old flashcard during rename",
+                             old_id=request.old_id,
+                             old_filename=old_filename,
+                             error=str(e))
         # Treat as new document with new ID
-        document = None
+        filename = None
         is_new_document = True
     else:
-        # Normal update or create
-        document = get_flashcard_document(flashcard_id)
-        is_new_document = document is None
+        # Normal update or create - find the actual filename by scanning all documents
+        filename = find_flashcard_filename_by_id(flashcard_id)
+        is_new_document = filename is None
 
-    if is_new_document and storage.flashcard_exists(flashcard_id):
-        logger.error("Flashcard exists but could not be read", flashcard_id=flashcard_id)
-        raise HTTPException(
-            status_code=500,
-            detail=f"Flashcard '{flashcard_id}' exists but could not be read"
-        )
-
-    filename = (request.filename or "").strip() or f"{flashcard_id}.yaml"
-    overwrite = True
-
+    # Determine the filename to use
     if is_new_document:
+        # New document - use the provided filename or default to ID.yml
+        filename = (request.filename or "").strip() or f"{flashcard_id}.yml"
         logger.info("Flashcard not found, creating new file",
                     flashcard_id=flashcard_id,
                     filename=filename)
         overwrite = False
     else:
-        filename = document.filename
+        # Existing document - keep the original filename
+        logger.info("Updating existing flashcard with original filename",
+                    flashcard_id=flashcard_id,
+                    filename=filename)
+        overwrite = True
 
     # Update or create the file
     try:

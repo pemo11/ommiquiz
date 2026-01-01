@@ -38,6 +38,9 @@ class BaseFlashcardStorage:
     def delete_flashcard(self, flashcard_id: str) -> List[str]:  # pragma: no cover - interface
         raise NotImplementedError
 
+    def delete_flashcard_by_filename(self, filename: str) -> bool:  # pragma: no cover - interface
+        raise NotImplementedError
+
     def flashcard_exists(self, flashcard_id: str) -> bool:  # pragma: no cover - interface
         raise NotImplementedError
 
@@ -173,6 +176,23 @@ class LocalFlashcardStorage(BaseFlashcardStorage):
                 deleted.append(candidate.name)
         return deleted
 
+    def delete_flashcard_by_filename(self, filename: str) -> bool:
+        """Delete a flashcard by its exact filename."""
+        file_path = self.flashcards_dir / filename
+        try:
+            if file_path.exists():
+                file_path.unlink()
+                logger.info("Deleted flashcard by filename", filename=filename)
+                return True
+            else:
+                logger.warning("Flashcard file not found", filename=filename)
+                return False
+        except Exception as e:
+            logger.error("Failed to delete flashcard by filename",
+                        filename=filename,
+                        error=str(e))
+            return False
+
     def flashcard_exists(self, flashcard_id: str) -> bool:
         return self._get_flashcard_path(flashcard_id) is not None
 
@@ -307,6 +327,20 @@ class S3FlashcardStorage(BaseFlashcardStorage):
             except (ClientError, BotoCoreError) as exc:
                 logger.warning("Failed to delete S3 flashcard", key=key, error=str(exc))
         return deleted
+
+    def delete_flashcard_by_filename(self, filename: str) -> bool:
+        """Delete a flashcard by its exact filename."""
+        key = self._build_key(filename)
+        try:
+            self.client.delete_object(Bucket=self.bucket, Key=key)
+            logger.info("Deleted flashcard by filename", filename=filename, key=key)
+            return True
+        except (ClientError, BotoCoreError) as exc:
+            logger.error("Failed to delete flashcard by filename",
+                        filename=filename,
+                        key=key,
+                        error=str(exc))
+            return False
 
     def flashcard_exists(self, flashcard_id: str) -> bool:
         return self._find_existing_key(flashcard_id) is not None
