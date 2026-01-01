@@ -1168,7 +1168,7 @@ function FlashcardViewer({ flashcard, onBack }) {
                           type="checkbox"
                           checked={isSelectedAnswer}
                           onChange={() => handleAnswerSelect(idx)}
-                          disabled={isFlipped}
+                          disabled={currentCardAnswered}
                         />
                         <span className="answer-text">{answer}</span>
                       </label>
