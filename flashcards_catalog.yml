@@ -7,7 +7,6 @@ flashcards:
   description: Fragen und Antworten zu allgemeinen Grundlagen der Quantencomputer,
     einschließlich Qubits, Superposition, Verschränkung und wichtigen Quantengattern.
   language: de
-  level: ''
   author: Claude & Peter Monadjemi
   topics:
   - Quantencomputer
@@ -19,7 +18,6 @@ flashcards:
   description: A new quiz to test the frontend display functionality with proper module
     field
   language: de
-  level: intermediate
   author: Peter Monadjemi
   topics:
   - frontend
@@ -33,7 +31,6 @@ flashcards:
   title: Basiswissen Datenbanksysteme
   description: Lern- und Verständnisfragen zum Kapitel 5 der VFH-Unterlage „Datenbanktechnologien“
   language: de
-  level: ''
   author: Pemo
   topics:
   - Relationale Datenbanken
@@ -47,7 +44,6 @@ flashcards:
   title: NoSQL-Datenbanken
   description: Lern- und Verständnisfragen zu Kapitel 8 der VFH-Unterlage „Datenbanktechnologien“
   language: de
-  level: ''
   author: Pemo
   topics:
   - nosql
@@ -63,7 +59,6 @@ flashcards:
   title: Exkurs – Vektordatenbanken
   description: Lern- und Verständnisfragen zu Kapitel 9 der VFH-Unterlage „Datenbanktechnologien“
   language: de
-  level: ''
   author: Pemo
   topics:
   - vektordatenbanken
@@ -78,7 +73,6 @@ flashcards:
   title: Verteiltheit
   description: Lern- und Verständnisfragen zu Kapitel 7 der VFH-Unterlage „Datenbanktechnologien“
   language: de
-  level: ''
   author: Pemo
   topics:
   - Verteilte_systeme
@@ -93,7 +87,6 @@ flashcards:
   title: Data Warehouse und Data Mining
   description: Lern- und Verständnisfragen zu Kapitel 6 der VFH-Unterlage „Datenbanktechnologien“
   language: de
-  level: ''
   author: Pemo
   topics:
   - Data Warehouse

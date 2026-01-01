@@ -64,7 +64,7 @@ if Path("/app/flashcards").exists():
 else:
     FLASHCARDS_DIR = Path(__file__).parent.parent / "flashcards"
 
-CATALOG_FILENAME = "flashcards_catalog.yaml"
+CATALOG_FILENAME = "flashcards_catalog.yml"
 
 storage = get_flashcard_storage(FLASHCARDS_DIR, CATALOG_FILENAME)
 
@@ -72,7 +72,6 @@ logger.info("Application starting", flashcards_dir=str(FLASHCARDS_DIR))
 
 # Compile regex pattern once for performance
 VALID_ID_PATTERN = re.compile(r'^[a-zA-Z0-9_-]+$')
-
 
 def get_flashcard_document(flashcard_id: str) -> Optional[FlashcardDocument]:
     """Retrieve a flashcard document from the configured storage backend."""
