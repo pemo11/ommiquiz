@@ -456,9 +456,14 @@ function FlashcardViewer({ flashcard, onBack }) {
 
     // For multiple choice cards
     if (cardType === 'multiple') {
-      // If not answered yet and flipping to back, trigger evaluation
-      if (!currentCardAnswered && !isFlipped) {
-        handleShowAnswers();
+      if (!currentCardAnswered) {
+        if (!isFlipped) {
+          // Flipping to back - trigger evaluation
+          handleShowAnswers();
+        } else {
+          // Flipping back to front - reset showCorrectAnswers to allow changes
+          setShowCorrectAnswers(false);
+        }
       }
       // Always allow flipping for multiple choice (to review question/answers)
       setIsFlipped(!isFlipped);
