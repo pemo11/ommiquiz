@@ -287,8 +287,25 @@ async def get_flashcard(
 ) -> Dict[str, Any]:
     """Get a specific flashcard file by ID"""
     logger.info("Getting flashcard", flashcard_id=flashcard_id)
-    
+
+    # First try the old way (for backwards compatibility)
     document = get_flashcard_document(flashcard_id)
+
+    # If not found by ID-based filename, scan all documents to find actual filename
+    if document is None:
+        logger.info("Flashcard not found by ID-based filename, scanning all documents",
+                   flashcard_id=flashcard_id)
+        filename = find_flashcard_filename_by_id(flashcard_id)
+        if filename:
+            # Read the file directly by its actual filename
+            all_documents = storage.get_all_flashcards()
+            for doc in all_documents:
+                if doc.filename == filename:
+                    document = doc
+                    logger.info("Found flashcard by scanning",
+                               flashcard_id=flashcard_id,
+                               actual_filename=filename)
+                    break
 
     if document is None:
         logger.error("Flashcard not found", flashcard_id=flashcard_id)
@@ -678,21 +695,36 @@ async def upload_flashcard(file: UploadFile = File(...), overwrite: str = Form(d
 @api_router.delete("/flashcards/{flashcard_id}")
 async def delete_flashcard(flashcard_id: str):
     """Delete a flashcard file"""
-    
-    logger.info("Deleting flashcard", flashcard_id=flashcard_id)
-    
-    document = get_flashcard_document(flashcard_id)
 
+    logger.info("Deleting flashcard", flashcard_id=flashcard_id)
+
+    # First try to find by ID-based filename
+    document = get_flashcard_document(flashcard_id)
+    filename = None
+
+    # If not found, scan all documents to find actual filename
     if document is None:
-        logger.error("Flashcard not found for deletion", flashcard_id=flashcard_id)
-        raise HTTPException(
-            status_code=404,
-            detail=f"Flashcard '{flashcard_id}' not found"
-        )
+        logger.info("Flashcard not found by ID-based filename, scanning all documents for deletion",
+                   flashcard_id=flashcard_id)
+        filename = find_flashcard_filename_by_id(flashcard_id)
+        if not filename:
+            logger.error("Flashcard not found for deletion", flashcard_id=flashcard_id)
+            raise HTTPException(
+                status_code=404,
+                detail=f"Flashcard '{flashcard_id}' not found"
+            )
+    else:
+        filename = document.filename
 
     try:
-        # Track all deleted files so we can report them and clean up alternates
-        deleted_files = storage.delete_flashcard(flashcard_id)
+        # Delete by actual filename if found by scanning, otherwise use ID-based deletion
+        if filename and filename != f"{flashcard_id}.yaml" and filename != f"{flashcard_id}.yml":
+            # Delete by actual filename
+            success = storage.delete_flashcard_by_filename(filename)
+            deleted_files = [filename] if success else []
+        else:
+            # Use ID-based deletion (tries both .yaml and .yml)
+            deleted_files = storage.delete_flashcard(flashcard_id)
 
         if not deleted_files:
             logger.error("Failed to delete flashcard from storage", flashcard_id=flashcard_id)
