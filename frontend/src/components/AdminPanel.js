@@ -1056,7 +1056,7 @@ function AdminPanel({ onBack }) {
                 <div className="stat-card">
                   <span className="stat-label">Flashcard Sets</span>
                   <span className="stat-value">
-                    {catalogData.total ?? (catalogData.flashcards ? catalogData.flashcards.length : 0)}
+                    {catalogData.total ?? (catalogData['flashcard-sets'] ? catalogData['flashcard-sets'].length : 0)}
                   </span>
                   <span className="stat-helper">Available in catalog</span>
                 </div>
@@ -1076,8 +1076,8 @@ function AdminPanel({ onBack }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {catalogData.flashcards && catalogData.flashcards.length > 0 ? (
-                      catalogData.flashcards.map((flashcard) => (
+                    {catalogData['flashcard-sets'] && catalogData['flashcard-sets'].length > 0 ? (
+                      catalogData['flashcard-sets'].map((flashcard) => (
                         <tr key={flashcard.id || flashcard.filename}>
                           <td>
                             <div className="stat-title">{flashcard.title || flashcard.id}</div>
