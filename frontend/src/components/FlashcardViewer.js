@@ -1165,11 +1165,19 @@ function FlashcardViewer({ flashcard, onBack }) {
 
             {/* Back side: Show correct/incorrect answers */}
             <div className="flashcard-face flashcard-back">
-              <div className="card-header">{t('common.answers')}</div>
-              <div className="card-content">
-                {renderQuestionContent()}
-
-                <div className="answers-list" style={{ marginTop: '1rem' }}>
+              <div className="card-content" style={{
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                height: '100%',
+                padding: '1rem'
+              }}>
+                <div className="answers-list" style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.75rem',
+                  width: '100%'
+                }}>
                   {currentCard.answers && currentCard.answers.map((answer, idx) => {
                     const isCorrectAnswer = currentCard.correctAnswers && currentCard.correctAnswers[idx];
                     const isSelectedAnswer = selectedAnswers.includes(idx);
@@ -1182,7 +1190,10 @@ function FlashcardViewer({ flashcard, onBack }) {
                     }
 
                     return (
-                      <div key={idx} className={answerClasses} onClick={(e) => e.stopPropagation()}>
+                      <div key={idx} className={answerClasses} style={{
+                        width: '100%',
+                        boxSizing: 'border-box'
+                      }} onClick={(e) => e.stopPropagation()}>
                         <input
                           type="checkbox"
                           checked={isSelectedAnswer}
