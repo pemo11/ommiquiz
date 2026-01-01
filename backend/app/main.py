@@ -193,7 +193,8 @@ def collect_flashcard_metadata() -> List[Dict[str, Any]]:
                    id=document.id,
                    content_length=len(document.content) if document.content else 0)
         
-        if document.filename == CATALOG_FILENAME:
+        # Skip catalog file (check both .yml and .yaml extensions)
+        if document.filename in (CATALOG_FILENAME, "flashcards_catalog.yaml", "flashcards_catalog.yml"):
             logger.debug("⏭️ Skipping catalog file during metadata collection", filename=document.filename)
             continue
             
@@ -240,7 +241,7 @@ def generate_flashcard_catalog() -> Tuple[Dict[str, Any], Path]:
     catalog_data: Dict[str, Any] = {
         "generatedAt": datetime.utcnow().isoformat() + "Z",
         "total": len(flashcard_files),
-        "flashcards": flashcard_files
+        "flashcard-sets": flashcard_files
     }
 
     catalog_yaml = yaml.safe_dump(catalog_data, allow_unicode=True, sort_keys=False)
@@ -277,8 +278,8 @@ async def get_flashcard_catalog_data():
     """Read the generated catalog file and return its contents as JSON"""
     catalog_data, _ = generate_flashcard_catalog()
 
-    catalog_data.setdefault("flashcards", [])
-    catalog_data.setdefault("total", len(catalog_data["flashcards"]))
+    catalog_data.setdefault("flashcard-sets", [])
+    catalog_data.setdefault("total", len(catalog_data["flashcard-sets"]))
 
     return catalog_data
 
@@ -1052,6 +1053,18 @@ async def root():
 async def startup_event():
     """Application startup event"""
     initialize_download_log_store()
+
+    # Generate flashcard catalog on startup
+    try:
+        catalog_data, catalog_path = generate_flashcard_catalog()
+        logger.info("Flashcard catalog generated on startup",
+                   total_flashcards=catalog_data.get("total", 0),
+                   catalog_path=str(catalog_path))
+    except Exception as e:
+        logger.error("Failed to generate flashcard catalog on startup",
+                    error=str(e),
+                    error_type=type(e).__name__)
+
     logger.info("Application startup completed")
 
 @app.on_event("shutdown")
