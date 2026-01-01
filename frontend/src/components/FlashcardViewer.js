@@ -247,7 +247,11 @@ function FlashcardViewer({ flashcard, onBack }) {
   console.log('Cards length:', cards.length);
 
   const currentCard = cards[currentCardIndex];
-  const rawCardType = currentCard?.type || (Array.isArray(currentCard?.correctAnswers) ? 'multiple' : 'single');
+  // Determine card type: explicit type, or infer from structure
+  // Cards with 'answers' array (plural) or 'correctAnswers' are multiple choice
+  // Cards with 'answer' (singular) are single answer
+  const rawCardType = currentCard?.type ||
+                      (Array.isArray(currentCard?.correctAnswers) || Array.isArray(currentCard?.answers) ? 'multiple' : 'single');
   const cardType = (typeof rawCardType === 'string' ? rawCardType.toLowerCase() : rawCardType) || 'single';
 
   const availableLevelCounts = useMemo(() => countCardLevels(flashcard.cards || []), [flashcard.cards]);
