@@ -1130,11 +1130,23 @@ function FlashcardViewer({ flashcard, onBack }) {
           >
             {/* Front side: Question with checkboxes */}
             <div className="flashcard-face flashcard-front">
-              <div className="card-header">{t('common.question')}</div>
-              <div className="card-content">
-                {renderQuestionContent()}
+              <div className="card-content" style={{
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                height: '100%',
+                padding: '1rem'
+              }}>
+                <div style={{ marginBottom: '1rem' }}>
+                  {renderQuestionContent()}
+                </div>
 
-                <div className="answers-list" style={{ marginTop: '1rem' }}>
+                <div className="answers-list" style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.75rem',
+                  width: '100%'
+                }}>
                   {currentCard.answers && currentCard.answers.map((answer, idx) => {
                     const isSelectedAnswer = selectedAnswers.includes(idx);
 
@@ -1142,6 +1154,10 @@ function FlashcardViewer({ flashcard, onBack }) {
                       <label
                         key={idx}
                         className={`answer-option ${isSelectedAnswer ? 'selected' : ''}`}
+                        style={{
+                          width: '100%',
+                          boxSizing: 'border-box'
+                        }}
                         onClick={(e) => e.stopPropagation()}
                       >
                         <input
