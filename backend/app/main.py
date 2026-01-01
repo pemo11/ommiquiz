@@ -382,6 +382,7 @@ def validate_flashcard_yaml(data: Dict[str, Any]) -> Dict[str, Any]:
 class FlashcardUpdateRequest(BaseModel):
     content: str
     filename: str
+    old_id: str | None = None  # For rename operations
 
 @api_router.put("/flashcards/{flashcard_id}")
 async def update_flashcard(flashcard_id: str, request: FlashcardUpdateRequest):
@@ -433,9 +434,26 @@ async def update_flashcard(flashcard_id: str, request: FlashcardUpdateRequest):
             detail=f"ID mismatch: URL specifies '{flashcard_id}' but content has '{data.get('id')}'"
         )
 
-    # Determine whether we're creating or updating the file
-    document = get_flashcard_document(flashcard_id)
-    is_new_document = document is None
+    # Handle rename operation if old_id is provided
+    if request.old_id and request.old_id != flashcard_id:
+        logger.info("Processing flashcard rename",
+                   old_id=request.old_id,
+                   new_id=flashcard_id)
+        # Check if old flashcard exists
+        old_document = get_flashcard_document(request.old_id)
+        if old_document:
+            # Delete the old file
+            deleted_files = storage.delete_flashcard(request.old_id)
+            logger.info("Deleted old flashcard during rename",
+                       old_id=request.old_id,
+                       deleted_files=deleted_files)
+        # Treat as new document with new ID
+        document = None
+        is_new_document = True
+    else:
+        # Normal update or create
+        document = get_flashcard_document(flashcard_id)
+        is_new_document = document is None
 
     if is_new_document and storage.flashcard_exists(flashcard_id):
         logger.error("Flashcard exists but could not be read", flashcard_id=flashcard_id)
