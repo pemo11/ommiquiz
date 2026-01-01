@@ -96,7 +96,7 @@ def find_flashcard_filename_by_id(flashcard_id: str) -> Optional[str]:
     logger.info("Searching for flashcard filename", flashcard_id=flashcard_id)
 
     # Get all documents from storage
-    all_documents = storage.get_all_flashcards()
+    all_documents = storage.list_flashcards()
 
     for document in all_documents:
         # Skip the catalog file
@@ -302,7 +302,7 @@ async def get_flashcard(
         filename = find_flashcard_filename_by_id(flashcard_id)
         if filename:
             # Read the file directly by its actual filename
-            all_documents = storage.get_all_flashcards()
+            all_documents = storage.list_flashcards()
             for doc in all_documents:
                 if doc.filename == filename:
                     document = doc
