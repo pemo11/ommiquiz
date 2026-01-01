@@ -148,7 +148,7 @@ class LoggingConfig:
         
         # Application metadata
         self.app_name = os.getenv("APP_NAME", "ommiquiz-backend")
-        self.app_version = os.getenv("APP_VERSION", "1.0.11")
+        self.app_version = os.getenv("APP_VERSION", "1.0.12")
         self.environment = os.getenv("ENVIRONMENT", "development")
         
     def setup_logging(self):
