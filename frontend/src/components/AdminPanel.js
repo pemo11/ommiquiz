@@ -438,6 +438,9 @@ function AdminPanel({ onBack }) {
     const isUpdatingExisting = !isCreatingNew &&
       selectedFlashcard &&
       selectedFlashcard.id === editingFlashcard.id;
+    const isRenaming = !isCreatingNew &&
+      selectedFlashcard &&
+      selectedFlashcard.id !== editingFlashcard.id;
     const isNewButExists = isCreatingNew && flashcards.some(fc => fc.id === editingFlashcard.id);
 
     if (isNewButExists && !forceOverwrite) {
@@ -451,18 +454,25 @@ function AdminPanel({ onBack }) {
       setError(null);
 
       const yamlData = convertToYAML(editingFlashcard);
-      
+
       let response;
-      if (isUpdatingExisting) {
+      if (isUpdatingExisting || isRenaming) {
+        const requestBody = {
+          content: yamlData,
+          filename: `${editingFlashcard.id}.yaml`
+        };
+
+        // If renaming, include the old ID
+        if (isRenaming) {
+          requestBody.old_id = selectedFlashcard.id;
+        }
+
         response = await fetch(`${API_URL}/flashcards/${editingFlashcard.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            content: yamlData,
-            filename: `${editingFlashcard.id}.yaml`
-          })
+          body: JSON.stringify(requestBody)
         });
       } else {
         const blob = new Blob([yamlData], { type: 'text/yaml' });
@@ -508,7 +518,7 @@ function AdminPanel({ onBack }) {
       }
 
       await response.json();
-      const actionText = isUpdatingExisting ? 'updated' : (isNewButExists ? 'overwritten' : 'created');
+      const actionText = isRenaming ? 'renamed' : (isUpdatingExisting ? 'updated' : (isNewButExists ? 'overwritten' : 'created'));
       setMessage(`Flashcard ${actionText} successfully!`);
       setSelectedFlashcard({ ...editingFlashcard });
       setIsCreatingNew(false);
