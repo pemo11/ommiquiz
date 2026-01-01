@@ -1232,7 +1232,7 @@ function FlashcardViewer({ flashcard, onBack }) {
                 {cardResults[currentCardIndex]?.evaluationResult !== undefined && (
                   <div className="evaluation-result" style={{ marginTop: '1rem' }}>
                     {cardResults[currentCardIndex]?.evaluationResult === true ? (
-                      <div className="correct-evaluation">✅ Correct! You got it right!</div>
+                      <div className="correct-evaluation">✅ Correct! Marked as done</div>
                     ) : (
                       <div className="incorrect-evaluation">❌ Incorrect. Review the correct answers above.</div>
                     )}
