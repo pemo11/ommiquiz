@@ -457,12 +457,12 @@ function AdminPanel({ onBack }) {
         let filename;
         if (isUpdatingExisting) {
           // Preserve original filename when just updating content
-          filename = selectedFlashcard.filename || `${editingFlashcard.id}.yaml`;
+          filename = selectedFlashcard.filename || `${editingFlashcard.id}.yml`;
         } else if (isRenaming) {
           // When renaming, preserve the file extension from the original file
           const originalExtension = selectedFlashcard.filename
             ? selectedFlashcard.filename.slice(selectedFlashcard.filename.lastIndexOf('.'))
-            : '.yaml';
+            : '.yml';
           filename = `${editingFlashcard.id}${originalExtension}`;
         }
 
@@ -486,7 +486,7 @@ function AdminPanel({ onBack }) {
       } else {
         const blob = new Blob([yamlData], { type: 'text/yaml' });
         const formData = new FormData();
-        formData.append('file', blob, `${editingFlashcard.id}.yaml`);
+        formData.append('file', blob, `${editingFlashcard.id}.yml`);
         
         if (forceOverwrite) {
           formData.append('overwrite', 'true');
@@ -640,7 +640,7 @@ function AdminPanel({ onBack }) {
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${dataToExport.id || 'flashcard'}.yaml`;
+      link.download = `${dataToExport.id || 'flashcard'}.yml`;
       
       document.body.appendChild(link);
       link.click();
