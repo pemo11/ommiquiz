@@ -457,9 +457,22 @@ function AdminPanel({ onBack }) {
 
       let response;
       if (isUpdatingExisting || isRenaming) {
+        // Determine the filename to use
+        let filename;
+        if (isUpdatingExisting) {
+          // Preserve original filename when just updating content
+          filename = selectedFlashcard.filename || `${editingFlashcard.id}.yaml`;
+        } else if (isRenaming) {
+          // When renaming, preserve the file extension from the original file
+          const originalExtension = selectedFlashcard.filename
+            ? selectedFlashcard.filename.slice(selectedFlashcard.filename.lastIndexOf('.'))
+            : '.yaml';
+          filename = `${editingFlashcard.id}${originalExtension}`;
+        }
+
         const requestBody = {
           content: yamlData,
-          filename: `${editingFlashcard.id}.yaml`
+          filename: filename
         };
 
         // If renaming, include the old ID
