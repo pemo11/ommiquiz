@@ -454,15 +454,19 @@ function FlashcardViewer({ flashcard, onBack }) {
       return;
     }
 
-    // For both single and multiple choice cards, flip if not answered
-    if (!currentCardAnswered) {
-      if (cardType === 'multiple') {
-        // For multiple choice, flipping triggers evaluation
-        if (!isFlipped) {
-          handleShowAnswers();
-        }
+    // For multiple choice cards
+    if (cardType === 'multiple') {
+      // If not answered yet and flipping to back, trigger evaluation
+      if (!currentCardAnswered && !isFlipped) {
+        handleShowAnswers();
       }
+      // Always allow flipping for multiple choice (to review question/answers)
       setIsFlipped(!isFlipped);
+    } else {
+      // For single answer cards, flip if not answered
+      if (!currentCardAnswered) {
+        setIsFlipped(!isFlipped);
+      }
     }
   };
 
