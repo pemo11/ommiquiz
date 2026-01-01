@@ -154,8 +154,12 @@ def _extract_flashcard_metadata(document: FlashcardDocument) -> Dict[str, Any]:
     try:
         data = yaml.safe_load(document.content) or {}
 
+        # Use the actual ID from YAML content, not the filename stem
+        actual_id = data.get("id", document.id)
+
         metadata.update({
-            "title": data.get("title", metadata["title"]),
+            "id": actual_id,  # Use actual ID from YAML
+            "title": data.get("title", actual_id),
             "description": data.get("description", ""),
             "language": data.get("language", ""),
             "level": data.get("level", ""),
