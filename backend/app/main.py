@@ -580,7 +580,9 @@ async def upload_flashcard(file: UploadFile = File(...), overwrite: str = Form(d
         )
     
     flashcard_id = data.get("id")
-    filename = f"{flashcard_id}.yaml"
+    # Preserve the original file extension (.yml or .yaml)
+    original_extension = file.filename[file.filename.rfind('.'):]  # Gets .yml or .yaml
+    filename = f"{flashcard_id}{original_extension}"
     allow_overwrite = overwrite.lower() == "true"
 
     existing_flashcard = storage.flashcard_exists(flashcard_id)
