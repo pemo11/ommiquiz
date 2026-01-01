@@ -1148,17 +1148,19 @@ function FlashcardViewer({ flashcard, onBack }) {
                 flexDirection: 'column',
                 justifyContent: 'center',
                 height: '100%',
-                padding: '1rem'
+                padding: '1rem',
+                alignItems: 'center'
               }}>
-                <div style={{ marginBottom: '1rem' }}>
+                <div style={{ marginBottom: '1rem', width: '100%', maxWidth: '90%' }}>
                   {renderQuestionContent()}
                 </div>
 
                 <div className="answers-list" style={{
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '0.75rem',
-                  width: '100%'
+                  gap: '0.5rem',
+                  width: '100%',
+                  maxWidth: '90%'
                 }}>
                   {currentCard.answers && currentCard.answers.map((answer, idx) => {
                     const isSelectedAnswer = selectedAnswers.includes(idx);
@@ -1200,13 +1202,15 @@ function FlashcardViewer({ flashcard, onBack }) {
                 justifyContent: 'center',
                 height: '100%',
                 padding: '1rem',
-                paddingBottom: '5rem'
+                paddingBottom: '5rem',
+                alignItems: 'center'
               }}>
                 <div className="answers-list" style={{
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '0.75rem',
-                  width: '100%'
+                  gap: '0.5rem',
+                  width: '100%',
+                  maxWidth: '90%'
                 }}>
                   {currentCard.answers && currentCard.answers.map((answer, idx) => {
                     const isCorrectAnswer = currentCard.correctAnswers && currentCard.correctAnswers[idx];
