@@ -1190,7 +1190,8 @@ function FlashcardViewer({ flashcard, onBack }) {
                 flexDirection: 'column',
                 justifyContent: 'center',
                 height: '100%',
-                padding: '1rem'
+                padding: '1rem',
+                paddingBottom: '5rem'
               }}>
                 <div className="answers-list" style={{
                   display: 'flex',
@@ -1245,7 +1246,12 @@ function FlashcardViewer({ flashcard, onBack }) {
               </div>
 
               {!currentCardAnswered && (
-                <div className="evaluation-buttons">
+                <div className="evaluation-buttons" style={{
+                  position: 'absolute',
+                  bottom: '1rem',
+                  left: '1rem',
+                  right: '1rem'
+                }}>
                   <button
                     onClick={(e) => { e.stopPropagation(); handleMultipleChoiceEvaluation(false); }}
                     className="eval-button incorrect-button"
@@ -1258,15 +1264,6 @@ function FlashcardViewer({ flashcard, onBack }) {
                   >
                     ✅ Done
                   </button>
-                </div>
-              )}
-              {currentCardAnswered && (
-                <div className="answered-indicator">
-                  {cardResults[currentCardIndex]?.correct ? (
-                    <span className="correct-indicator">✅ Marked as Done</span>
-                  ) : (
-                    <span className="incorrect-indicator">📤 Postponed</span>
-                  )}
                 </div>
               )}
             </div>
