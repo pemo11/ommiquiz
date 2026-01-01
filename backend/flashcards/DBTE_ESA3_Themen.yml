@@ -1,7 +1,7 @@
-id: "esa3_nosql_cassandra_quiz"
+id: "dbte_esa3_quiz"
 author: "Pemo"
 title: "Datenbanktechnologien - NoSQL & Column Stores (Cassandra)"
-description: "Flashcard-Quiz zu NoSQL-Datenbanken mit Fokus auf Column Stores und Apache Cassandra (ESA3)"
+description: "Quiz zu NoSQL-Datenbanken mit Fokus auf Column Stores und Apache Cassandra"
 createDate: "2025-12-16"
 language: "de"
 module: "Datenbanktechnologien"
@@ -25,7 +25,6 @@ flashcards:
 
 - question: "Welches Hauptproblem adressieren NoSQL-Datenbanken?"
   answer: "Skalierbarkeit und Verfügbarkeit bei großen, verteilten Datenmengen."
-  level: "A"
 
 - question: "Welche Anforderungen stellt das Messaging-System aus ESA3?"
   answers:
@@ -39,7 +38,6 @@ flashcards:
     - true
     - false
   type: "multiple"
-  level: "A"
 
 - question: "Welche vier Haupttypen von NoSQL-Datenbanken gibt es?"
   answers:
@@ -53,27 +51,21 @@ flashcards:
     - true
     - true
   type: "multiple"
-  level: "A"
 
 - question: "Warum ist ein Key-Value-Store für Chatnachrichten ungeeignet?"
   answer: "Fehlende Query- und Indexmöglichkeiten auf Metadaten."
-  level: "A"
 
 - question: "Welcher Vorteil spricht für Dokument-Datenbanken?"
   answer: "Native Speicherung von JSON mit flexibler Schemaerweiterung."
-  level: "A"
 
 - question: "Warum können Document Stores bei extrem hoher Schreibrate limitiert sein?"
   answer: "Zeilenorientierte Speicherung ist weniger effizient als spaltenorientierte Modelle."
-  level: "B"
 
 - question: "Was ist das zentrale Merkmal spaltenorientierter NoSQL-Datenbanken?"
   answer: "Speicherung nach Partitionen und Clustern statt vollständiger Zeilen."
-  level: "A"
 
 - question: "Was bedeutet „query-driven schema design“?"
   answer: "Das Schema wird anhand der Abfragen entworfen, nicht umgekehrt."
-  level: "A"
 
 - question: "Welche Aussage trifft auf Column Stores zu?"
   answers:
@@ -87,88 +79,66 @@ flashcards:
     - true
     - true
   type: "multiple"
-  level: "B"
 
 - question: "Warum eignen sich Column Stores besonders für Chatnachrichten?"
   answer: "Zeitlich sortierte Schreib- und Lesezugriffe mit hoher Schreibrate."
-  level: "A"
 
 - question: "Welche NoSQL-Eigenschaft unterstützt Cassandra besonders gut?"
   answer: "Horizontale Skalierung."
-  level: "A"
 
 - question: "Welchem CAP-Typ entspricht Cassandra?"
   answer: "AP (Availability + Partition Tolerance)."
-  level: "A"
 
 - question: "Was bedeutet „eventual consistency“?"
   answer: "Konsistenz wird zeitverzögert erreicht."
-  level: "A"
 
 - question: "Warum ist eventual consistency für Chats akzeptabel?"
   answer: "Kurzzeitige Inkonsistenzen sind für Nutzer tolerierbar."
-  level: "A"
 
 - question: "Was ist der Partition Key in Cassandra?"
   answer: "Bestimmt, auf welchem Knoten die Daten liegen."
-  level: "A"
 
 - question: "Was ist der Clustering Key?"
   answer: "Bestimmt die Sortierung innerhalb einer Partition."
-  level: "A"
 
 - question: "Welche Rolle spielt conversation_id im ESA3-Modell?"
   answer: "Partition Key für Chatnachrichten."
-  level: "A"
 
 - question: "Warum liegen alle Nachrichten eines Chats in einer Partition?"
   answer: "Für schnelle Abfragen des Chatverlaufs."
-  level: "A"
 
 - question: "Warum wird timestamp als Clustering Key verwendet?"
   answer: "Sortierung der Nachrichten nach Zeit."
-  level: "A"
 
 - question: "Was bewirkt CLUSTERING ORDER BY (timestamp DESC)?"
   answer: "Neueste Nachrichten werden zuerst gelesen."
-  level: "A"
 
 - question: "Was ist Sharding?"
   answer: "Horizontale Aufteilung der Daten auf mehrere Knoten."
-  level: "A"
 
 - question: "Was ist ein Shard?"
   answer: "Ein Teil der Gesamtdatenmenge auf einem Knoten."
-  level: "A"
 
 - question: "Wie erfolgt Sharding in Cassandra technisch?"
   answer: "Über Hashing des Partition Keys."
-  level: "B"
 
 - question: "Welches Feld eignet sich im Chat-System gut als Shard Key?"
   answer: "conversation_id."
-  level: "A"
 
 - question: "Was ist eine Hot Partition?"
   answer: "Eine Partition mit überdurchschnittlich hoher Last."
-  level: "A"
 
 - question: "Warum können sehr aktive Chats problematisch sein?"
   answer: "Alle Schreibzugriffe landen auf demselben Knoten."
-  level: "A"
 
 - question: "Wie kann man sehr große Partitionen vermeiden?"
   answer: "Kombination aus conversation_id und Zeitsegment."
-  level: "B"
 
 - question: "Was bedeutet Rebalancing?"
   answer: "Neuverteilung von Daten beim Hinzufügen von Knoten."
-  level: "A"
 
 - question: "Welche Nebenwirkung kann Rebalancing haben?"
   answer: "Kurzzeitig erhöhte Latenzen."
-  level: "A"
 
 - question: "Warum ist Cassandra für globale Messaging-Systeme geeignet?"
   answer: "Hohe Verfügbarkeit, Skalierbarkeit und Schreibleistung."
-  level: "A"

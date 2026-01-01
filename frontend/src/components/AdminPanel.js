@@ -205,7 +205,6 @@ function AdminPanel({ onBack }) {
       createDate: new Date().toISOString().split('T')[0],
       language: 'en',
       module: '',
-      level: 'beginner',
       semester: '',
       institution: '',
       studycourse: '',
@@ -249,7 +248,6 @@ function AdminPanel({ onBack }) {
         createDate: '',
         language: 'en',
         module: '',
-        level: 'beginner',
         semester: '',
         institution: '',
         studycourse: '',
@@ -339,8 +337,6 @@ function AdminPanel({ onBack }) {
             }
           } else if (trimmedLine.startsWith('type:') && currentCard) {
             currentCard.type = trimmedLine.substring(trimmedLine.indexOf(':') + 1).trim().replace(/^"(.*)"$/, '$1');
-          } else if (trimmedLine.startsWith('level:') && currentCard) {
-            currentCard.level = trimmedLine.substring(trimmedLine.indexOf(':') + 1).trim().replace(/^"(.*)"$/, '$1');
           }
         }
       }
@@ -671,7 +667,6 @@ function AdminPanel({ onBack }) {
     yamlLines.push(`createDate: "${escapeQuotes(data.createDate || '')}"`);
     yamlLines.push(`language: "${escapeQuotes(data.language || '')}"`);
     yamlLines.push(`module: "${escapeQuotes(data.module || '')}"`);
-    yamlLines.push(`level: "${escapeQuotes(data.level || '')}"`);
     yamlLines.push(`semester: "${escapeQuotes(data.semester || '')}"`);
     yamlLines.push(`institution: "${escapeQuotes(data.institution || '')}"`);
     yamlLines.push(`studycourse: "${escapeQuotes(data.studycourse || '')}"`);
@@ -731,10 +726,6 @@ function AdminPanel({ onBack }) {
       }
 
       yamlLines.push(`    type: "${cardType}"`);
-
-      if (card.level) {
-        yamlLines.push(`    level: "${escapeQuotes(card.level)}"`);
-      }
 
       yamlLines.push('');
     });
@@ -906,7 +897,6 @@ function AdminPanel({ onBack }) {
         createDate: '',
         language: 'en',
         module: '',
-        level: 'beginner',
         semester: '',
         institution: '',
         studycourse: '',
@@ -993,8 +983,6 @@ function AdminPanel({ onBack }) {
             }
           } else if (trimmedLine.startsWith('type:') && currentCard) {
             currentCard.type = trimmedLine.substring(trimmedLine.indexOf(':') + 1).trim().replace(/^"(.*)"$/, '$1');
-          } else if (trimmedLine.startsWith('level:') && currentCard) {
-            currentCard.level = trimmedLine.substring(trimmedLine.indexOf(':') + 1).trim().replace(/^"(.*)"$/, '$1');
           }
         }
       }
@@ -1164,7 +1152,7 @@ function AdminPanel({ onBack }) {
                         <span className="flashcard-description">{flashcard.description}</span>
                       )}
                       <span className="flashcard-meta">
-                        ID: {flashcard.id} | Author: {flashcard.author || 'Unknown'} | Level: {flashcard.level || 'Unknown'}
+                        ID: {flashcard.id} | Author: {flashcard.author || 'Unknown'}
                       </span>
                     </div>
                   </div>
@@ -1364,18 +1352,6 @@ flashcards:
                     onChange={(e) => updateFlashcardField('module', e.target.value)}
                     placeholder="e.g. Databases, Frontend Development"
                   />
-                </div>
-                <div className="form-row">
-                  <label>Level:</label>
-                  <select
-                    value={editingFlashcard.level}
-                    onChange={(e) => updateFlashcardField('level', e.target.value)}
-                  >
-                    <option value="beginner">Beginner</option>
-                    <option value="intermediate">Intermediate</option>
-                    <option value="advanced">Advanced</option>
-                    <option value="expert">Expert</option>
-                  </select>
                 </div>
                 <div className="form-row">
                   <label>Semester:</label>

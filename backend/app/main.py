@@ -309,9 +309,9 @@ def validate_flashcard_yaml(data: Dict[str, Any]) -> Dict[str, Any]:
     logger.debug("Starting flashcard validation")
     
     # Required fields in root
-    required_fields = ["id", "author", "title", "description", "createDate", 
-                      "language", "level", "topics", "keywords", "flashcards"]
-    
+    required_fields = ["id", "author", "title", "description", "createDate",
+                      "language", "topics", "keywords", "flashcards"]
+
     for field in required_fields:
         if field not in data:
             errors.append(f"Missing required field: '{field}'")
@@ -326,13 +326,7 @@ def validate_flashcard_yaml(data: Dict[str, Any]) -> Dict[str, Any]:
         valid_languages = ["en", "de", "fr", "es", "it", "pt", "nl", "ru", "ja", "zh"]
         if data["language"] not in valid_languages:
             warnings.append(f"Language '{data['language']}' not in common list: {valid_languages}")
-    
-    # Validate level
-    if "level" in data:
-        valid_levels = ["beginner", "intermediate", "advanced", "expert"]
-        if data["level"] not in valid_levels:
-            warnings.append(f"Level '{data['level']}' not in standard list: {valid_levels}")
-    
+
     # Validate flashcards structure
     if "flashcards" in data:
         if not isinstance(data["flashcards"], list):

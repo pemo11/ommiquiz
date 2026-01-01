@@ -1,7 +1,7 @@
-id: "vfhdbte_kapitel7_quiz"
+id: "dbte_kapitel7_quiz"
 author: "Pemo"
-title: "Verteiltheit"
-description: "Lern- und Verständnisfragen zu Kapitel 7 der VFH-Unterlage „Datenbanktechnologien“"
+title: "DBTE - Verteiltheit (Kapitel 7)"
+description: "Lern- und Verständnisfragen zu Kapitel 7 des VFH-Modulhandbuchs Datenbanktechnologien"
 createDate: "2025-11-12"
 language: "de"
 module: "Datenbanktechnologien"
@@ -20,7 +20,6 @@ flashcards:
 - question: "Wie definiert Andrew S. Tanenbaum ein verteiltes System?"
   answer: "Als Zusammenschluss unabhängiger Computer, die sich für den Benutzer als ein einziges System präsentieren."
   type: "single"
-  level: "A"
 
 - question: "Welche Vorteile bieten verteilte Datenbanksysteme?"
   answers:
@@ -32,7 +31,6 @@ flashcards:
   - true
   - true
   type: "multiple"
-  level: "A"
 
 - question: "Welche drei Eigenschaften beschreiben das CAP-Theorem?"
   answers:
@@ -44,27 +42,22 @@ flashcards:
   - true
   - true
   type: "multiple"
-  level: "A"
 
 - question: "Was besagt das CAP-Theorem?"
   answer: "Ein verteiltes System kann höchstens zwei der drei Eigenschaften Consistency, Availability und Partition Tolerance gleichzeitig vollständig erfüllen."
   type: "single"
-  level: "A"
 
 - question: "Was bedeutet „eventual consistency“?"
   answer: "Daten können zeitweise inkonsistent sein, werden aber nach einer gewissen Zeit wieder konsistent."
   type: "single"
-  level: "A"
 
 - question: "Was sind die „Fallacies of Distributed Computing“?"
   answer: "Acht typische Fehlannahmen über Netzwerke, z. B. dass sie ausfallsicher oder latenzfrei seien."
   type: "single"
-  level: "A"
 
 - question: "Was versteht man unter Replikation in verteilten Datenbanken?"
   answer: "Das redundante Speichern identischer Kopien von Daten an mehreren Orten."
   type: "single"
-  level: "A"
 
 - question: "Welche Hauptvorteile hat Replikation?"
   answers:
@@ -76,7 +69,6 @@ flashcards:
   - true
   - true
   type: "multiple"
-  level: "A"
 
 - question: "Welche Parameter werden bei der Replikationsstrategie verwendet?"
   answers:
@@ -88,22 +80,18 @@ flashcards:
   - true
   - true
   type: "multiple"
-  level: "A"
 
 - question: "Was bedeutet „consistency by writes“?"
   answer: "Alle Kopien müssen erfolgreich geschrieben werden, bevor eine Operation als abgeschlossen gilt."
   type: "single"
-  level: "A"
 
 - question: "Wie nennt man den Ansatz, bei dem W + R > N gilt?"
   answer: "Consistency by Quorum"
   type: "single"
-  level: "A"
 
 - question: "Wofür werden Vektoruhren eingesetzt?"
   answer: "Zur Bestimmung der zeitlichen Reihenfolge von Ereignissen und zur Erkennung von Konflikten."
   type: "single"
-  level: "A"
 
 - question: "Welche Fälle können beim Vergleich von Vektoruhren auftreten?"
   answers:
@@ -115,12 +103,10 @@ flashcards:
   - true
   - true
   type: "multiple"
-  level: "A"
 
 - question: "Was ist ein CRDT?"
   answer: "Ein konfliktfreier replizierter Datentyp, der starke eventual consistency ohne zentralen Leader ermöglicht."
   type: "single"
-  level: "A"
 
 - question: "Welche zwei Arten von CRDTs gibt es?"
   answers:
@@ -130,22 +116,18 @@ flashcards:
   - true
   - true
   type: "multiple"
-  level: "A"
 
 - question: "Was ist Sharding?"
   answer: "Die Aufteilung einer Datenbank in mehrere Fragmente, die auf verschiedene Server verteilt sind."
   type: "single"
-  level: "A"
 
 - question: "Worin unterscheiden sich vertikale und horizontale Fragmentierung?"
   answer: "Vertikal teilt Spalten, horizontal teilt Datensätze."
   type: "single"
-  level: "A"
 
 - question: "Was ist das Ziel von Consistent Hashing?"
   answer: "Eine gleichmäßige Verteilung der Daten bei minimalen Datenbewegungen beim Hinzufügen oder Entfernen von Knoten."
   type: "single"
-  level: "A"
 
 - question: "Welche Aufgaben übernehmen Map und Reduce?"
   answers:
@@ -155,42 +137,34 @@ flashcards:
   - true
   - true
   type: "multiple"
-  level: "A"
 
 - question: "Was ist das Prinzip hinter Map Reduce?"
   answer: "Parallele Datenverarbeitung in zwei Phasen – Map und Reduce – auf verteilten Clustern."
   type: "single"
-  level: "A"
 
 - question: "Was ist das Leader-Follower-Prinzip?"
   answer: "Ein Knoten übernimmt Schreiboperationen als Leader, Follower replizieren und bearbeiten Leseanfragen."
   type: "single"
-  level: "A"
 
 - question: "Was ist der Nachteil des Single-Leader-Ansatzes?"
   answer: "Fehlende Skalierbarkeit und ein Single Point of Failure."
   type: "single"
-  level: "A"
 
 - question: "Was zeichnet das Multi-Leader-Modell aus?"
   answer: "Mehrere Leader sind gleichzeitig aktiv und führen Updates durch; Konflikte werden koordiniert aufgelöst."
   type: "single"
-  level: "A"
 
 - question: "Wozu dient das Zwei-Phasen-Commit-Protokoll (2PC)?"
   answer: "Zur Koordination von Transaktionen über mehrere Knoten durch „prepare“ und „commit/abort“ Phasen."
   type: "single"
-  level: "A"
 
 - question: "Warum kann das 2PC-Protokoll problematisch sein?"
   answer: "Es blockiert, wenn ein Koordinator ausfällt oder Knoten nicht rechtzeitig antworten."
   type: "single"
-  level: "A"
 
 - question: "Was ist das Ziel des Paxos-Protokolls?"
   answer: "Einen Konsens unter den Teilnehmenden zu erzielen und Transaktionen fehlertolerant abzuschließen."
   type: "single"
-  level: "A"
 
 - question: "Welche drei Hauptfunktionen übernimmt der Raft-Algorithmus?"
   answers:
@@ -202,9 +176,7 @@ flashcards:
   - true
   - true
   type: "multiple"
-  level: "A"
 
 - question: "Wie verbessert Raft das Paxos-Verfahren?"
   answer: "Durch bessere Verständlichkeit und strukturierte Aufteilung in Leaderwahl, Log-Replikation und Sicherheitsmechanismen."
   type: "single"
-  level: "A"

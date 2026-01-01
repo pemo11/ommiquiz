@@ -1,7 +1,7 @@
-id: "vfhdbte_kapitel5_quiz"
+id: "dbte_kapitel5_quiz"
 author: "Pemo"
-title: "Basiswissen Datenbanksysteme"
-description: "Lern- und Verständnisfragen zum Kapitel 5 der VFH-Unterlage „Datenbanktechnologien“"
+title: "DBTE - Basiswissen Datenbanksysteme (Kapitel 5)"
+description: "Lern- und Verständnisfragen zum Kapitel 5 des VHF-Modulhandbuchs Datenbanktechnologien"
 createDate: "2025-11-12"
 language: "de"
 module: "Datenbanktechnologien"
@@ -15,16 +15,15 @@ topics:
   - "Datenmodellierung"
 keywords:
   - "Codd;Relationale Algebra;SQL;Normalformen;ACID;Trigger;Datenmigration"
+
 flashcards:
   - question: "Wer gilt als Begründer des relationalen Datenbankmodells?"
     answer: "Edgar F. Codd"
     type: "single"
-    level: "A"
 
   - question: "Wie viele Regeln nach Codd beschreiben, ob ein System ein echtes DBMS ist?"
     answer: "13"
     type: "single"
-    level: "A"
 
   - question: "Welche drei Schemaebenen beschreibt das ANSI/SPARC-Modell?"
     answers:
@@ -36,17 +35,14 @@ flashcards:
       - true
       - true
     type: "multiple"
-    level: "A"
 
   - question: "Welche Annahme gilt in relationalen Datenbanken bezüglich nicht gespeicherter Fakten?"
     answer: "Closed World Assumption – nicht gespeicherte Fakten gelten als falsch."
     type: "single"
-    level: "A"
 
   - question: "Wie viele Basisoperationen umfasst die Relationenalgebra?"
     answer: "6"
     type: "single"
-    level: "A"
 
   - question: "Welche Operation gehört NICHT zu den sechs Basisoperationen der Relationenalgebra?"
     answers:
@@ -60,12 +56,10 @@ flashcards:
       - true
       - false
     type: "multiple"
-    level: "A"
 
   - question: "Was bedeutet „NULL“ in der dreiwertigen Logik relationaler Systeme?"
     answer: "Unbekannt – weder wahr noch falsch."
     type: "single"
-    level: "A"
 
   - question: "Nenne drei Aggregatfunktionen in SQL."
     answers:
@@ -79,7 +73,6 @@ flashcards:
       - true
       - true
     type: "multiple"
-    level: "A"
 
   - question: "Welche SQL-Befehle gehören zur DDL?"
     answers:
@@ -93,37 +86,30 @@ flashcards:
       - true
       - true
     type: "multiple"
-    level: "A"
 
   - question: "Was ist der Unterschied zwischen einem Primärschlüssel und einem Fremdschlüssel?"
     answer: "Ein Primärschlüssel identifiziert Datensätze eindeutig, ein Fremdschlüssel verweist auf den Primärschlüssel einer anderen Tabelle."
     type: "single"
-    level: "A"
 
   - question: "Was beschreibt die 1. Normalform?"
     answer: "Alle Attribute müssen atomar sein und frei von Wiederholungsgruppen."
     type: "single"
-    level: "A"
 
   - question: "Welche Normalform fordert, dass kein Nichtschlüsselattribut von einem Teilschlüssel abhängt?"
     answer: "2. Normalform"
     type: "single"
-    level: "A"
 
   - question: "Wann ist eine Relation in 3. Normalform?"
     answer: "Wenn kein Nichtschlüsselattribut transitiv von einem Schlüsselkandidaten abhängt."
     type: "single"
-    level: "A"
 
   - question: "Was fügt die Boyce-Codd-Normalform (BCNF) zusätzlich zur 3NF hinzu?"
     answer: "Jedes Attribut, von dem andere abhängen, muss ein Schlüsselkandidat sein."
     type: "single"
-    level: "A"
 
   - question: "Welche Normalform behandelt mehrwertige Abhängigkeiten?"
     answer: "4. Normalform"
     type: "single"
-    level: "A"
 
   - question: "Welche Eigenschaften beschreibt das ACID-Konzept?"
     answers:
@@ -137,22 +123,18 @@ flashcards:
       - true
       - true
     type: "multiple"
-    level: "A"
 
   - question: "Wofür werden Indizes in Datenbanken verwendet?"
     answer: "Zur Beschleunigung von Suchanfragen und Joins."
     type: "single"
-    level: "A"
 
   - question: "Was ist ein View in SQL?"
     answer: "Eine virtuelle Tabelle, die auf einer Abfrage basiert."
     type: "single"
-    level: "A"
 
   - question: "Wie lautet die höchste Isolationsstufe bei Transaktionen?"
     answer: "Serializable"
     type: "single"
-    level: "A"
 
   - question: "Welche drei Arten von Backup/Replikation werden im Kapitel genannt?"
     answers:
@@ -166,4 +148,3 @@ flashcards:
       - true
       - false
     type: "multiple"
-    level: "A"

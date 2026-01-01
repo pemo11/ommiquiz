@@ -1,4 +1,4 @@
-id: "wcag_praxis_fehler_quiz"
+id: "wcag_praxis_quiz"
 author: "Pemo"
 title: "Praxis-Quiz: Typische Barrierefreiheitsfehler & WCAG-Bezug"
 description: "Praxisnahe Flashcards zu häufigen Barrierefreiheitsproblemen mit Zuordnung zu WCAG-Erfolgskriterien"
@@ -20,99 +20,79 @@ flashcards:
   - question: "Ein Button hat keinen sichtbaren Fokus beim Tabben. Welches WCAG-Prinzip ist verletzt?"
     answer: "Bedienbar – Fokus muss sichtbar sein (z. B. WCAG 2.4.7 / 2.4.11 Focus Appearance)."
     type: "single"
-    level: "A"
 
   - question: "Ein Formularfeld hat kein zugeordnetes Label. Welches Problem entsteht?"
     answer: "Screenreader-Nutzer können den Zweck des Feldes nicht erkennen (WCAG 1.3.1 / 3.3.2)."
     type: "single"
-    level: "A"
 
   - question: "Text und Hintergrund haben zu wenig Kontrast. Welche WCAG-Anforderung ist betroffen?"
     answer: "Wahrnehmbarkeit – Mindestkontrast für Text (WCAG 1.4.3)."
     type: "single"
-    level: "A"
 
   - question: "Eine Navigation ist nur mit der Maus bedienbar. Welches Prinzip ist verletzt?"
     answer: "Bedienbar – Inhalte müssen vollständig mit der Tastatur nutzbar sein (WCAG 2.1.1)."
     type: "single"
-    level: "A"
 
   - question: "Ein Bild enthält wichtige Informationen, hat aber keinen Alt-Text."
     answer: "Wahrnehmbar – Textalternativen fehlen (WCAG 1.1.1)."
     type: "single"
-    level: "A"
 
   - question: "Ein Linktext lautet nur 'Hier klicken'. Warum ist das problematisch?"
     answer: "Der Zweck des Links ist nicht verständlich (WCAG 2.4.4 Link Purpose)."
     type: "single"
-    level: "A"
 
   - question: "Pflichtfelder sind nur durch rote Farbe gekennzeichnet. Welche Anforderung wird verletzt?"
     answer: "Informationen dürfen nicht nur über Farbe vermittelt werden (WCAG 1.4.1)."
     type: "single"
-    level: "A"
 
   - question: "Ein Modal öffnet sich, aber der Tastaturfokus bleibt im Hintergrund."
     answer: "Fehlerhafte Fokus-Steuerung (WCAG 2.4.3 / 2.4.7)."
     type: "single"
-    level: "B"
 
   - question: "Ein Video enthält keine Untertitel. Welche Nutzer sind ausgeschlossen?"
     answer: "Menschen mit Hörbehinderungen (WCAG 1.2.2 Untertitel)."
     type: "single"
-    level: "A"
 
   - question: "Ein Button ist auf dem Smartphone sehr klein und schwer zu treffen."
     answer: "Zu kleine Zielgröße – WCAG 2.2: Target Size (Minimum)."
     type: "single"
-    level: "A"
 
   - question: "Ein Screenreader liest Menüeinträge in falscher Reihenfolge vor."
     answer: "Fehlerhafte Struktur oder Fokus-Reihenfolge (WCAG 1.3.2 / 2.4.3)."
     type: "single"
-    level: "B"
 
   - question: "ARIA-Rollen werden eingesetzt, obwohl semantisches HTML möglich wäre."
     answer: "ARIA wird falsch eingesetzt – semantisches HTML ist zu bevorzugen (WCAG 4.1.2)."
     type: "single"
-    level: "B"
 
   - question: "Ein Formular zeigt Fehlermeldungen nur technisch, aber nicht verständlich an."
     answer: "Fehler müssen klar beschrieben werden (WCAG 3.3.1 / 3.3.3)."
     type: "single"
-    level: "A"
 
   - question: "Ein Inhalt bewegt sich automatisch und kann nicht pausiert werden."
     answer: "Verstoß gegen WCAG 2.2.2 – Bewegte Inhalte müssen pausierbar sein."
     type: "single"
-    level: "A"
 
   - question: "Eine Webseite funktioniert nur mit einem bestimmten Browser korrekt."
     answer: "Nicht robust – fehlende Kompatibilität mit User Agents (WCAG 4.1)."
     type: "single"
-    level: "A"
 
   - question: "Eine Überschrift wird nur visuell fett dargestellt, aber nicht als <h>-Element."
     answer: "Fehlende semantische Struktur (WCAG 1.3.1)."
     type: "single"
-    level: "A"
 
   - question: "Der Fokus springt beim Tabben scheinbar zufällig."
     answer: "Unlogische Fokus-Reihenfolge (WCAG 2.4.3 Focus Order)."
     type: "single"
-    level: "B"
 
   - question: "Ein CAPTCHA ist nur visuell lösbar."
     answer: "Nicht barrierefrei – alternative Zugänge fehlen (WCAG 1.1.1 / 1.2)."
     type: "single"
-    level: "B"
 
   - question: "Ein Touch-Gestus erfordert Ziehen, ohne Alternative."
     answer: "Dragging Movements ohne Alternative (WCAG 2.5.7 – neu in 2.2)."
     type: "single"
-    level: "A"
 
   - question: "Warum sind solche Praxisfehler besonders relevant für Prüfungen?"
     answer: "Weil Barrierefreiheit häufig über konkrete Nutzungsszenarien bewertet wird."
     type: "single"
-    level: "A"
