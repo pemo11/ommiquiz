@@ -283,7 +283,10 @@ async def get_flashcard(
 async def health_check():
     """Health check endpoint"""
     logger.debug("Health check requested")
-    return {"status": "healthy"}
+    return {
+        "status": "healthy",
+        "version": os.getenv("APP_VERSION", "1.0.11")
+    }
 
 
 @api_router.get("/version")
