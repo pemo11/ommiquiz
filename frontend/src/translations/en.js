@@ -35,7 +35,17 @@ export default {
     resetAndRepeat: '🔄 Reset & Repeat All Cards',
     exitQuiz: '🚪 Exit Quiz',
     greatJob: 'Great job! You have no postponed cards.',
-    cardsToReview: 'You have {count} card{plural} to review.'
+    cardsToReview: 'You have {count} card{plural} to review.',
+    selectMode: 'Select Quiz Mode',
+    regularMode: 'Regular',
+    regularModeDesc: 'Practice with all cards in the set',
+    postponedMode: 'Postponed',
+    postponedModeDesc: 'Review only postponed cards',
+    speedMode: 'Speed Quiz',
+    speedModeDesc: '12 random cards for quick practice',
+    noPostponedCards: 'No postponed cards',
+    startQuiz: 'Start Quiz',
+    speedSession: 'Speed Quiz'
   },
   levelMix: {
     title: 'Choose card difficulty mix',

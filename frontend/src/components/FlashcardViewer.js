@@ -214,6 +214,21 @@ const selectCardsWithFallback = (cards, targets) => {
   };
 };
 
+const selectRandomCards = (cardsArray, count) => {
+  if (cardsArray.length <= count) {
+    return [...cardsArray]; // Return all if fewer than requested
+  }
+
+  const shuffled = [...cardsArray];
+  // Fisher-Yates shuffle
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  return shuffled.slice(0, count);
+};
+
 function FlashcardViewer({ flashcard, onBack }) {
   const { t } = useTranslation(); 
   const [cards, setCards] = useState(flashcard.cards || []);
@@ -238,6 +253,8 @@ function FlashcardViewer({ flashcard, onBack }) {
   const [levelMixError, setLevelMixError] = useState('');
   const [levelMixWarnings, setLevelMixWarnings] = useState([]);
   const [appliedMixSummary, setAppliedMixSummary] = useState('levelMix.defaultSummary');
+  const [showStartScreen, setShowStartScreen] = useState(true);
+  const [selectedMode, setSelectedMode] = useState(null); // 'regular', 'postponed', 'speed'
   const touchStartRef = useRef(null);
   const gestureHandledRef = useRef(false);
 
@@ -771,13 +788,11 @@ function FlashcardViewer({ flashcard, onBack }) {
     };
   };
 
-  // Reset quiz function
+  // Reset quiz function - now returns to start screen
   const handleRestartQuiz = () => {
-    const fullOrder = cards.map((_, idx) => idx);
-    setCardOrder(fullOrder);
-    setCurrentOrderIndex(0);
+    setShowStartScreen(true);
+    setSelectedMode(null);
     setCardResults({});
-    setCurrentCardIndex(fullOrder[0] ?? 0);
     setIsFlipped(false);
     setSelectedAnswers([]);
     setShowCorrectAnswers(false);
@@ -788,7 +803,49 @@ function FlashcardViewer({ flashcard, onBack }) {
     setShowCelebration(false);
     setElapsedTime(0);
     setStartTime(Date.now());
-    setSessionType('full');
+  };
+
+  const handleStartQuiz = () => {
+    let filteredCards = [...cards];
+    let newSessionType = 'full';
+
+    switch(selectedMode) {
+      case 'regular':
+        newSessionType = 'full';
+        break;
+
+      case 'postponed':
+        const postponedIndices = postponedQueue;
+        filteredCards = postponedIndices.map(idx => cards[idx]);
+        newSessionType = 'postponed';
+        break;
+
+      case 'speed':
+        filteredCards = selectRandomCards(cards, 12);
+        newSessionType = 'speed';
+        break;
+
+      default:
+        break;
+    }
+
+    setCards(filteredCards);
+    const initialOrder = filteredCards.map((_, idx) => idx);
+    setCardOrder(initialOrder);
+    setCurrentOrderIndex(0);
+    setCurrentCardIndex(0);
+    setSessionType(newSessionType);
+    setShowStartScreen(false);
+
+    // Reset quiz state
+    setCardResults({});
+    setIsFlipped(false);
+    setSelectedAnswers([]);
+    setShowCorrectAnswers(false);
+    setCurrentCardAnswered(false);
+    setSwipeDirection(null);
+    setElapsedTime(0);
+    setStartTime(Date.now());
   };
 
   const isPostponedResult = (result) => {
@@ -858,7 +915,7 @@ function FlashcardViewer({ flashcard, onBack }) {
         <div className="quiz-summary">
           <div className="summary-header">
             <h2>🎉 Quiz Complete!</h2>
-            <div className="session-label">Session: {sessionType === 'postponed' ? 'Postponed review' : 'Full quiz'}</div>
+            <div className="session-label">Session: {sessionType === 'postponed' ? t('quiz.postponedReview') : sessionType === 'speed' ? t('quiz.speedSession') : t('quiz.fullQuiz')}</div>
             {showCelebration && (
               <div className="celebration">
                 <div className="firework firework-1" />
@@ -972,6 +1029,122 @@ function FlashcardViewer({ flashcard, onBack }) {
     );
   }
 
+  if (showStartScreen) {
+    return (
+      <div className="viewer-container">
+        <div className="start-screen">
+          <button onClick={onBack} className="back-button">← {t('common.back')}</button>
+
+          <div className="start-screen-header">
+            <h2>{flashcard.title}</h2>
+            <div className="metadata">
+              <span>{t('quiz.author')} {flashcard.author}</span>
+              <span>{t('quiz.level')} {flashcard.level}</span>
+              <span>Total Cards: {cards.length}</span>
+            </div>
+          </div>
+
+          <div className="mode-selection">
+            <h3>{t('quiz.selectMode')}</h3>
+
+            <div className="mode-cards">
+              <button
+                className={`mode-card ${selectedMode === 'regular' ? 'selected' : ''}`}
+                onClick={() => setSelectedMode('regular')}
+              >
+                <div className="mode-icon">📚</div>
+                <div className="mode-title">{t('quiz.regularMode')}</div>
+                <div className="mode-description">{t('quiz.regularModeDesc')}</div>
+                <div className="mode-count">{cards.length} cards</div>
+              </button>
+
+              <button
+                className={`mode-card ${selectedMode === 'postponed' ? 'selected' : ''}`}
+                onClick={() => setSelectedMode('postponed')}
+                disabled={postponedQueue.length === 0}
+              >
+                <div className="mode-icon">🔁</div>
+                <div className="mode-title">{t('quiz.postponedMode')}</div>
+                <div className="mode-description">{t('quiz.postponedModeDesc')}</div>
+                <div className="mode-count">
+                  {postponedQueue.length > 0
+                    ? `${postponedQueue.length} cards`
+                    : t('quiz.noPostponedCards')}
+                </div>
+              </button>
+
+              <button
+                className={`mode-card ${selectedMode === 'speed' ? 'selected' : ''}`}
+                onClick={() => setSelectedMode('speed')}
+              >
+                <div className="mode-icon">⚡</div>
+                <div className="mode-title">{t('quiz.speedMode')}</div>
+                <div className="mode-description">{t('quiz.speedModeDesc')}</div>
+                <div className="mode-count">
+                  {Math.min(12, cards.length)} cards
+                </div>
+              </button>
+            </div>
+
+            <button
+              className="start-quiz-button"
+              onClick={handleStartQuiz}
+              disabled={!selectedMode}
+            >
+              {t('quiz.startQuiz')}
+            </button>
+          </div>
+
+          <div className="level-mix-panel">
+            <div className="level-mix-header">
+              <div>
+                <h3>{t('levelMix.title')}</h3>
+                <p className="level-mix-subtitle">
+                  {t('levelMix.subtitle')}
+                </p>
+              </div>
+              <div className="level-availability">
+                <span>{t('levelMix.available', { a: availableLevelCounts.A, b: availableLevelCounts.B, c: availableLevelCounts.C }).replace('{a}', availableLevelCounts.A).replace('{b}', availableLevelCounts.B).replace('{c}', availableLevelCounts.C)}</span>
+              </div>
+            </div>
+
+            <div className="level-mix-controls">
+              <input
+                className="level-mix-input"
+                type="text"
+                value={levelMixInput}
+                onChange={(e) => setLevelMixInput(e.target.value)}
+                placeholder="e.g., A, B, C or A60,B30,C10"
+              />
+              <button className="level-mix-apply" onClick={handleApplyLevelMix}>
+                {t('levelMix.applyMix')}
+              </button>
+              <button className="level-mix-reset" onClick={handleResetLevelMix}>
+                {t('levelMix.reset')}
+              </button>
+            </div>
+
+            {levelMixError && <div className="level-mix-error">{levelMixError}</div>}
+            {levelMixWarnings.length > 0 && (
+              <ul className="level-mix-warnings">
+                {levelMixWarnings.map((warning, index) => (
+                  <li key={index}>{warning}</li>
+                ))}
+              </ul>
+            )}
+
+            <div className="level-mix-summary">
+              <div>{t('levelMix.appliedMix')} {appliedMixSummary}</div>
+              <div>
+                {t('levelMix.showing', { a: appliedLevelCounts.A, b: appliedLevelCounts.B, c: appliedLevelCounts.C, total: cards.length }).replace('{a}', appliedLevelCounts.A).replace('{b}', appliedLevelCounts.B).replace('{c}', appliedLevelCounts.C).replace('{total}', cards.length)}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!currentCard) {
     return (
       <div className="viewer-container">
@@ -1066,7 +1239,7 @@ function FlashcardViewer({ flashcard, onBack }) {
         </div>
         <div className="stat">
           <span className="stat-label">Session:</span>
-          <span className="stat-value">{sessionType === 'postponed' ? 'Postponed review' : 'Full quiz'}</span>
+          <span className="stat-value">{sessionType === 'postponed' ? t('quiz.postponedReview') : sessionType === 'speed' ? t('quiz.speedSession') : t('quiz.fullQuiz')}</span>
         </div>
       </div>
 

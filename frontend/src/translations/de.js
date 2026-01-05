@@ -35,7 +35,17 @@ export default {
     resetAndRepeat: '🔁 Zurücksetzen & Alle Karten wiederholen',
     exitQuiz: '🚪 Quiz beenden',
     greatJob: 'Gut gemacht! Du hast keine aufgeschobenen Karten mehr.',
-    cardsToReview: 'Du hast noch {count} Karte{n} zum Wiederholen.'
+    cardsToReview: 'Du hast noch {count} Karte{n} zum Wiederholen.',
+    selectMode: 'Quiz-Modus wählen',
+    regularMode: 'Regulär',
+    regularModeDesc: 'Übe mit allen Karten im Set',
+    postponedMode: 'Aufgeschoben',
+    postponedModeDesc: 'Wiederhole nur aufgeschobene Karten',
+    speedMode: 'Schnell-Quiz',
+    speedModeDesc: '12 zufällige Karten für schnelles Üben',
+    noPostponedCards: 'Keine aufgeschobenen Karten',
+    startQuiz: 'Quiz starten',
+    speedSession: 'Schnell-Quiz'
   },
   levelMix: {
     title: 'Kartenschwierigkeit auswählen',

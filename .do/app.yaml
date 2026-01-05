@@ -27,7 +27,7 @@ services:
       - key: ENVIRONMENT
         value: "production"
       - key: APP_VERSION
-        value: "1.0.12"
+        value: "1.0.13"
       # S3/Spaces Storage for Flashcards
       - key: FLASHCARDS_STORAGE
         value: "s3"
