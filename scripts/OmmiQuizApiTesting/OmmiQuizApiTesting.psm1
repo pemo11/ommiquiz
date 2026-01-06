@@ -628,7 +628,8 @@ function Get-OmmiQuizSpeedQuizPdf {
         # Extract filename from Content-Disposition header if not specified
         $filename = $null
         if ($response.Headers['Content-Disposition']) {
-            $disposition = $response.Headers['Content-Disposition']
+            # Convert to string in case it's an array
+            $disposition = [string]$response.Headers['Content-Disposition']
             if ($disposition -match 'filename="?([^"]+)"?') {
                 $filename = $matches[1]
             }
