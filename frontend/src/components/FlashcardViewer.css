@@ -305,6 +305,14 @@
   width: 100%;
 }
 
+.question-content p {
+  margin: 0;
+}
+
+.question-content p::before {
+  content: none;
+}
+
 .question-image {
   max-height: 200px;
   max-width: 100%;
