@@ -1,7 +1,7 @@
 #requires -Version 5.1
 Set-StrictMode -Version Latest
 
-$Script:OmmiQuizApiBaseUrl = 'https://nanoquiz-backend-woe2w.ondigitalocean.app/api/'
+$Script:OmmiQuizApiBaseUrl = 'https://nanoquiz-backend-ypez6.ondigitalocean.app/'
 $Script:OmmiQuizAuthConfig = @{
     Domain = $env:AUTH0_DOMAIN
     ClientId = $env:AUTH0_CLIENT_ID

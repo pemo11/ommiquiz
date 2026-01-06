@@ -1,9 +1,9 @@
 #requires -Version 5.1
 Set-StrictMode -Version Latest
 
-$Script:NanoQuizApiBaseUrl = 'https://nanoquiz-backend-woe2w.ondigitalocean.app/api/'
+$Script:OmmiQuizApiBaseUrl = 'https://nanoquiz-backend-ypez6.ondigitalocean.app/api/'
 
-function Set-NanoQuizApiBaseUrl {
+function Set-OmmiQuizApiBaseUrl {
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)]
@@ -22,19 +22,19 @@ function Set-NanoQuizApiBaseUrl {
         throw "The provided base url '$BaseUrl' is not a valid absolute URI."
     }
 
-    $Script:NanoQuizApiBaseUrl = $BaseUrl
+    $Script:OmmiQuizApiBaseUrl = $BaseUrl
 }
 
-function Get-NanoQuizApiBaseUrl {
+function Get-OmmiQuizApiBaseUrl {
     [CmdletBinding()]
     param()
-    return $Script:NanoQuizApiBaseUrl
+    return $Script:OmmiQuizApiBaseUrl
 }
 
-function Invoke-NanoQuizApiRequest {
+function Invoke-OmmiQuizApiRequest {
     <#
     .SYNOPSIS
-    Sends a request to the NanoQuiz API and captures the HTTP response metadata.
+    Sends a request to the OmmiQuiz API and captures the HTTP response metadata.
 
     .DESCRIPTION
     Internal helper that uses Invoke-WebRequest to call the API and optionally asserts
@@ -73,7 +73,7 @@ function Invoke-NanoQuizApiRequest {
         [switch]$SkipJsonParsing
     )
 
-    $baseUrl = Get-NanoQuizApiBaseUrl
+    $baseUrl = Get-OmmiQuizApiBaseUrl
     $relativePath = $Path.TrimStart('/')
     $uri = [uri]::new([uri]$baseUrl, $relativePath)
 
@@ -121,7 +121,7 @@ function Invoke-NanoQuizApiRequest {
     }
 }
 
-function Test-NanoQuizHealthEndpoint {
+function Test-OmmiQuizHealthEndpoint {
     <#
     .SYNOPSIS
     Validates the /health endpoint and ensures it reports a healthy status.
@@ -132,7 +132,7 @@ function Test-NanoQuizHealthEndpoint {
     [CmdletBinding()]
     param()
 
-    $result = Invoke-NanoQuizApiRequest -Path '/health' -Method 'GET' -ExpectedStatusCode 200
+    $result = Invoke-OmmiQuizApiRequest -Path '/health' -Method 'GET' -ExpectedStatusCode 200
 
     $isHealthy = $false
     $message = 'Health endpoint did not return the expected payload.'
@@ -150,7 +150,7 @@ function Test-NanoQuizHealthEndpoint {
     }
 }
 
-function Get-NanoQuizFlashcardSets {
+function Get-OmmiQuizFlashcardSets {
     <#
     .SYNOPSIS
     Retrieves all flashcard sets from the API.
@@ -158,10 +158,10 @@ function Get-NanoQuizFlashcardSets {
     [CmdletBinding()]
     param()
 
-    Invoke-NanoQuizApiRequest -Path '/flashcards' -Method 'GET' -ExpectedStatusCode 200
+    Invoke-OmmiQuizApiRequest -Path '/flashcards' -Method 'GET' -ExpectedStatusCode 200
 }
 
-function Get-NanoQuizFlashcardSet {
+function Get-OmmiQuizFlashcardSet {
     <#
     .SYNOPSIS
     Retrieves a single flashcard set by its identifier.
@@ -173,10 +173,10 @@ function Get-NanoQuizFlashcardSet {
         [string]$FlashcardId
     )
 
-    Invoke-NanoQuizApiRequest -Path "/flashcards/$FlashcardId" -Method 'GET' -ExpectedStatusCode 200
+    Invoke-OmmiQuizApiRequest -Path "/flashcards/$FlashcardId" -Method 'GET' -ExpectedStatusCode 200
 }
 
-function Test-NanoQuizFlashcardListing {
+function Test-OmmiQuizFlashcardListing {
     <#
     .SYNOPSIS
     Ensures the flashcard overview endpoint returns at least one set with the required metadata.
@@ -184,7 +184,7 @@ function Test-NanoQuizFlashcardListing {
     [CmdletBinding()]
     param()
 
-    $result = Get-NanoQuizFlashcardSets
+    $result = Get-OmmiQuizFlashcardSets
     $content = $result.Content
 
     # Handle both array and single object responses
@@ -217,7 +217,7 @@ function Test-NanoQuizFlashcardListing {
     }
 }
 
-function Test-NanoQuizFlashcardDetail {
+function Test-OmmiQuizFlashcardDetail {
     <#
     .SYNOPSIS
     Fetches a single flashcard set (defaulting to the first available) and validates its structure.
@@ -229,7 +229,7 @@ function Test-NanoQuizFlashcardDetail {
 
     $selectedId = $FlashcardId
     if (-not $selectedId) {
-        $listing = Get-NanoQuizFlashcardSets
+        $listing = Get-OmmiQuizFlashcardSets
         
         # Handle both array and single object responses
         $sets = @()
@@ -258,7 +258,7 @@ function Test-NanoQuizFlashcardDetail {
         $selectedId = $first.id
     }
 
-    $result = Get-NanoQuizFlashcardSet -FlashcardId $selectedId
+    $result = Get-OmmiQuizFlashcardSet -FlashcardId $selectedId
     $content = $result.Content
 
     $cards = @()
@@ -282,7 +282,7 @@ function Test-NanoQuizFlashcardDetail {
     }
 }
 
-function Invoke-NanoQuizApiSmokeTests {
+function Invoke-OmmiQuizApiSmokeTests {
     <#
     .SYNOPSIS
     Executes all API validation tests and returns an aggregated summary.
@@ -293,9 +293,9 @@ function Invoke-NanoQuizApiSmokeTests {
     )
 
     $tests = @(
-        { Test-NanoQuizHealthEndpoint },
-        { Test-NanoQuizFlashcardListing },
-        { Test-NanoQuizFlashcardDetail -FlashcardId $FlashcardId }
+        { Test-OmmiQuizHealthEndpoint },
+        { Test-OmmiQuizFlashcardListing },
+        { Test-OmmiQuizFlashcardDetail -FlashcardId $FlashcardId }
     )
 
     $results = foreach ($test in $tests) {
@@ -318,10 +318,10 @@ function Invoke-NanoQuizApiSmokeTests {
     }
 }
 
-function Get-NanoQuizLogs {
+function Get-OmmiQuizLogs {
     <#
     .SYNOPSIS
-    Queries application logs from the NanoQuiz API with optional filtering.
+    Queries application logs from the OmmiQuiz API with optional filtering.
 
     .DESCRIPTION
     Retrieves log entries from the backend with support for time-based filtering,
@@ -346,13 +346,13 @@ function Get-NanoQuizLogs {
     Number of log entries to skip for pagination (default: 0).
 
     .EXAMPLE
-    Get-NanoQuizLogs -Level ERROR -Limit 50
+    Get-OmmiQuizLogs -Level ERROR -Limit 50
 
     .EXAMPLE
-    Get-NanoQuizLogs -StartTime "2025-12-16T10:00:00" -MessageContains "flashcard"
+    Get-OmmiQuizLogs -StartTime "2025-12-16T10:00:00" -MessageContains "flashcard"
 
     .EXAMPLE
-    Get-NanoQuizLogs -Level WARNING -StartTime (Get-Date).AddHours(-1).ToString("yyyy-MM-ddTHH:mm:ss")
+    Get-OmmiQuizLogs -Level WARNING -StartTime (Get-Date).AddHours(-1).ToString("yyyy-MM-ddTHH:mm:ss")
     #>
     [CmdletBinding()]
     param(
@@ -391,31 +391,31 @@ function Get-NanoQuizLogs {
     $queryString = if ($queryParams.Count -gt 0) { "?" + ($queryParams -join "&") } else { "" }
     $path = "/logs$queryString"
     
-    Invoke-NanoQuizApiRequest -Path $path -Method 'GET' -ExpectedStatusCode 200
+    Invoke-OmmiQuizApiRequest -Path $path -Method 'GET' -ExpectedStatusCode 200
 }
 
-function Get-NanoQuizLogFiles {
+function Get-OmmiQuizLogFiles {
     <#
     .SYNOPSIS
-    Lists available log files from the NanoQuiz API.
+    Lists available log files from the OmmiQuiz API.
 
     .DESCRIPTION
     Retrieves metadata about available log files including filename, size, 
     and last modified date.
 
     .EXAMPLE
-    Get-NanoQuizLogFiles
+    Get-OmmiQuizLogFiles
     #>
     [CmdletBinding()]
     param()
 
-    Invoke-NanoQuizApiRequest -Path '/logs/files' -Method 'GET' -ExpectedStatusCode 200
+    Invoke-OmmiQuizApiRequest -Path '/logs/files' -Method 'GET' -ExpectedStatusCode 200
 }
 
-function Get-NanoQuizLogFile {
+function Get-OmmiQuizLogFile {
     <#
     .SYNOPSIS
-    Downloads a specific log file from the NanoQuiz API.
+    Downloads a specific log file from the OmmiQuiz API.
 
     .DESCRIPTION
     Downloads the content of a specific log file. The content is returned as text.
@@ -424,7 +424,7 @@ function Get-NanoQuizLogFile {
     Name of the log file to download (e.g., "app-2025-12-16.log").
 
     .EXAMPLE
-    Get-NanoQuizLogFile -Filename "app-2025-12-16.log"
+    Get-OmmiQuizLogFile -Filename "app-2025-12-16.log"
     #>
     [CmdletBinding()]
     param(
@@ -438,10 +438,10 @@ function Get-NanoQuizLogFile {
         throw "Invalid log filename format. Expected format: alphanumeric characters, hyphens, underscores, and .log extension."
     }
 
-    Invoke-NanoQuizApiRequest -Path "/logs/download/$Filename" -Method 'GET' -ExpectedStatusCode 200 -SkipJsonParsing
+    Invoke-OmmiQuizApiRequest -Path "/logs/download/$Filename" -Method 'GET' -ExpectedStatusCode 200 -SkipJsonParsing
 }
 
-function Test-NanoQuizLogsEndpoint {
+function Test-OmmiQuizLogsEndpoint {
     <#
     .SYNOPSIS
     Validates the logs endpoint and ensures it returns log data.
@@ -457,7 +457,7 @@ function Test-NanoQuizLogsEndpoint {
     param()
 
     try {
-        $result = Get-NanoQuizLogs -Limit 10
+        $result = Get-OmmiQuizLogs -Limit 10
         $content = $result.Content
 
         $hasLogs = $false
@@ -514,7 +514,7 @@ function Test-NanoQuizLogsEndpoint {
     }
 }
 
-function Test-NanoQuizLogFilesEndpoint {
+function Test-OmmiQuizLogFilesEndpoint {
     <#
     .SYNOPSIS
     Validates the log files listing endpoint.
@@ -526,7 +526,7 @@ function Test-NanoQuizLogFilesEndpoint {
     param()
 
     try {
-        $result = Get-NanoQuizLogFiles
+        $result = Get-OmmiQuizLogFiles
         $content = $result.Content
 
         $hasFiles = $false
@@ -581,4 +581,228 @@ function Test-NanoQuizLogFilesEndpoint {
     }
 }
 
-Export-ModuleMember -Function *NanoQuiz*
+function Get-OmmiQuizSpeedQuizPdf {
+    <#
+    .SYNOPSIS
+    Downloads a speed quiz PDF worksheet for a flashcard set.
+
+    .DESCRIPTION
+    Generates and downloads a printable PDF worksheet containing 12 randomly
+    selected flashcards. The PDF includes questions without answers:
+    - Single choice questions have dotted lines for writing answers
+    - Multiple choice questions have empty checkboxes for each option
+
+    .PARAMETER FlashcardId
+    The identifier of the flashcard set to generate the PDF for.
+
+    .PARAMETER OutputPath
+    Optional path where the PDF should be saved. If not specified, saves to
+    the current directory with the filename from the Content-Disposition header.
+
+    .EXAMPLE
+    Get-OmmiQuizSpeedQuizPdf -FlashcardId "my-flashcard-set"
+
+    .EXAMPLE
+    Get-OmmiQuizSpeedQuizPdf -FlashcardId "my-flashcard-set" -OutputPath "C:\Temp\quiz.pdf"
+
+    .OUTPUTS
+    PSCustomObject with the download result including Success flag, file path, and size.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$FlashcardId,
+
+        [string]$OutputPath
+    )
+
+    $baseUrl = Get-OmmiQuizApiBaseUrl
+    $path = "flashcards/$FlashcardId/speed-quiz-pdf"
+    $uri = [uri]::new([uri]$baseUrl, $path)
+
+    try {
+        # Download the PDF
+        $response = Invoke-WebRequest -Uri $uri -Method GET -UseBasicParsing -ErrorAction Stop
+
+        # Extract filename from Content-Disposition header if not specified
+        $filename = $null
+        if ($response.Headers['Content-Disposition']) {
+            $disposition = $response.Headers['Content-Disposition']
+            if ($disposition -match 'filename="?([^"]+)"?') {
+                $filename = $matches[1]
+            }
+        }
+
+        # Default filename if not found in header
+        if (-not $filename) {
+            $filename = "$FlashcardId-speed-quiz.pdf"
+        }
+
+        # Determine output path
+        $savePath = if ($OutputPath) {
+            $OutputPath
+        } else {
+            Join-Path -Path (Get-Location) -ChildPath $filename
+        }
+
+        # Save the PDF file
+        [System.IO.File]::WriteAllBytes($savePath, $response.Content)
+
+        $fileInfo = Get-Item -Path $savePath
+        $fileSizeKB = [math]::Round($fileInfo.Length / 1KB, 2)
+
+        [pscustomobject]@{
+            Success = $true
+            FlashcardId = $FlashcardId
+            FilePath = $savePath
+            FileName = $fileInfo.Name
+            FileSizeKB = $fileSizeKB
+            StatusCode = $response.StatusCode
+            Message = "Successfully downloaded speed quiz PDF ($fileSizeKB KB)"
+        }
+    }
+    catch {
+        [pscustomobject]@{
+            Success = $false
+            FlashcardId = $FlashcardId
+            FilePath = $null
+            FileName = $null
+            FileSizeKB = 0
+            StatusCode = $null
+            Message = "Failed to download speed quiz PDF: $($_.Exception.Message)"
+        }
+    }
+}
+
+function Test-OmmiQuizSpeedQuizPdfEndpoint {
+    <#
+    .SYNOPSIS
+    Validates the speed quiz PDF generation endpoint.
+
+    .DESCRIPTION
+    Tests the PDF generation functionality by requesting a speed quiz PDF
+    for a flashcard set and validating that a valid PDF file is returned.
+
+    .PARAMETER FlashcardId
+    Optional flashcard ID to test with. If not provided, uses the first available flashcard set.
+
+    .PARAMETER KeepFile
+    If specified, keeps the downloaded PDF file. Otherwise, it's deleted after validation.
+
+    .OUTPUTS
+    PSCustomObject with test results including Success flag, message, and file information.
+
+    .EXAMPLE
+    Test-OmmiQuizSpeedQuizPdfEndpoint
+
+    .EXAMPLE
+    Test-OmmiQuizSpeedQuizPdfEndpoint -FlashcardId "my-set" -KeepFile
+    #>
+    [CmdletBinding()]
+    param(
+        [string]$FlashcardId,
+        [switch]$KeepFile
+    )
+
+    try {
+        # Get flashcard ID if not provided
+        $selectedId = $FlashcardId
+        if (-not $selectedId) {
+            $listing = Get-OmmiQuizFlashcardSets
+
+            $sets = @()
+            if ($listing.Content) {
+                if ($listing.Content -is [array]) {
+                    $sets = $listing.Content
+                } elseif ($listing.Content.PSObject.Properties['flashcards']) {
+                    $sets = @($listing.Content.flashcards)
+                } elseif ($listing.Content.PSObject.Properties['flashcard_sets']) {
+                    $sets = @($listing.Content.flashcard_sets)
+                } else {
+                    $sets = @($listing.Content)
+                }
+            }
+
+            $first = $sets | Select-Object -First 1
+            if (-not $first -or -not $first.id) {
+                return [pscustomobject]@{
+                    Test = 'SpeedQuizPdfEndpoint'
+                    Success = $false
+                    StatusCode = $null
+                    Message = 'No flashcard sets available to test PDF generation.'
+                    FilePath = $null
+                    FileSizeKB = 0
+                }
+            }
+            $selectedId = $first.id
+        }
+
+        # Download the PDF
+        $result = Get-OmmiQuizSpeedQuizPdf -FlashcardId $selectedId
+
+        if (-not $result.Success) {
+            return [pscustomobject]@{
+                Test = 'SpeedQuizPdfEndpoint'
+                Success = $false
+                StatusCode = $result.StatusCode
+                Message = $result.Message
+                FilePath = $null
+                FileSizeKB = 0
+            }
+        }
+
+        # Validate PDF file
+        $isPdf = $false
+        $isValidSize = $false
+
+        if (Test-Path -Path $result.FilePath) {
+            # Check if it's a PDF by reading the header
+            $bytes = [System.IO.File]::ReadAllBytes($result.FilePath)
+            if ($bytes.Length -ge 4) {
+                $header = [System.Text.Encoding]::ASCII.GetString($bytes[0..3])
+                $isPdf = $header -eq '%PDF'
+            }
+
+            # Check file size (should be reasonable, > 1KB)
+            $isValidSize = $result.FileSizeKB -gt 1
+        }
+
+        $success = $isPdf -and $isValidSize
+        $message = if ($success) {
+            "Speed quiz PDF generated successfully for '$selectedId' ($($result.FileSizeKB) KB)"
+        } elseif (-not $isPdf) {
+            "Downloaded file is not a valid PDF"
+        } else {
+            "Downloaded file size is invalid"
+        }
+
+        # Cleanup unless KeepFile is specified
+        if (-not $KeepFile -and (Test-Path -Path $result.FilePath)) {
+            Remove-Item -Path $result.FilePath -Force
+        }
+
+        [pscustomobject]@{
+            Test = 'SpeedQuizPdfEndpoint'
+            Success = $success
+            StatusCode = $result.StatusCode
+            Message = $message
+            FilePath = if ($KeepFile) { $result.FilePath } else { $null }
+            FileSizeKB = $result.FileSizeKB
+            FlashcardId = $selectedId
+        }
+    }
+    catch {
+        [pscustomobject]@{
+            Test = 'SpeedQuizPdfEndpoint'
+            Success = $false
+            StatusCode = $null
+            Message = "Speed quiz PDF endpoint test failed: $($_.Exception.Message)"
+            FilePath = $null
+            FileSizeKB = 0
+            FlashcardId = $FlashcardId
+        }
+    }
+}
+
+Export-ModuleMember -Function *OmmiQuiz*
