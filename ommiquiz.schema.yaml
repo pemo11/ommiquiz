@@ -31,6 +31,11 @@ properties:
         - question
         - level
       properties:
+        id:
+          type: string
+          description: "Unique identifier for the card (auto-generated if missing)"
+          example: "abc001"
+
         question:
           type: string
           description: "The question text"
@@ -127,16 +132,18 @@ examples:
     id: "example_single"
     title: "Single Answer Questions"
     flashcards:
-      - question: "What is 2+2?"
+      - id: "exa001"
+        question: "What is 2+2?"
         answer: "4"
         type: "single"
         level: "A"
-        
+
   - # Multiple choice question (actual format)
     id: "example_multiple"
     title: "Multiple Choice Questions"
     flashcards:
-      - question: "Which are programming languages?"
+      - id: "exa001"
+        question: "Which are programming languages?"
         answers: ["Python", "HTML", "Java", "CSS"]
         correctAnswers: [true, false, true, false]
         type: "multiple"

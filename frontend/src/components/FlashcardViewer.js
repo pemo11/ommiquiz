@@ -1162,7 +1162,7 @@ function FlashcardViewer({ flashcard, onBack }) {
   return (
     <div className="viewer-container">
       <div className="viewer-header">
-        <button onClick={onBack} className="back-button">← Back</button>
+        <button onClick={onBack} className="back-button">Back</button>
         <div className="metadata">
           <div className="metadata-item">
             <strong>Author:</strong> {flashcard.author}
@@ -1263,7 +1263,6 @@ function FlashcardViewer({ flashcard, onBack }) {
             onTouchEnd={handleTouchEnd}
           >
             <div className="flashcard-face flashcard-front">
-              <div className="card-header">{t('common.question')}</div>
               <div className="card-content">
                 {renderQuestionContent()}
               </div>
@@ -1275,7 +1274,6 @@ function FlashcardViewer({ flashcard, onBack }) {
               )}
             </div>
             <div className="flashcard-face flashcard-back">
-              <div className="card-header">{t('common.answer')}</div>
               <div className="card-content">
                 <p>{currentCard.answer}</p>
               </div>

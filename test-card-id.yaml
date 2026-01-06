@@ -1,0 +1,25 @@
+id: card-id-test
+author: Test Author
+title: Card ID Test
+description: Test flashcard to verify card ID auto-generation
+createDate: 2026-01-06
+language: en
+level: beginner
+semester: none
+institution: Test
+studycourse: Testing
+topics: [testing, card-ids]
+keywords: [test, card, id]
+
+flashcards:
+  - question: "First question without card ID"
+    answer: "This should get card ID car001"
+    type: single
+
+  - question: "Second question without card ID"
+    answer: "This should get card ID car002"
+    type: single
+
+  - question: "Third question without card ID"
+    answer: "This should get card ID car003"
+    type: single

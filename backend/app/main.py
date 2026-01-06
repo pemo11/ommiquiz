@@ -430,6 +430,76 @@ async def get_version():
     }
 
 
+def generate_card_id(cardset_id: str, card_index: int) -> str:
+    """
+    Generate a unique card ID from cardset ID and index.
+
+    Format: First 3 letters of cardset_id + zero-padded 3-digit number
+    Example: cardset_id="three-states-test", index=0 -> "thr001"
+
+    Args:
+        cardset_id: The flashcard set ID
+        card_index: Zero-based index of the card (0, 1, 2, ...)
+
+    Returns:
+        Card ID in format: prefix + number (e.g., "thr001")
+    """
+    # Extract first 3 letters from cardset_id (skip non-alphanumeric)
+    prefix = ''.join(c for c in cardset_id if c.isalnum())[:3].lower()
+
+    # Pad with 'x' if less than 3 characters
+    prefix = prefix.ljust(3, 'x')
+
+    # Create number part (1-indexed for display, e.g., 001, 002, 003)
+    number = str(card_index + 1).zfill(3)
+
+    return f"{prefix}{number}"
+
+
+def ensure_card_ids(data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Ensure all flashcards have unique IDs.
+    Generates IDs for cards that don't have them.
+
+    Args:
+        data: Flashcard YAML data dictionary
+
+    Returns:
+        Modified data with card IDs
+    """
+    logger.info("ensure_card_ids called",
+               has_flashcards="flashcards" in data,
+               flashcards_type=type(data.get("flashcards")).__name__ if "flashcards" in data else "N/A")
+
+    if "flashcards" not in data or not isinstance(data["flashcards"], list):
+        logger.info("Skipping ensure_card_ids - no flashcards list")
+        return data
+
+    cardset_id = data.get("id", "unknown")
+    logger.info("Processing flashcards for card IDs",
+               cardset_id=cardset_id,
+               card_count=len(data["flashcards"]))
+
+    for i, card in enumerate(data["flashcards"]):
+        logger.info("Checking card",
+                   card_index=i,
+                   is_dict=isinstance(card, dict),
+                   has_id="id" in card if isinstance(card, dict) else False)
+
+        if not isinstance(card, dict):
+            continue
+
+        # Generate ID if not present
+        if "id" not in card or not card["id"]:
+            card["id"] = generate_card_id(cardset_id, i)
+            logger.info("Generated card ID",
+                       card_index=i,
+                       card_id=card["id"],
+                       cardset_id=cardset_id)
+
+    return data
+
+
 @log_function_call("validate_flashcard_yaml")
 def validate_flashcard_yaml(data: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -438,7 +508,7 @@ def validate_flashcard_yaml(data: Dict[str, Any]) -> Dict[str, Any]:
     """
     errors = []
     warnings = []
-    
+
     logger.debug("Starting flashcard validation")
     
     # Required fields in root
@@ -471,6 +541,8 @@ def validate_flashcard_yaml(data: Dict[str, Any]) -> Dict[str, Any]:
                     continue
                 
                 # Required card fields
+                if "id" not in card:
+                    warnings.append(f"Flashcard {i+1} missing 'id' field (will be auto-generated)")
                 if "question" not in card:
                     errors.append(f"Flashcard {i+1} missing 'question' field")
                 if "type" not in card:
@@ -534,6 +606,9 @@ async def update_flashcard(flashcard_id: str, request: FlashcardUpdateRequest):
             status_code=400,
             detail=f"Invalid YAML format: {str(e)}"
         )
+
+    # Ensure all cards have IDs
+    data = ensure_card_ids(data)
 
     # Validate flashcard structure
     validation = validate_flashcard_yaml(data)
@@ -694,7 +769,16 @@ async def upload_flashcard(file: UploadFile = File(...), overwrite: str = Form(d
             status_code=400,
             detail=f"File encoding error: {str(e)}. Please use UTF-8 encoding"
         )
-    
+
+    # Ensure all cards have IDs
+    logger.info("About to call ensure_card_ids",
+               flashcard_id=data.get("id"),
+               card_count=len(data.get("flashcards", [])))
+    data = ensure_card_ids(data)
+    logger.info("After calling ensure_card_ids",
+               flashcard_id=data.get("id"),
+               card_count=len(data.get("flashcards", [])))
+
     # Validate flashcard structure
     validation = validate_flashcard_yaml(data)
     if not validation["valid"]:

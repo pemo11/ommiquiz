@@ -1,5 +1,5 @@
 @{
-    RootModule        = "NanoQuizAuthTesting.psm1"
+    RootModule        = "OmmiQuizAuthTesting.psm1"
     ModuleVersion     = "1.0.0"
     GUID              = "8f69f0a8-b7cd-41c3-8f98-c35912dfd534"
     Author            = "Ommiquiz Contributors"

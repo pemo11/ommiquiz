@@ -300,7 +300,8 @@ function AdminPanel({ onBack }) {
         }
 
         if (currentSection === 'flashcards') {
-          if (trimmedLine.startsWith('- question:')) {
+          if (trimmedLine.startsWith('- id:') || trimmedLine.startsWith('- question:')) {
+            // Start of a new flashcard (can begin with either id or question)
             if (currentCard) {
               if (currentAnswers.length > 0) {
                 currentCard.answers = currentAnswers;
@@ -308,12 +309,22 @@ function AdminPanel({ onBack }) {
               }
               flashcardData.flashcards.push(currentCard);
             }
-            
+
             currentCard = {
-              question: trimmedLine.substring(trimmedLine.indexOf(':') + 1).trim().replace(/^"(.*)"$/, '$1'),
               type: 'single'
             };
+
+            // Parse the first field
+            if (trimmedLine.startsWith('- id:')) {
+              currentCard.id = trimmedLine.substring(trimmedLine.indexOf(':') + 1).trim().replace(/^"(.*)"$/, '$1');
+            } else {
+              currentCard.question = trimmedLine.substring(trimmedLine.indexOf(':') + 1).trim().replace(/^"(.*)"$/, '$1');
+            }
             currentAnswers = [];
+          } else if (trimmedLine.startsWith('id:') && currentCard && !currentCard.id) {
+            currentCard.id = trimmedLine.substring(trimmedLine.indexOf(':') + 1).trim().replace(/^"(.*)"$/, '$1');
+          } else if (trimmedLine.startsWith('question:') && currentCard && !currentCard.question) {
+            currentCard.question = trimmedLine.substring(trimmedLine.indexOf(':') + 1).trim().replace(/^"(.*)"$/, '$1');
           } else if (trimmedLine.startsWith('bitmap:') && currentCard) {
             const bitmapValue = trimmedLine.substring(trimmedLine.indexOf(':') + 1).trim().replace(/^"(.*)"$/, '$1');
             currentCard.bitmap = bitmapValue;
@@ -1005,7 +1016,7 @@ function AdminPanel({ onBack }) {
   return (
     <div className="admin-panel">
       <div className="admin-header">
-        <button onClick={onBack} className="back-button">← Back to Quiz</button>
+        <button onClick={onBack} className="back-button">Back to Quiz</button>
         <h2>🔧 Admin Panel</h2>
       </div>
 
@@ -1025,7 +1036,7 @@ function AdminPanel({ onBack }) {
         <div className="statistics-section">
           <div className="statistics-header">
             <button onClick={handleHideStatistics} className="back-to-list-button">
-              ← Back to List
+              Back to List
             </button>
             <h3>Flashcard Statistics</h3>
             <button
@@ -1165,7 +1176,7 @@ function AdminPanel({ onBack }) {
         <div className="yaml-import-section">
           <div className="yaml-import-header">
             <button onClick={cancelYamlImport} className="back-to-list-button">
-              ← Back to List
+              Back to List
             </button>
             <h3>Import Flashcard from YAML</h3>
             <button onClick={parseYamlInput} className="parse-yaml-button">
@@ -1234,7 +1245,7 @@ flashcards:
               onClick={cancelEdit}
               className="back-to-list-button"
             >
-              ← Back to List
+              Back to List
             </button>
             <h3>
               {isCreatingNew ? 'Creating New Flashcard' : `Editing: ${selectedFlashcard.id}`}

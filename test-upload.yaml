@@ -12,10 +12,12 @@ topics: [testing, demo]
 keywords: [upload, test, demo]
 
 flashcards:
-  - question: "What is the purpose of this flashcard?"
+  - id: tes001
+    question: "What is the purpose of this flashcard?"
     answer: "To test the upload functionality of the Ommiquiz backend API"
     type: single
-  
-  - question: "Which HTTP method is used for uploading files?"
+
+  - id: tes002
+    question: "Which HTTP method is used for uploading files?"
     answer: "POST method is used for uploading files to web APIs"
     type: single

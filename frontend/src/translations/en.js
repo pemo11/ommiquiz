@@ -1,6 +1,6 @@
 export default {
   common: {
-    back: '← Back',
+    back: 'Back',
     question: 'Question',
     answer: 'Answer',
     answers: 'Answers:',
