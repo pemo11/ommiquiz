@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, UploadFile, File, APIRouter, Form, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
 from pydantic import BaseModel
 import yaml
 import re
@@ -15,6 +15,7 @@ from .logging_config import setup_logging, get_logger, LoggingMiddleware, log_fu
 from .auth import AuthenticatedUser, get_optional_current_user, login_with_email_password
 from .download_logger import initialize_download_log_store, log_flashcard_download
 from .storage import FlashcardDocument, get_flashcard_storage
+from .pdf_generator import generate_speed_quiz_pdf
 
 # Initialize logging before creating the app
 setup_logging()
@@ -333,6 +334,79 @@ async def get_flashcard(
     except Exception as e:
         logger.error("File reading error", flashcard_id=flashcard_id, error=str(e))
         raise HTTPException(status_code=500, detail=f"Error reading file: {str(e)}")
+
+
+@api_router.get("/flashcards/{flashcard_id}/speed-quiz-pdf")
+async def get_speed_quiz_pdf(
+    flashcard_id: str,
+    user: Optional[AuthenticatedUser] = Depends(get_optional_current_user)
+):
+    """
+    Generate a PDF worksheet with 12 random speed quiz questions.
+
+    Single choice questions include a dotted line for writing answers.
+    Multiple choice questions include checkboxes for each option.
+    Answers are not included in the PDF.
+    """
+    logger.info("Generating speed quiz PDF", flashcard_id=flashcard_id)
+
+    # Get flashcard document
+    document = get_flashcard_document(flashcard_id)
+
+    # If not found by ID-based filename, scan all documents to find actual filename
+    if document is None:
+        logger.info("Flashcard not found by ID-based filename, scanning all documents",
+                   flashcard_id=flashcard_id)
+        filename = find_flashcard_filename_by_id(flashcard_id)
+        if filename:
+            all_documents = storage.list_flashcards()
+            for doc in all_documents:
+                if doc.filename == filename:
+                    document = doc
+                    logger.info("Found flashcard by scanning",
+                               flashcard_id=flashcard_id,
+                               actual_filename=filename)
+                    break
+
+    if document is None:
+        logger.error("Flashcard not found for PDF generation", flashcard_id=flashcard_id)
+        raise HTTPException(status_code=404, detail=f"Flashcard '{flashcard_id}' not found")
+
+    try:
+        # Parse YAML content
+        data = yaml.safe_load(document.content)
+
+        # Generate PDF
+        pdf_buffer = generate_speed_quiz_pdf(data)
+
+        logger.info("Speed quiz PDF generated successfully",
+                   flashcard_id=flashcard_id,
+                   user_sub=user.sub if user else None)
+
+        # Create safe filename
+        title = data.get('title', 'speed-quiz')
+        safe_title = re.sub(r'[^\w\s-]', '', title).strip().replace(' ', '-')
+        filename = f"{safe_title}-speed-quiz.pdf"
+
+        # Return PDF as streaming response
+        return StreamingResponse(
+            pdf_buffer,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}"
+            }
+        )
+
+    except yaml.YAMLError as e:
+        logger.error("YAML parsing error for PDF generation",
+                    flashcard_id=flashcard_id,
+                    error=str(e))
+        raise HTTPException(status_code=500, detail=f"Error parsing YAML file: {str(e)}")
+    except Exception as e:
+        logger.error("PDF generation error",
+                    flashcard_id=flashcard_id,
+                    error=str(e))
+        raise HTTPException(status_code=500, detail=f"Error generating PDF: {str(e)}")
 
 
 @api_router.get("/health")
