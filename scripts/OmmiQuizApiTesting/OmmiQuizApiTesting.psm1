@@ -150,30 +150,41 @@ function Test-OmmiQuizHealthEndpoint {
     }
 }
 
-function Get-OmmiQuizFlashcardSets {
-    <#
-    .SYNOPSIS
-    Retrieves all flashcard sets from the API.
-    #>
-    [CmdletBinding()]
-    param()
-
-    Invoke-OmmiQuizApiRequest -Path '/flashcards' -Method 'GET' -ExpectedStatusCode 200
-}
-
 function Get-OmmiQuizFlashcardSet {
     <#
     .SYNOPSIS
-    Retrieves a single flashcard set by its identifier.
+    Retrieves flashcard set(s) from the API.
+
+    .DESCRIPTION
+    Retrieves either a single flashcard set by its identifier or all available flashcard sets.
+
+    .PARAMETER FlashcardId
+    The identifier of the flashcard set to retrieve. Required unless -All is specified.
+
+    .PARAMETER All
+    If specified, retrieves all available flashcard sets instead of a single set.
+
+    .EXAMPLE
+    Get-OmmiQuizFlashcardSet -FlashcardId "my-flashcard-set"
+
+    .EXAMPLE
+    Get-OmmiQuizFlashcardSet -All
     #>
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='Single')]
     param(
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ParameterSetName='Single')]
         [ValidateNotNullOrEmpty()]
-        [string]$FlashcardId
+        [string]$FlashcardId,
+
+        [Parameter(Mandatory, ParameterSetName='All')]
+        [switch]$All
     )
 
-    Invoke-OmmiQuizApiRequest -Path "/flashcards/$FlashcardId" -Method 'GET' -ExpectedStatusCode 200
+    if ($All) {
+        Invoke-OmmiQuizApiRequest -Path '/flashcards' -Method 'GET' -ExpectedStatusCode 200
+    } else {
+        Invoke-OmmiQuizApiRequest -Path "/flashcards/$FlashcardId" -Method 'GET' -ExpectedStatusCode 200
+    }
 }
 
 function Test-OmmiQuizFlashcardListing {
@@ -184,7 +195,7 @@ function Test-OmmiQuizFlashcardListing {
     [CmdletBinding()]
     param()
 
-    $result = Get-OmmiQuizFlashcardSets
+    $result = Get-OmmiQuizFlashcardSet -All
     $content = $result.Content
 
     # Handle both array and single object responses
@@ -229,7 +240,7 @@ function Test-OmmiQuizFlashcardDetail {
 
     $selectedId = $FlashcardId
     if (-not $selectedId) {
-        $listing = Get-OmmiQuizFlashcardSets
+        $listing = Get-OmmiQuizFlashcardSet -All
         
         # Handle both array and single object responses
         $sets = @()
@@ -318,7 +329,7 @@ function Invoke-OmmiQuizApiSmokeTests {
     }
 }
 
-function Get-OmmiQuizLogs {
+function Get-OmmiQuizLog {
     <#
     .SYNOPSIS
     Queries application logs from the OmmiQuiz API with optional filtering.
@@ -346,13 +357,13 @@ function Get-OmmiQuizLogs {
     Number of log entries to skip for pagination (default: 0).
 
     .EXAMPLE
-    Get-OmmiQuizLogs -Level ERROR -Limit 50
+    Get-OmmiQuizLog -Level ERROR -Limit 50
 
     .EXAMPLE
-    Get-OmmiQuizLogs -StartTime "2025-12-16T10:00:00" -MessageContains "flashcard"
+    Get-OmmiQuizLog -StartTime "2025-12-16T10:00:00" -MessageContains "flashcard"
 
     .EXAMPLE
-    Get-OmmiQuizLogs -Level WARNING -StartTime (Get-Date).AddHours(-1).ToString("yyyy-MM-ddTHH:mm:ss")
+    Get-OmmiQuizLog -Level WARNING -StartTime (Get-Date).AddHours(-1).ToString("yyyy-MM-ddTHH:mm:ss")
     #>
     [CmdletBinding()]
     param(
@@ -394,51 +405,46 @@ function Get-OmmiQuizLogs {
     Invoke-OmmiQuizApiRequest -Path $path -Method 'GET' -ExpectedStatusCode 200
 }
 
-function Get-OmmiQuizLogFiles {
-    <#
-    .SYNOPSIS
-    Lists available log files from the OmmiQuiz API.
-
-    .DESCRIPTION
-    Retrieves metadata about available log files including filename, size, 
-    and last modified date.
-
-    .EXAMPLE
-    Get-OmmiQuizLogFiles
-    #>
-    [CmdletBinding()]
-    param()
-
-    Invoke-OmmiQuizApiRequest -Path '/logs/files' -Method 'GET' -ExpectedStatusCode 200
-}
-
 function Get-OmmiQuizLogFile {
     <#
     .SYNOPSIS
-    Downloads a specific log file from the OmmiQuiz API.
+    Retrieves log file(s) from the API.
 
     .DESCRIPTION
-    Downloads the content of a specific log file. The content is returned as text.
+    Retrieves either a specific log file's content by filename or metadata about all available log files.
 
     .PARAMETER Filename
-    Name of the log file to download (e.g., "app-2025-12-16.log").
+    Name of the log file to download (e.g., "app-2025-12-16.log"). Required unless -All is specified.
+
+    .PARAMETER All
+    If specified, retrieves metadata about all available log files instead of downloading a specific file.
 
     .EXAMPLE
     Get-OmmiQuizLogFile -Filename "app-2025-12-16.log"
+
+    .EXAMPLE
+    Get-OmmiQuizLogFile -All
     #>
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName='Single')]
     param(
-        [Parameter(Mandatory)]
+        [Parameter(Mandatory, ParameterSetName='Single')]
         [ValidateNotNullOrEmpty()]
-        [string]$Filename
+        [string]$Filename,
+
+        [Parameter(Mandatory, ParameterSetName='All')]
+        [switch]$All
     )
 
-    # Validate filename pattern
-    if ($Filename -notmatch '^[a-zA-Z0-9_-]+\.log$') {
-        throw "Invalid log filename format. Expected format: alphanumeric characters, hyphens, underscores, and .log extension."
-    }
+    if ($All) {
+        Invoke-OmmiQuizApiRequest -Path '/logs/files' -Method 'GET' -ExpectedStatusCode 200
+    } else {
+        # Validate filename pattern
+        if ($Filename -notmatch '^[a-zA-Z0-9_-]+\.log$') {
+            throw "Invalid log filename format. Expected format: alphanumeric characters, hyphens, underscores, and .log extension."
+        }
 
-    Invoke-OmmiQuizApiRequest -Path "/logs/download/$Filename" -Method 'GET' -ExpectedStatusCode 200 -SkipJsonParsing
+        Invoke-OmmiQuizApiRequest -Path "/logs/download/$Filename" -Method 'GET' -ExpectedStatusCode 200 -SkipJsonParsing
+    }
 }
 
 function Test-OmmiQuizLogsEndpoint {
@@ -457,7 +463,7 @@ function Test-OmmiQuizLogsEndpoint {
     param()
 
     try {
-        $result = Get-OmmiQuizLogs -Limit 10
+        $result = Get-OmmiQuizLog -Limit 10
         $content = $result.Content
 
         $hasLogs = $false
@@ -526,7 +532,7 @@ function Test-OmmiQuizLogFilesEndpoint {
     param()
 
     try {
-        $result = Get-OmmiQuizLogFiles
+        $result = Get-OmmiQuizLogFile -All
         $content = $result.Content
 
         $hasFiles = $false
@@ -710,7 +716,7 @@ function Test-OmmiQuizSpeedQuizPdfEndpoint {
         # Get flashcard ID if not provided
         $selectedId = $FlashcardId
         if (-not $selectedId) {
-            $listing = Get-OmmiQuizFlashcardSets
+            $listing = Get-OmmiQuizFlashcardSet -All
 
             $sets = @()
             if ($listing.Content) {
