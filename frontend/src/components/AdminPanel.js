@@ -800,18 +800,27 @@ function AdminPanel({ onBack }) {
   };
 
   const addNewCard = () => {
-    setEditingFlashcard(prev => ({
-      ...prev,
-      flashcards: [
-        ...prev.flashcards,
-        {
-          question: '',
-          answer: '',
-          bitmap: '',
-          type: 'single'
-        }
-      ]
-    }));
+    setEditingFlashcard(prev => {
+      // Generate card ID: first 3 letters of cardset ID + zero-padded number
+      const cardsetId = prev.id || 'new';
+      const prefix = cardsetId.replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toLowerCase().padEnd(3, 'x');
+      const cardNumber = (prev.flashcards.length + 1).toString().padStart(3, '0');
+      const newCardId = `${prefix}${cardNumber}`;
+
+      return {
+        ...prev,
+        flashcards: [
+          ...prev.flashcards,
+          {
+            id: newCardId,
+            question: '',
+            answer: '',
+            bitmap: '',
+            type: 'single'
+          }
+        ]
+      };
+    });
   };
 
   const deleteCard = (cardIndex) => {
@@ -1433,6 +1442,17 @@ flashcards:
                       >
                         🗑️ Delete
                       </button>
+                    </div>
+
+                    <div className="form-row">
+                      <label>Card ID:</label>
+                      <input
+                        type="text"
+                        value={card.id || ''}
+                        onChange={(e) => updateCardField(cardIndex, 'id', e.target.value)}
+                        placeholder="e.g., abc001"
+                      />
+                      <small>Unique identifier for this card (auto-generated if empty)</small>
                     </div>
 
                     <div className="form-row">

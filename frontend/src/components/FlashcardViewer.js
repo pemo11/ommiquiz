@@ -806,6 +806,8 @@ function FlashcardViewer({ flashcard, onBack }) {
   };
 
   const handleStartQuiz = () => {
+    // Always use the original flashcard.cards for filtering, not the current cards state
+    const originalCards = flashcard.cards || [];
     let filteredCards = [...cards];
     let newSessionType = 'full';
 
@@ -816,7 +818,8 @@ function FlashcardViewer({ flashcard, onBack }) {
 
       case 'postponed':
         const postponedIndices = postponedQueue;
-        filteredCards = postponedIndices.map(idx => cards[idx]);
+        // Use originalCards instead of cards to get correct indices
+        filteredCards = postponedIndices.map(idx => originalCards[idx]);
         newSessionType = 'postponed';
         break;
 
