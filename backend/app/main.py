@@ -534,59 +534,63 @@ async def get_learning_report(
     Requires authentication.
     """
     from datetime import timedelta
-    from sqlalchemy import select
-    from .models import QuizSession
-    from .database import AsyncSessionLocal
+    from .database import get_db_pool
 
     logger.info("Generating learning report",
                 user_id=user.user_id,
                 flashcard_id=flashcard_id,
                 days=days)
 
-    async with AsyncSessionLocal() as session:
-        try:
+    pool = await get_db_pool()
+
+    try:
+        async with pool.acquire() as conn:
             # Calculate date range
             cutoff_date = datetime.now() - timedelta(days=days)
 
-            # Base query
-            query = select(QuizSession).where(
-                QuizSession.user_id == user.user_id,
-                QuizSession.completed_at >= cutoff_date
-            )
-
-            # Add flashcard filter if specified
+            # Build query with optional flashcard filter
             if flashcard_id:
-                query = query.where(QuizSession.flashcard_id == flashcard_id)
-
-            # Order by completion time (newest first)
-            query = query.order_by(QuizSession.completed_at.desc())
-
-            result = await session.execute(query)
-            sessions = result.scalars().all()
+                query = """
+                    SELECT id, flashcard_id, flashcard_title, started_at, completed_at,
+                           cards_reviewed, box1_count, box2_count, box3_count, duration_seconds
+                    FROM quiz_sessions
+                    WHERE user_id = $1 AND flashcard_id = $2 AND completed_at >= $3
+                    ORDER BY completed_at DESC
+                """
+                sessions = await conn.fetch(query, user.user_id, flashcard_id, cutoff_date)
+            else:
+                query = """
+                    SELECT id, flashcard_id, flashcard_title, started_at, completed_at,
+                           cards_reviewed, box1_count, box2_count, box3_count, duration_seconds
+                    FROM quiz_sessions
+                    WHERE user_id = $1 AND completed_at >= $2
+                    ORDER BY completed_at DESC
+                """
+                sessions = await conn.fetch(query, user.user_id, cutoff_date)
 
             # Calculate aggregate statistics
             total_sessions = len(sessions)
-            total_cards_reviewed = sum(s.cards_reviewed for s in sessions)
-            total_box1 = sum(s.box1_count for s in sessions)
-            total_box2 = sum(s.box2_count for s in sessions)
-            total_box3 = sum(s.box3_count for s in sessions)
-            total_duration = sum(s.duration_seconds or 0 for s in sessions)
+            total_cards_reviewed = sum(row['cards_reviewed'] for row in sessions)
+            total_box1 = sum(row['box1_count'] for row in sessions)
+            total_box2 = sum(row['box2_count'] for row in sessions)
+            total_box3 = sum(row['box3_count'] for row in sessions)
+            total_duration = sum(row['duration_seconds'] or 0 for row in sessions)
 
             # Format session details
             session_details = [
                 {
-                    "id": s.id,
-                    "flashcard_id": s.flashcard_id,
-                    "flashcard_title": s.flashcard_title,
-                    "started_at": s.started_at.isoformat() + "Z",
-                    "completed_at": s.completed_at.isoformat() + "Z",
-                    "cards_reviewed": s.cards_reviewed,
-                    "box1_count": s.box1_count,
-                    "box2_count": s.box2_count,
-                    "box3_count": s.box3_count,
-                    "duration_seconds": s.duration_seconds
+                    "id": row['id'],
+                    "flashcard_id": row['flashcard_id'],
+                    "flashcard_title": row['flashcard_title'],
+                    "started_at": row['started_at'].isoformat() + "Z",
+                    "completed_at": row['completed_at'].isoformat() + "Z",
+                    "cards_reviewed": row['cards_reviewed'],
+                    "box1_count": row['box1_count'],
+                    "box2_count": row['box2_count'],
+                    "box3_count": row['box3_count'],
+                    "duration_seconds": row['duration_seconds']
                 }
-                for s in sessions
+                for row in sessions
             ]
 
             logger.info("Learning report generated successfully",
@@ -610,14 +614,14 @@ async def get_learning_report(
                 "sessions": session_details
             }
 
-        except Exception as e:
-            logger.error("Error generating learning report",
-                        user_id=user.user_id,
-                        error=str(e))
-            raise HTTPException(
-                status_code=500,
-                detail=f"Failed to generate learning report: {str(e)}"
-            )
+    except Exception as e:
+        logger.error("Error generating learning report",
+                    user_id=user.user_id,
+                    error=str(e))
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate learning report: {str(e)}"
+        )
 
 
 @api_router.get("/health")

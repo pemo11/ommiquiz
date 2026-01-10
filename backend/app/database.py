@@ -1,13 +1,12 @@
 """
-Database configuration and session management for Ommiquiz.
+Database configuration and connection pooling for Ommiquiz.
 
-Uses SQLAlchemy with asyncpg for async PostgreSQL operations.
+Uses asyncpg for async PostgreSQL operations with plain SQL.
 """
 
 import os
-from sqlalchemy import create_engine
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker, declarative_base
+import asyncpg
+from typing import Optional
 
 # Database URL from environment
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -15,59 +14,74 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise ValueError("DATABASE_URL environment variable is not set")
 
-# Convert postgresql:// to postgresql+asyncpg:// for async operations
-ASYNC_DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
-
-# Create async engine
-# echo=False to disable SQL logging (set to True for debugging)
-engine = create_async_engine(
-    ASYNC_DATABASE_URL,
-    echo=False,
-    pool_pre_ping=True,  # Verify connections before using them
-    pool_size=10,  # Number of connections to maintain
-    max_overflow=20  # Max additional connections when pool is full
-)
-
-# Create async session factory
-AsyncSessionLocal = sessionmaker(
-    engine,
-    class_=AsyncSession,
-    expire_on_commit=False,  # Don't expire objects after commit
-    autocommit=False,
-    autoflush=False
-)
-
-# Base class for all models
-Base = declarative_base()
+# Global connection pool
+_pool: Optional[asyncpg.Pool] = None
 
 
-async def get_db():
+async def get_db_pool() -> asyncpg.Pool:
     """
-    Dependency for getting database session.
+    Get or create the database connection pool.
 
-    Usage in FastAPI:
-        @app.get("/endpoint")
-        async def endpoint(db: AsyncSession = Depends(get_db)):
-            # Use db here
+    Returns:
+        asyncpg.Pool: The database connection pool
     """
-    async with AsyncSessionLocal() as session:
-        try:
-            yield session
-        finally:
-            await session.close()
+    global _pool
+
+    if _pool is None:
+        _pool = await asyncpg.create_pool(
+            DATABASE_URL,
+            min_size=5,  # Minimum number of connections
+            max_size=20,  # Maximum number of connections
+            command_timeout=60,  # Command timeout in seconds
+        )
+
+    return _pool
 
 
-async def init_db():
+async def get_db_connection():
     """
-    Initialize database by creating all tables.
+    Get a database connection from the pool.
 
-    Note: In production, use Alembic migrations instead.
-    This is mainly for development/testing.
+    Usage:
+        async with get_db_connection() as conn:
+            result = await conn.fetch("SELECT * FROM users")
+
+    Yields:
+        asyncpg.Connection: A database connection
     """
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    pool = await get_db_pool()
+    async with pool.acquire() as connection:
+        yield connection
 
 
-async def close_db():
-    """Close database connections and dispose of the engine."""
-    await engine.dispose()
+async def close_db_pool():
+    """Close the database connection pool."""
+    global _pool
+
+    if _pool is not None:
+        await _pool.close()
+        _pool = None
+
+
+async def execute_query(query: str, *args, fetch: bool = False, fetchrow: bool = False):
+    """
+    Execute a SQL query using the connection pool.
+
+    Args:
+        query: SQL query string
+        *args: Query parameters
+        fetch: If True, return all results
+        fetchrow: If True, return single row
+
+    Returns:
+        Query results or None
+    """
+    pool = await get_db_pool()
+
+    async with pool.acquire() as conn:
+        if fetch:
+            return await conn.fetch(query, *args)
+        elif fetchrow:
+            return await conn.fetchrow(query, *args)
+        else:
+            return await conn.execute(query, *args)

@@ -12,8 +12,6 @@ $newDependencies = @"
 
 # Supabase dependencies
 supabase==2.3.0
-psycopg2-binary==2.9.9
-sqlalchemy==2.0.25
 asyncpg==0.29.0
 "@
 

@@ -29,8 +29,7 @@ import sys
 import asyncio
 
 try:
-    from sqlalchemy.ext.asyncio import create_async_engine
-    from sqlalchemy import text
+    import asyncpg
 except ImportError as e:
     print(f'Error: Required package not installed: {e}')
     print('Please run Install-BackendDependencies.ps1 first.')
@@ -39,29 +38,26 @@ except ImportError as e:
 async def test_connection():
     db_url = os.getenv('DATABASE_URL', '$DatabaseUrl')
 
-    # Convert postgresql:// to postgresql+asyncpg:// for async
-    if db_url.startswith('postgresql://'):
-        async_url = db_url.replace('postgresql://', 'postgresql+asyncpg://')
-    else:
-        async_url = db_url
-
-    engine = None
-
     try:
-        print('Creating database engine...')
-        engine = create_async_engine(async_url, echo=False)
+        print('Attempting to connect to PostgreSQL...')
 
-        print('Attempting to connect...')
-        async with engine.begin() as conn:
-            result = await conn.execute(text('SELECT 1 as test'))
-            row = result.fetchone()
+        # Create a connection
+        conn = await asyncpg.connect(db_url)
 
-        if row and row[0] == 1:
+        print('Connection established.')
+
+        # Test query
+        result = await conn.fetchval('SELECT 1 as test')
+
+        if result == 1:
             print('\n✓ Database connection successful!')
             print('✓ PostgreSQL is responding correctly')
+            await conn.close()
+            print('Connection closed.')
             return 0
         else:
             print('\n✗ Unexpected result from database')
+            await conn.close()
             return 1
 
     except Exception as e:
@@ -73,11 +69,6 @@ async def test_connection():
         print(f'  - Ensure your IP is allowed in Supabase settings')
         print(f'  - Check if asyncpg is installed (pip install asyncpg)')
         return 1
-
-    finally:
-        if engine:
-            await engine.dispose()
-            print('Connection closed.')
 
 if __name__ == '__main__':
     try:
