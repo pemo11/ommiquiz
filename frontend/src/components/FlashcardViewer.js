@@ -457,7 +457,6 @@ function FlashcardViewer({ flashcard, onBack }) {
     setShowCorrectAnswers(false);
     setCurrentCardAnswered(false);
     setSwipeDirection(null);
-    setPostponedQueue([]);
     setShowCelebration(false);
     setShowSummary(false);
     setCardResults({});
