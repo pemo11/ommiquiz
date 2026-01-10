@@ -2,6 +2,23 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import './FlashcardViewer.css';
 import { useTranslation } from '../context/TranslationContext';
 
+// API URL configuration
+const getApiUrl = () => {
+  if (process.env.NODE_ENV === 'production' && process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
+  }
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
+  }
+  const hostname = window.location.hostname;
+  const baseUrl = hostname === 'localhost' ? 'localhost' : hostname;
+  const protocol = hostname === 'localhost' ? 'http' : window.location.protocol.replace(':', '');
+  const port = hostname === 'localhost' ? ':8080' : '';
+  return `${protocol}://${baseUrl}${port}/api`;
+};
+
+const API_URL = getApiUrl();
+
 const normalizeLevel = (level) => {
   const normalized = (level || '').toString().trim().toUpperCase();
   return ['A', 'B', 'C'].includes(normalized) ? normalized : 'A';
@@ -247,7 +264,8 @@ function FlashcardViewer({ flashcard, onBack }) {
   const [showSummary, setShowSummary] = useState(false);
   const [currentCardAnswered, setCurrentCardAnswered] = useState(false);
   const [swipeDirection, setSwipeDirection] = useState(null);
-  const [postponedQueue, setPostponedQueue] = useState([]);
+  const [currentSessionBoxes, setCurrentSessionBoxes] = useState({}); // { cardId: 1-3 }
+  const [historicalBoxData, setHistoricalBoxData] = useState(null); // Previous session data
   const [showCelebration, setShowCelebration] = useState(false);
   const [levelMixInput, setLevelMixInput] = useState('');
   const [levelMixError, setLevelMixError] = useState('');
@@ -357,7 +375,7 @@ function FlashcardViewer({ flashcard, onBack }) {
     setShowSummary(false);
     setCurrentCardAnswered(false);
     setSwipeDirection(null);
-    setPostponedQueue([]);
+    setCurrentSessionBoxes({});
     setShowCelebration(false);
     setElapsedTime(0);
     setStartTime(Date.now());
@@ -464,7 +482,6 @@ function FlashcardViewer({ flashcard, onBack }) {
     // When we reach the last card, show the summary
     // Use a timeout to ensure state updates are processed before showing summary
     setTimeout(() => {
-      setShowCelebration(postponedQueue.length === 0);
       setShowSummary(true);
     }, 0);
   };
@@ -534,46 +551,60 @@ function FlashcardViewer({ flashcard, onBack }) {
   const handleAnswerSelect = (answerIndex) => {
     // Don't allow changing answers after showing correct ones or if already answered
     if (showCorrectAnswers || currentCardAnswered) return;
-    
+
     setSelectedAnswers(prev => {
       const newSelection = prev.includes(answerIndex)
         ? prev.filter(idx => idx !== answerIndex)
         : [...prev, answerIndex];
-      
+
       console.log('Selected answers updated:', newSelection);
       return newSelection;
     });
   };
 
-  // New function to handle single-answer card evaluation
-  const handleSingleAnswerEvaluation = (isCorrect) => {
-    if (swipeDirection === null && cardType === 'single' && !currentCardAnswered) {
-      setSwipeDirection(isCorrect ? 'right' : 'left');
-    }
+  // New function to handle box assignment (1=green/learned, 2=yellow/uncertain, 3=red/not learned)
+  const handleBoxAssignment = (boxNumber) => {
+    const cardId = currentCard.id;
 
-    if (!isCorrect) {
-      setPostponedQueue(prev => prev.includes(currentCardIndex) ? prev : [...prev, currentCardIndex]);
-    } else {
-      setPostponedQueue(prev => prev.filter(idx => idx !== currentCardIndex));
-    }
+    // Update box assignment for this card
+    setCurrentSessionBoxes(prev => ({ ...prev, [cardId]: boxNumber }));
 
+    // Update card results with box information
     setCardResults(prev => ({
       ...prev,
       [currentCardIndex]: {
-        type: 'single',
-        correct: isCorrect,
+        ...(prev[currentCardIndex] || {}),
+        box: boxNumber,
+        correct: boxNumber === 1, // Only Box 1 counts as "correct"
+        userAnswer: `Box ${boxNumber}`,
+        type: cardType,
         question: currentCard.question,
-        answer: currentCard.answer,
-        userAnswer: isCorrect ? 'Correct' : 'Incorrect',
-        level: currentCard.level
+        answer: cardType === 'multiple'
+          ? currentCard.answers?.filter((_, idx) => currentCard.correctAnswers?.[idx]).join(', ')
+          : currentCard.answer,
+        level: currentCard.level,
+        selectedAnswers: cardType === 'multiple' ? selectedAnswers : undefined,
+        correctAnswers: cardType === 'multiple' ? currentCard.correctAnswers : undefined
       }
     }));
+
     setCurrentCardAnswered(true);
 
     // Automatically proceed to next card after a short delay
     setTimeout(() => {
       proceedToNextCard();
     }, 500);
+  };
+
+  // Old function - kept for swipe gestures, but will be deprecated in favor of handleBoxAssignment
+  const handleSingleAnswerEvaluation = (isCorrect) => {
+    // For backwards compatibility with swipe gestures
+    // Map to box assignment: isCorrect -> Box 1, !isCorrect -> Box 3
+    handleBoxAssignment(isCorrect ? 1 : 3);
+
+    if (swipeDirection === null && cardType === 'single' && !currentCardAnswered) {
+      setSwipeDirection(isCorrect ? 'right' : 'left');
+    }
 
     setTimeout(() => setSwipeDirection(null), 600);
   };
@@ -627,53 +658,11 @@ function FlashcardViewer({ flashcard, onBack }) {
     }
   };
 
-  // Handle evaluation of multiple choice answers when user clicks Done/Postpone
+  // Old function - deprecated in favor of handleBoxAssignment
+  // Kept for backwards compatibility
   const handleMultipleChoiceEvaluation = (markAsCorrect) => {
-    console.log('handleMultipleChoiceEvaluation called with markAsCorrect:', markAsCorrect);
-    
-    // First, mark the card as answered to prevent any state resets
-    setCurrentCardAnswered(true);
-    
-    // Update the postponed queue based on user's choice
-    if (markAsCorrect) {
-      setPostponedQueue(prev => prev.filter(idx => idx !== currentCardIndex));
-    } else {
-      setPostponedQueue(prev => 
-        prev.includes(currentCardIndex) ? prev : [...prev, currentCardIndex]
-      );
-    }
-    
-    // Update the card result with the final evaluation
-    setCardResults(prev => {
-      const updatedResults = {
-        ...prev,
-        [currentCardIndex]: {
-          ...(prev[currentCardIndex] || {}),
-          correct: markAsCorrect,
-          userAnswer: markAsCorrect 
-            ? 'Marked as correct by user' 
-            : 'Marked as postponed by user',
-          type: 'multiple',
-          question: currentCard?.question || '',
-          answer: currentCard?.answers?.filter((_, idx) => 
-            currentCard.correctAnswers?.[idx]
-          )?.join(', ') || '',
-          selectedAnswers: [...selectedAnswers],
-          correctAnswers: [...(currentCard?.correctAnswers || [])],
-          level: currentCard?.level || 'B',
-          evaluationResult: markAsCorrect
-        }
-      };
-      
-      console.log('Updated card results:', updatedResults);
-      return updatedResults;
-    });
-    
-    // Show a brief confirmation before proceeding
-    setTimeout(() => {
-      console.log('Proceeding to next card...');
-      proceedToNextCard();
-    }, 500);
+    // Map to box assignment: markAsCorrect -> Box 1, !markAsCorrect -> Box 3
+    handleBoxAssignment(markAsCorrect ? 1 : 3);
   };
 
   const handleNext = () => {
@@ -703,7 +692,8 @@ function FlashcardViewer({ flashcard, onBack }) {
           level: currentCard?.level
         }
       }));
-      setPostponedQueue(prev => prev.includes(currentCardIndex) ? prev : [...prev, currentCardIndex]);
+      // Note: With the new box system, skipped cards are not automatically assigned a box
+      // They will remain unassigned until the user explicitly assigns them to a box
     }
 
     proceedToNextCard();
@@ -730,41 +720,64 @@ function FlashcardViewer({ flashcard, onBack }) {
     }
   };
 
-  // Calculate statistics
+  // Calculate statistics with box distribution
   const calculateStats = () => {
     const orderedResults = cardOrder
       .map(idx => cardResults[idx] ? { ...cardResults[idx], cardIndex: idx, level: cardResults[idx].level || cards[idx]?.level } : null)
       .filter(Boolean);
 
-    const correct = orderedResults.filter(r => r.correct).length;
+    // Count cards in each box
+    const boxCounts = { box1: 0, box2: 0, box3: 0 };
+    orderedResults.forEach(result => {
+      if (result.box === 1) boxCounts.box1++;
+      else if (result.box === 2) boxCounts.box2++;
+      else if (result.box === 3) boxCounts.box3++;
+    });
+
+    const correct = boxCounts.box1; // Only Box 1 counts as "correct"
     const total = cardOrder.length;
     const percentage = total > 0 ? Math.round((correct / total) * 100) : 0;
-    const postponedCount = Math.max(total - correct, 0);
+
+    // Level breakdown by box
     const levels = orderedResults.reduce((acc, result) => {
       const levelKey = result.level || 'Unspecified';
       if (!acc[levelKey]) {
-        acc[levelKey] = { done: 0, postponed: 0 };
+        acc[levelKey] = { box1: 0, box2: 0, box3: 0 };
       }
-      if (result.correct) {
-        acc[levelKey].done += 1;
-      } else {
-        acc[levelKey].postponed += 1;
+      if (result.box === 1) {
+        acc[levelKey].box1 += 1;
+      } else if (result.box === 2) {
+        acc[levelKey].box2 += 1;
+      } else if (result.box === 3) {
+        acc[levelKey].box3 += 1;
       }
       return acc;
     }, {});
-    
-    return { correct, total, percentage, results: orderedResults, postponedCount, levels };
+
+    return {
+      correct,
+      total,
+      percentage,
+      results: orderedResults,
+      box1Count: boxCounts.box1,
+      box2Count: boxCounts.box2,
+      box3Count: boxCounts.box3,
+      levels
+    };
   };
 
   const buildLearningEvaluation = (stats) => {
     const total = stats.total || cardOrder.length;
-    const postponedCount = stats.postponedCount ?? Math.max(total - stats.correct, 0);
-    const progress = total > 0 ? Math.round((stats.correct / total) * 100) : 0;
-    const cardsPerMinute = elapsedTime > 0 ? (stats.correct / (elapsedTime / 60)) : null;
-    const etaMinutes = cardsPerMinute && postponedCount > 0 ? Math.ceil(postponedCount / cardsPerMinute) : null;
+    const box1Count = stats.box1Count || 0;
+    const box2Count = stats.box2Count || 0;
+    const box3Count = stats.box3Count || 0;
+    const progress = total > 0 ? Math.round((box1Count / total) * 100) : 0;
+    const cardsPerMinute = elapsedTime > 0 ? (box1Count / (elapsedTime / 60)) : null;
+    const remainingCards = box2Count + box3Count;
+    const etaMinutes = cardsPerMinute && remainingCards > 0 ? Math.ceil(remainingCards / cardsPerMinute) : null;
 
     let headline = 'Keep going!';
-    if (progress === 100) {
+    if (progress === 100 && box2Count === 0 && box3Count === 0) {
       headline = 'Outstanding, you mastered every card!';
     } else if (progress >= 75) {
       headline = 'Great work, you are close to mastery!';
@@ -773,16 +786,20 @@ function FlashcardViewer({ flashcard, onBack }) {
     }
 
     const levelInsights = Object.entries(stats.levels || {}).map(([level, breakdown]) => {
-      return `${level}: ${breakdown.done} done${breakdown.postponed ? `, ${breakdown.postponed} postponed` : ''}`;
+      const parts = [];
+      if (breakdown.box1) parts.push(`${breakdown.box1} learned`);
+      if (breakdown.box2) parts.push(`${breakdown.box2} uncertain`);
+      if (breakdown.box3) parts.push(`${breakdown.box3} not learned`);
+      return `${level}: ${parts.join(', ') || '0 cards'}`;
     });
 
-    const etaMessage = etaMinutes !== null
-      ? `At your current pace you can clear the remaining cards in about ${etaMinutes} minute${etaMinutes === 1 ? '' : 's'}.`
+    const etaMessage = etaMinutes !== null && remainingCards > 0
+      ? `At your current pace you can review the remaining cards in about ${etaMinutes} minute${etaMinutes === 1 ? '' : 's'}.`
       : 'Complete a few cards to estimate how long the remaining set will take.';
 
     return {
       headline,
-      progressLine: `You finished ${stats.correct} of ${total} cards (${progress}%). ${postponedCount === 0 ? 'Everything is marked as done.' : `${postponedCount} card${postponedCount === 1 ? '' : 's'} are postponed.`}`,
+      progressLine: `Box 1 (Learned): ${box1Count}, Box 2 (Uncertain): ${box2Count}, Box 3 (Not Learned): ${box3Count}`,
       levelLine: levelInsights.length > 0 ? levelInsights.join(' • ') : 'No level data available for these cards.',
       etaMessage
     };
@@ -799,7 +816,7 @@ function FlashcardViewer({ flashcard, onBack }) {
     setShowSummary(false);
     setCurrentCardAnswered(false);
     setSwipeDirection(null);
-    setPostponedQueue([]);
+    setCurrentSessionBoxes({});
     setShowCelebration(false);
     setElapsedTime(0);
     setStartTime(Date.now());
@@ -807,7 +824,6 @@ function FlashcardViewer({ flashcard, onBack }) {
 
   const handleStartQuiz = () => {
     // Always use the original flashcard.cards for filtering, not the current cards state
-    const originalCards = flashcard.cards || [];
     let filteredCards = [...cards];
     let newSessionType = 'full';
 
@@ -816,18 +832,12 @@ function FlashcardViewer({ flashcard, onBack }) {
         newSessionType = 'full';
         break;
 
-      case 'postponed':
-        const postponedIndices = postponedQueue;
-        // Use originalCards instead of cards to get correct indices
-        filteredCards = postponedIndices.map(idx => originalCards[idx]);
-        newSessionType = 'postponed';
-        break;
-
       case 'speed':
         filteredCards = selectRandomCards(cards, 12);
         newSessionType = 'speed';
         break;
 
+      // Box modes will be handled by handleContinueWithBox function
       default:
         break;
     }
@@ -874,29 +884,126 @@ function FlashcardViewer({ flashcard, onBack }) {
     return false;
   };
 
-  const handleRepeatPostponed = () => {
-    const postponedOnly = Object.entries(cardResults)
-      .filter(([, result]) => isPostponedResult(result))
-      .map(([idx]) => Number(idx));
+  // New function to continue with cards from a specific box
+  const handleContinueWithBox = (boxNumber) => {
+    const boxCards = Object.entries(currentSessionBoxes)
+      .filter(([_, box]) => box === boxNumber)
+      .map(([cardId]) => cards.find(c => c.id === cardId))
+      .filter(Boolean);
 
-    const nextOrder = postponedOnly.length > 0 ? postponedOnly : cards.map((_, idx) => idx);
+    if (boxCards.length === 0) {
+      alert(`No cards in Box ${boxNumber}`);
+      return;
+    }
 
-    setCardOrder(nextOrder);
+    setCards(boxCards);
+    const initialOrder = boxCards.map((_, idx) => idx);
+    setCardOrder(initialOrder);
     setCurrentOrderIndex(0);
-    setCurrentCardIndex(nextOrder[0] ?? 0);
+    setCurrentCardIndex(0);
     setCardResults({});
+    setCurrentSessionBoxes({});
+    setShowSummary(false);
     setIsFlipped(false);
     setSelectedAnswers([]);
     setShowCorrectAnswers(false);
-    setShowSummary(false);
     setCurrentCardAnswered(false);
     setSwipeDirection(null);
-    setPostponedQueue([]);
     setShowCelebration(false);
     setElapsedTime(0);
     setStartTime(Date.now());
-    setSessionType(postponedOnly.length > 0 ? 'postponed' : 'full');
+    setSessionType(`box${boxNumber}`);
   };
+
+  // Save progress function
+  const handleSaveProgress = async () => {
+    // Check if user is authenticated (token in localStorage)
+    const token = localStorage.getItem('authToken');
+
+    if (!token) {
+      alert('Please login to save your progress');
+      return;
+    }
+
+    const stats = calculateStats();
+    const progressData = {
+      cards: Object.entries(currentSessionBoxes).reduce((acc, [cardId, box]) => {
+        acc[cardId] = {
+          box,
+          last_reviewed: new Date().toISOString(),
+          review_count: 1
+        };
+        return acc;
+      }, {}),
+      session_summary: {
+        completed_at: new Date().toISOString(),
+        cards_reviewed: Object.keys(currentSessionBoxes).length,
+        box_distribution: {
+          box1: stats.box1Count,
+          box2: stats.box2Count,
+          box3: stats.box3Count
+        }
+      }
+    };
+
+    try {
+      const response = await fetch(
+        `${API_URL}/flashcards/${flashcard.id}/progress`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(progressData)
+        }
+      );
+
+      if (response.ok) {
+        alert('Progress saved successfully!');
+      } else {
+        const errorData = await response.json().catch(() => ({ detail: 'Failed to save progress' }));
+        alert(`Failed to save progress: ${errorData.detail || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Save progress error:', error);
+      alert('Network error - please check your connection and try again');
+    }
+  };
+
+  // Load progress on mount
+  useEffect(() => {
+    const loadProgress = async () => {
+      const token = localStorage.getItem('authToken');
+
+      if (!token || !flashcard.id) {
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `${API_URL}/flashcards/${flashcard.id}/progress`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.progress && data.progress.cards) {
+            setHistoricalBoxData(data.progress);
+            console.log('Loaded historical progress:', data.progress);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load progress:', error);
+      }
+    };
+
+    loadProgress();
+  }, [flashcard.id]);
 
   // Automatically show the summary when all cards have been processed
   useEffect(() => {
@@ -904,10 +1011,9 @@ function FlashcardViewer({ flashcard, onBack }) {
     const isAtEndOfOrder = currentOrderIndex >= cardOrder.length - 1;
 
     if (!showSummary && allCardsProcessed && isAtEndOfOrder) {
-      setShowCelebration(postponedQueue.length === 0);
       setShowSummary(true);
     }
-  }, [cardResults, cardOrder.length, currentOrderIndex, showSummary, postponedQueue.length]);
+  }, [cardResults, cardOrder.length, currentOrderIndex, showSummary]);
 
   if (showSummary) {
     const stats = calculateStats();
@@ -929,20 +1035,20 @@ function FlashcardViewer({ flashcard, onBack }) {
             )}
             <div className="summary-stats">
               <div className="stat-card">
-                <div className="stat-number">{stats.correct}/{stats.total}</div>
-                <div className="stat-label">Correct Answers</div>
+                <div className="stat-number">{stats.box1Count}</div>
+                <div className="stat-label">Box 1 (Learned)</div>
               </div>
               <div className="stat-card">
-                <div className="stat-number">{stats.percentage}%</div>
-                <div className="stat-label">Score</div>
+                <div className="stat-number">{stats.box2Count}</div>
+                <div className="stat-label">Box 2 (Uncertain)</div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-number">{stats.box3Count}</div>
+                <div className="stat-label">Box 3 (Not Learned)</div>
               </div>
               <div className="stat-card">
                 <div className="stat-number">{formatTime(elapsedTime)}</div>
                 <div className="stat-label">Time Taken</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-number">{stats.postponedCount}</div>
-                <div className="stat-label">Postponed</div>
               </div>
             </div>
           </div>
@@ -959,9 +1065,14 @@ function FlashcardViewer({ flashcard, onBack }) {
               {Object.entries(stats.levels).map(([level, breakdown]) => (
                 <div key={level} className="level-chip">
                   <span className="level-title">Level {level}</span>
-                  <span className="level-counts">{breakdown.done} done</span>
-                  {breakdown.postponed > 0 && (
-                    <span className="level-counts postponed">{breakdown.postponed} postponed</span>
+                  {breakdown.box1 > 0 && (
+                    <span className="level-counts box1">✅ {breakdown.box1}</span>
+                  )}
+                  {breakdown.box2 > 0 && (
+                    <span className="level-counts box2">⚠️ {breakdown.box2}</span>
+                  )}
+                  {breakdown.box3 > 0 && (
+                    <span className="level-counts box3">❌ {breakdown.box3}</span>
                   )}
                 </div>
               ))}
@@ -991,40 +1102,71 @@ function FlashcardViewer({ flashcard, onBack }) {
           </div>
 
           <div className="summary-actions">
+            <h3>Continue Learning</h3>
             <div className="action-buttons">
-              <button 
-                onClick={handleRepeatPostponed} 
-                className={`action-button ${stats.postponedCount === 0 ? 'disabled' : ''}`}
-                disabled={stats.postponedCount === 0}
+              <button
+                onClick={() => handleContinueWithBox(1)}
+                className={`action-button ${stats.box1Count === 0 ? 'disabled' : ''}`}
+                disabled={stats.box1Count === 0}
               >
-                <span className="button-icon">🔁</span>
-                <span className="button-text">Repeat Only Postponed Cards</span>
-                {stats.postponedCount > 0 && (
-                  <span className="badge">{stats.postponedCount}</span>
+                <span className="button-icon">✅</span>
+                <span className="button-text">Continue with Box 1 (Learned)</span>
+                {stats.box1Count > 0 && (
+                  <span className="badge">{stats.box1Count}</span>
                 )}
               </button>
-              
-              <button 
-                onClick={handleRestartQuiz} 
+
+              <button
+                onClick={() => handleContinueWithBox(2)}
+                className={`action-button ${stats.box2Count === 0 ? 'disabled' : ''}`}
+                disabled={stats.box2Count === 0}
+              >
+                <span className="button-icon">⚠️</span>
+                <span className="button-text">Continue with Box 2 (Uncertain)</span>
+                {stats.box2Count > 0 && (
+                  <span className="badge">{stats.box2Count}</span>
+                )}
+              </button>
+
+              <button
+                onClick={() => handleContinueWithBox(3)}
+                className={`action-button ${stats.box3Count === 0 ? 'disabled' : ''}`}
+                disabled={stats.box3Count === 0}
+              >
+                <span className="button-icon">❌</span>
+                <span className="button-text">Continue with Box 3 (Not Learned)</span>
+                {stats.box3Count > 0 && (
+                  <span className="badge">{stats.box3Count}</span>
+                )}
+              </button>
+
+              <button
+                onClick={handleSaveProgress}
+                className="action-button save"
+              >
+                <span className="button-icon">💾</span>
+                <span className="button-text">Save Progress</span>
+              </button>
+
+              <button
+                onClick={handleRestartQuiz}
                 className="action-button primary"
               >
                 <span className="button-icon">🔄</span>
-                <span className="button-text">Reset & Repeat All Cards</span>
+                <span className="button-text">Start Fresh (All Cards)</span>
               </button>
-              
-              <button 
-                onClick={onBack} 
+
+              <button
+                onClick={onBack}
                 className="action-button exit"
               >
                 <span className="button-icon">🚪</span>
                 <span className="button-text">Exit Quiz</span>
               </button>
             </div>
-            
+
             <div className="action-note">
-              {stats.postponedCount === 0 
-                ? 'Great job! You have no postponed cards.' 
-                : `You have ${stats.postponedCount} card${stats.postponedCount === 1 ? '' : 's'} to review.`}
+              Box 1: {stats.box1Count} cards • Box 2: {stats.box2Count} cards • Box 3: {stats.box3Count} cards
             </div>
           </div>
         </div>
@@ -1059,21 +1201,6 @@ function FlashcardViewer({ flashcard, onBack }) {
                 <div className="mode-title">{t('quiz.regularMode')}</div>
                 <div className="mode-description">{t('quiz.regularModeDesc')}</div>
                 <div className="mode-count">{cards.length} cards</div>
-              </button>
-
-              <button
-                className={`mode-card ${selectedMode === 'postponed' ? 'selected' : ''}`}
-                onClick={() => setSelectedMode('postponed')}
-                disabled={postponedQueue.length === 0}
-              >
-                <div className="mode-icon">🔁</div>
-                <div className="mode-title">{t('quiz.postponedMode')}</div>
-                <div className="mode-description">{t('quiz.postponedModeDesc')}</div>
-                <div className="mode-count">
-                  {postponedQueue.length > 0
-                    ? `${postponedQueue.length} cards`
-                    : t('quiz.noPostponedCards')}
-                </div>
               </button>
 
               <button
@@ -1246,16 +1373,6 @@ function FlashcardViewer({ flashcard, onBack }) {
         </div>
       </div>
 
-      {postponedQueue.length > 0 && (
-        <div className="postponed-banner">
-          <span className="postponed-icon">🔁</span>
-          <div>
-            <div className="postponed-title">Postponed cards in queue</div>
-            <div className="postponed-subtitle">{postponedQueue.length} left to retry</div>
-          </div>
-        </div>
-      )}
-
       {cardType === 'single' ? (
         // Single answer card (flip-style)
         <div className="card-container">
@@ -1281,27 +1398,37 @@ function FlashcardViewer({ flashcard, onBack }) {
                 <p>{currentCard.answer}</p>
               </div>
               {!currentCardAnswered && (
-                <div className="evaluation-buttons">
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); handleSingleAnswerEvaluation(false); }}
-                    className="eval-button incorrect-button"
+                <div className="box-assignment-buttons">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleBoxAssignment(1); }}
+                    className="box-button box-green"
                   >
-                    📤 Postpone
+                    ✅ Box 1
                   </button>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); handleSingleAnswerEvaluation(true); }}
-                    className="eval-button correct-button"
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleBoxAssignment(2); }}
+                    className="box-button box-yellow"
                   >
-                    ✅ Done
+                    ⚠️ Box 2
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleBoxAssignment(3); }}
+                    className="box-button box-red"
+                  >
+                    ❌ Box 3
                   </button>
                 </div>
               )}
               {currentCardAnswered && (
                 <div className="answered-indicator">
-                  {cardResults[currentCardIndex]?.correct ? (
-                    <span className="correct-indicator">✅ Marked as Done</span>
-                  ) : (
-                    <span className="incorrect-indicator">📤 Postponed</span>
+                  {cardResults[currentCardIndex]?.box === 1 && (
+                    <span className="correct-indicator">✅ Box 1 - Learned</span>
+                  )}
+                  {cardResults[currentCardIndex]?.box === 2 && (
+                    <span className="uncertain-indicator">⚠️ Box 2 - Uncertain</span>
+                  )}
+                  {cardResults[currentCardIndex]?.box === 3 && (
+                    <span className="incorrect-indicator">❌ Box 3 - Not Learned</span>
                   )}
                 </div>
               )}
@@ -1433,23 +1560,29 @@ function FlashcardViewer({ flashcard, onBack }) {
               </div>
 
               {!currentCardAnswered && (
-                <div className="evaluation-buttons" style={{
+                <div className="box-assignment-buttons" style={{
                   position: 'absolute',
                   bottom: '1rem',
                   left: '1rem',
                   right: '1rem'
                 }}>
                   <button
-                    onClick={(e) => { e.stopPropagation(); handleMultipleChoiceEvaluation(false); }}
-                    className="eval-button incorrect-button"
+                    onClick={(e) => { e.stopPropagation(); handleBoxAssignment(1); }}
+                    className="box-button box-green"
                   >
-                    📤 Postpone
+                    ✅ Box 1
                   </button>
                   <button
-                    onClick={(e) => { e.stopPropagation(); handleMultipleChoiceEvaluation(true); }}
-                    className="eval-button correct-button"
+                    onClick={(e) => { e.stopPropagation(); handleBoxAssignment(2); }}
+                    className="box-button box-yellow"
                   >
-                    ✅ Done
+                    ⚠️ Box 2
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleBoxAssignment(3); }}
+                    className="box-button box-red"
+                  >
+                    ❌ Box 3
                   </button>
                 </div>
               )}

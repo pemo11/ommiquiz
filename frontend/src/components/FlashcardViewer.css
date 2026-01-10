@@ -586,6 +586,80 @@
   min-width: 120px;
 }
 
+/* Box assignment buttons */
+.box-assignment-buttons {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.box-button {
+  flex: 1;
+  min-width: 100px;
+  padding: 0.75rem 1rem;
+  border: 2px solid;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.box-green {
+  background-color: #d4edda;
+  border-color: #28a745;
+  color: #155724;
+}
+
+.box-green:hover:not(:disabled) {
+  background-color: #28a745;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+}
+
+.box-yellow {
+  background-color: #fff3cd;
+  border-color: #ffc107;
+  color: #856404;
+}
+
+.box-yellow:hover:not(:disabled) {
+  background-color: #ffc107;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(255, 193, 7, 0.3);
+}
+
+.box-red {
+  background-color: #f8d7da;
+  border-color: #dc3545;
+  color: #721c24;
+}
+
+.box-red:hover:not(:disabled) {
+  background-color: #dc3545;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+}
+
+.box-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Answered indicator colors for boxes */
+.uncertain-indicator {
+  color: #856404;
+  background-color: #fff3cd;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
 .correct-button {
   background-color: #4caf50;
   color: white;
@@ -1002,6 +1076,21 @@
 
 .level-counts {
   font-size: 0.95rem;
+}
+
+.level-counts.box1 {
+  color: #28a745;
+  font-weight: 600;
+}
+
+.level-counts.box2 {
+  color: #ffc107;
+  font-weight: 600;
+}
+
+.level-counts.box3 {
+  color: #dc3545;
+  font-weight: 600;
 }
 
 .level-counts.postponed {

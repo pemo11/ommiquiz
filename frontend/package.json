@@ -1,6 +1,6 @@
 {
   "name": "ommiquiz-frontend",
-  "version": "1.0.16",
+  "version": "1.0.20",
   "private": true,
   "dependencies": {
     "react": "^18.2.0",

@@ -16,6 +16,7 @@ from .auth import AuthenticatedUser, get_optional_current_user, login_with_email
 from .download_logger import initialize_download_log_store, log_flashcard_download
 from .storage import FlashcardDocument, get_flashcard_storage
 from .pdf_generator import generate_speed_quiz_pdf
+from . import progress_storage
 
 # Initialize logging before creating the app
 setup_logging()
@@ -407,6 +408,113 @@ async def get_speed_quiz_pdf(
                     flashcard_id=flashcard_id,
                     error=str(e))
         raise HTTPException(status_code=500, detail=f"Error generating PDF: {str(e)}")
+
+
+@api_router.get("/flashcards/{flashcard_id}/progress")
+async def get_user_progress(
+    flashcard_id: str,
+    user: Optional[AuthenticatedUser] = Depends(get_optional_current_user)
+):
+    """
+    Get user's learning progress for a specific flashcard set.
+
+    Returns box assignments and session history.
+    Requires authentication.
+    """
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    logger.info("Loading user progress",
+                user_id=user.user_id,
+                flashcard_id=flashcard_id)
+
+    progress = progress_storage.load_user_progress(user.user_id, flashcard_id)
+
+    return {
+        "flashcard_id": flashcard_id,
+        "progress": progress
+    }
+
+
+@api_router.put("/flashcards/{flashcard_id}/progress")
+async def save_user_progress(
+    flashcard_id: str,
+    progress_data: Dict[str, Any],
+    user: Optional[AuthenticatedUser] = Depends(get_optional_current_user)
+):
+    """
+    Save user's learning progress for a specific flashcard set.
+
+    Expected payload:
+    {
+        "cards": {
+            "card_id": {"box": 1, "last_reviewed": "ISO_TIMESTAMP", "review_count": 1}
+        },
+        "session_summary": {
+            "completed_at": "ISO_TIMESTAMP",
+            "cards_reviewed": 15,
+            "box_distribution": {"box1": 8, "box2": 4, "box3": 3}
+        }
+    }
+
+    Requires authentication.
+    """
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    logger.info("Saving user progress",
+                user_id=user.user_id,
+                flashcard_id=flashcard_id,
+                cards_count=len(progress_data.get("cards", {})))
+
+    # Validate box values
+    if "cards" in progress_data:
+        for card_id, card_data in progress_data["cards"].items():
+            box_value = card_data.get("box")
+            if box_value not in [1, 2, 3]:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Invalid box value for card {card_id}: {box_value}. Must be 1, 2, or 3."
+                )
+
+    success = progress_storage.save_user_progress(user.user_id, flashcard_id, progress_data)
+
+    if success:
+        return {
+            "success": True,
+            "message": "Progress saved successfully"
+        }
+    else:
+        raise HTTPException(status_code=500, detail="Failed to save progress")
+
+
+@api_router.delete("/flashcards/{flashcard_id}/progress")
+async def delete_user_progress(
+    flashcard_id: str,
+    user: Optional[AuthenticatedUser] = Depends(get_optional_current_user)
+):
+    """
+    Delete user's learning progress for a specific flashcard set.
+
+    This resets all box assignments and session history.
+    Requires authentication.
+    """
+    if not user:
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    logger.info("Deleting user progress",
+                user_id=user.user_id,
+                flashcard_id=flashcard_id)
+
+    success = progress_storage.delete_user_progress(user.user_id, flashcard_id)
+
+    if success:
+        return {
+            "success": True,
+            "message": "Progress deleted successfully"
+        }
+    else:
+        raise HTTPException(status_code=500, detail="Failed to delete progress")
 
 
 @api_router.get("/health")
