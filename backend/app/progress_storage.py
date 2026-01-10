@@ -1,50 +1,28 @@
 """
 User progress storage module for Ommiquiz.
 
-Handles persistence of card box assignments and learning progress.
+Handles persistence of card box assignments and learning progress using PostgreSQL.
 """
 
-import json
-import os
-from pathlib import Path
-from typing import Dict, Optional
 from datetime import datetime
+from typing import Dict, Optional
+
+from sqlalchemy import select, delete
+from sqlalchemy.dialects.postgresql import insert
+
+from .database import AsyncSessionLocal
+from .models import FlashcardProgress, QuizSession
+from .logging_config import get_logger
+
+logger = get_logger("ommiquiz.progress")
 
 
-# Directory for storing user progress files
-PROGRESS_DIR = Path(__file__).parent.parent / "user_progress"
-
-
-def _ensure_progress_directory() -> None:
-    """Create the user_progress directory if it doesn't exist."""
-    PROGRESS_DIR.mkdir(parents=True, exist_ok=True)
-
-
-def _get_progress_file_path(user_id: str, flashcard_id: str) -> Path:
+async def load_user_progress(user_id: str, flashcard_id: str) -> Dict:
     """
-    Get the file path for a user's progress file.
+    Load a user's progress for a specific flashcard set from PostgreSQL.
 
     Args:
-        user_id: The user's ID
-        flashcard_id: The flashcard set ID
-
-    Returns:
-        Path object for the progress file
-    """
-    # Sanitize filenames to prevent path traversal
-    safe_user_id = "".join(c for c in user_id if c.isalnum() or c in ('_', '-'))
-    safe_flashcard_id = "".join(c for c in flashcard_id if c.isalnum() or c in ('_', '-'))
-
-    filename = f"{safe_user_id}_{safe_flashcard_id}_progress.json"
-    return PROGRESS_DIR / filename
-
-
-def load_user_progress(user_id: str, flashcard_id: str) -> Dict:
-    """
-    Load a user's progress for a specific flashcard set.
-
-    Args:
-        user_id: The user's ID
+        user_id: The user's ID (UUID)
         flashcard_id: The flashcard set ID
 
     Returns:
@@ -52,7 +30,7 @@ def load_user_progress(user_id: str, flashcard_id: str) -> Dict:
 
     Example return value:
     {
-        "user_id": "user123",
+        "user_id": "uuid-string",
         "flashcard_id": "dbte_kapitel9_quiz",
         "last_updated": "2026-01-10T22:30:00Z",
         "cards": {
@@ -65,27 +43,79 @@ def load_user_progress(user_id: str, flashcard_id: str) -> Dict:
         "session_history": [...]
     }
     """
-    _ensure_progress_directory()
+    async with AsyncSessionLocal() as session:
+        try:
+            # Query all cards for this user+flashcard
+            result = await session.execute(
+                select(FlashcardProgress).where(
+                    FlashcardProgress.user_id == user_id,
+                    FlashcardProgress.flashcard_id == flashcard_id
+                )
+            )
+            progress_rows = result.scalars().all()
 
-    file_path = _get_progress_file_path(user_id, flashcard_id)
+            # Build cards dictionary
+            cards = {}
+            last_updated = None
+            for row in progress_rows:
+                cards[row.card_id] = {
+                    "box": row.box,
+                    "last_reviewed": row.last_reviewed.isoformat() + "Z",
+                    "review_count": row.review_count
+                }
+                if last_updated is None or row.updated_at and row.updated_at > last_updated:
+                    last_updated = row.updated_at or row.created_at
 
-    if not file_path.exists():
-        return {}
+            # Get session history (last 20 sessions)
+            sessions_result = await session.execute(
+                select(QuizSession)
+                .where(
+                    QuizSession.user_id == user_id,
+                    QuizSession.flashcard_id == flashcard_id
+                )
+                .order_by(QuizSession.completed_at.desc())
+                .limit(20)
+            )
+            sessions = sessions_result.scalars().all()
 
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except (json.JSONDecodeError, IOError) as e:
-        print(f"Error loading progress file {file_path}: {e}")
-        return {}
+            session_history = [
+                {
+                    "session_id": f"sess_{s.id}",
+                    "started_at": s.started_at.isoformat() + "Z",
+                    "completed_at": s.completed_at.isoformat() + "Z",
+                    "cards_reviewed": s.cards_reviewed,
+                    "box_distribution": {
+                        "box1": s.box1_count,
+                        "box2": s.box2_count,
+                        "box3": s.box3_count
+                    },
+                    "duration_seconds": s.duration_seconds
+                }
+                for s in sessions
+            ]
+
+            if not cards and not session_history:
+                return {}
+
+            return {
+                "user_id": user_id,
+                "flashcard_id": flashcard_id,
+                "last_updated": last_updated.isoformat() + "Z" if last_updated else datetime.now().isoformat() + "Z",
+                "cards": cards,
+                "session_history": session_history
+            }
+
+        except Exception as e:
+            logger.error("Error loading progress", user_id=user_id, flashcard_id=flashcard_id, error=str(e))
+            return {}
 
 
-def save_user_progress(user_id: str, flashcard_id: str, progress: Dict) -> bool:
+async def save_user_progress(user_id: str, flashcard_id: str, progress: Dict) -> bool:
     """
-    Save a user's progress for a specific flashcard set.
+    Save a user's progress for a specific flashcard set to PostgreSQL.
 
     Args:
-        user_id: The user's ID
+        user_id: The user's ID (UUID)
         flashcard_id: The flashcard set ID
         progress: Progress data to save
 
@@ -100,113 +130,185 @@ def save_user_progress(user_id: str, flashcard_id: str, progress: Dict) -> bool:
         "session_summary": {
             "completed_at": "ISO_TIMESTAMP",
             "cards_reviewed": 15,
-            "box_distribution": {"box1": 8, "box2": 4, "box3": 3}
-        }
+            "box_distribution": {"box1": 8, "box2": 4, "box3": 3},
+            "duration_seconds": 300
+        },
+        "flashcard_title": "Optional Title"
     }
     """
-    _ensure_progress_directory()
+    async with AsyncSessionLocal() as session:
+        try:
+            # Save card-level progress
+            if "cards" in progress:
+                for card_id, card_data in progress["cards"].items():
+                    # Validate box number
+                    box_number = card_data.get("box")
+                    if box_number not in (1, 2, 3):
+                        logger.warning(
+                            "Invalid box number",
+                            user_id=user_id,
+                            flashcard_id=flashcard_id,
+                            card_id=card_id,
+                            box=box_number
+                        )
+                        continue
 
-    file_path = _get_progress_file_path(user_id, flashcard_id)
+                    # Parse timestamp
+                    last_reviewed_str = card_data.get("last_reviewed")
+                    if last_reviewed_str:
+                        # Remove trailing 'Z' if present and parse
+                        last_reviewed_str = last_reviewed_str.rstrip('Z')
+                        last_reviewed = datetime.fromisoformat(last_reviewed_str)
+                    else:
+                        last_reviewed = datetime.now()
 
-    # Load existing progress to merge with new data
-    existing_progress = load_user_progress(user_id, flashcard_id)
+                    # Upsert card progress
+                    stmt = insert(FlashcardProgress).values(
+                        user_id=user_id,
+                        flashcard_id=flashcard_id,
+                        card_id=card_id,
+                        box=box_number,
+                        last_reviewed=last_reviewed,
+                        review_count=card_data.get("review_count", 1),
+                        updated_at=datetime.now()
+                    )
 
-    # Initialize structure if empty
-    if not existing_progress:
-        existing_progress = {
-            "user_id": user_id,
-            "flashcard_id": flashcard_id,
-            "cards": {},
-            "session_history": []
-        }
+                    # On conflict, update the card
+                    stmt = stmt.on_conflict_do_update(
+                        index_elements=["user_id", "flashcard_id", "card_id"],
+                        set_={
+                            "box": box_number,
+                            "last_reviewed": last_reviewed,
+                            "review_count": FlashcardProgress.review_count + 1,
+                            "updated_at": datetime.now()
+                        }
+                    )
 
-    # Merge card progress
-    if "cards" in progress:
-        for card_id, card_data in progress["cards"].items():
-            if card_id not in existing_progress["cards"]:
-                existing_progress["cards"][card_id] = card_data
-            else:
-                # Merge existing data with new data
-                existing_card = existing_progress["cards"][card_id]
-                existing_card["box"] = card_data.get("box", existing_card.get("box", 1))
-                existing_card["last_reviewed"] = card_data.get("last_reviewed", existing_card.get("last_reviewed"))
-                existing_card["review_count"] = existing_card.get("review_count", 0) + 1
+                    await session.execute(stmt)
 
-    # Add session summary to history
-    if "session_summary" in progress:
-        session = progress["session_summary"].copy()
-        session["session_id"] = f"sess_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        session["started_at"] = existing_progress.get("last_updated", session.get("completed_at"))
-        existing_progress.setdefault("session_history", []).append(session)
+            # Save session history
+            if "session_summary" in progress:
+                summary = progress["session_summary"]
 
-        # Keep only last 20 sessions to prevent file bloat
-        if len(existing_progress["session_history"]) > 20:
-            existing_progress["session_history"] = existing_progress["session_history"][-20:]
+                # Parse timestamps
+                completed_at_str = summary.get("completed_at", "")
+                completed_at_str = completed_at_str.rstrip('Z')
+                completed_at = datetime.fromisoformat(completed_at_str) if completed_at_str else datetime.now()
 
-    # Update timestamp
-    existing_progress["last_updated"] = datetime.now().isoformat() + "Z"
+                started_at_str = summary.get("started_at", "")
+                if started_at_str:
+                    started_at_str = started_at_str.rstrip('Z')
+                    started_at = datetime.fromisoformat(started_at_str)
+                else:
+                    # Calculate started_at from completed_at and duration if available
+                    duration_seconds = summary.get("duration_seconds", 0)
+                    if duration_seconds:
+                        from datetime import timedelta
+                        started_at = completed_at - timedelta(seconds=duration_seconds)
+                    else:
+                        started_at = completed_at
 
-    # Save to file
-    try:
-        with open(file_path, 'w', encoding='utf-8') as f:
-            json.dump(existing_progress, f, indent=2, ensure_ascii=False)
-        return True
-    except IOError as e:
-        print(f"Error saving progress file {file_path}: {e}")
-        return False
+                box_dist = summary.get("box_distribution", {})
+
+                new_session = QuizSession(
+                    user_id=user_id,
+                    flashcard_id=flashcard_id,
+                    flashcard_title=progress.get("flashcard_title"),
+                    started_at=started_at,
+                    completed_at=completed_at,
+                    cards_reviewed=summary.get("cards_reviewed", 0),
+                    box1_count=box_dist.get("box1", 0),
+                    box2_count=box_dist.get("box2", 0),
+                    box3_count=box_dist.get("box3", 0),
+                    duration_seconds=summary.get("duration_seconds")
+                )
+
+                session.add(new_session)
+
+            await session.commit()
+            logger.info(
+                "Progress saved successfully",
+                user_id=user_id,
+                flashcard_id=flashcard_id,
+                cards_count=len(progress.get("cards", {}))
+            )
+            return True
+
+        except Exception as e:
+            await session.rollback()
+            logger.error("Error saving progress", user_id=user_id, flashcard_id=flashcard_id, error=str(e))
+            return False
 
 
-def delete_user_progress(user_id: str, flashcard_id: str) -> bool:
+async def delete_user_progress(user_id: str, flashcard_id: str) -> bool:
     """
     Delete a user's progress for a specific flashcard set.
 
     Args:
-        user_id: The user's ID
+        user_id: The user's ID (UUID)
         flashcard_id: The flashcard set ID
 
     Returns:
-        True if deleted successfully or file didn't exist, False on error
+        True if deleted successfully or nothing to delete, False on error
     """
-    _ensure_progress_directory()
+    async with AsyncSessionLocal() as session:
+        try:
+            # Delete card progress
+            await session.execute(
+                delete(FlashcardProgress).where(
+                    FlashcardProgress.user_id == user_id,
+                    FlashcardProgress.flashcard_id == flashcard_id
+                )
+            )
 
-    file_path = _get_progress_file_path(user_id, flashcard_id)
+            # Note: We don't delete quiz_sessions as they are historical records
+            # If you want to delete sessions too, uncomment below:
+            # await session.execute(
+            #     delete(QuizSession).where(
+            #         QuizSession.user_id == user_id,
+            #         QuizSession.flashcard_id == flashcard_id
+            #     )
+            # )
 
-    if not file_path.exists():
-        return True  # Nothing to delete
+            await session.commit()
+            logger.info("Progress deleted successfully", user_id=user_id, flashcard_id=flashcard_id)
+            return True
 
-    try:
-        file_path.unlink()
-        return True
-    except IOError as e:
-        print(f"Error deleting progress file {file_path}: {e}")
-        return False
+        except Exception as e:
+            await session.rollback()
+            logger.error("Error deleting progress", user_id=user_id, flashcard_id=flashcard_id, error=str(e))
+            return False
 
 
-def get_all_user_progress(user_id: str) -> Dict[str, Dict]:
+async def get_all_user_progress(user_id: str) -> Dict[str, Dict]:
     """
     Get all progress data for a specific user across all flashcard sets.
 
     Args:
-        user_id: The user's ID
+        user_id: The user's ID (UUID)
 
     Returns:
         Dictionary mapping flashcard_id to progress data
     """
-    _ensure_progress_directory()
+    async with AsyncSessionLocal() as session:
+        try:
+            # Get all unique flashcard IDs for this user
+            result = await session.execute(
+                select(FlashcardProgress.flashcard_id)
+                .where(FlashcardProgress.user_id == user_id)
+                .distinct()
+            )
+            flashcard_ids = [row[0] for row in result.fetchall()]
 
-    safe_user_id = "".join(c for c in user_id if c.isalnum() or c in ('_', '-'))
-    pattern = f"{safe_user_id}_*_progress.json"
+            # Load progress for each flashcard
+            all_progress = {}
+            for flashcard_id in flashcard_ids:
+                progress = await load_user_progress(user_id, flashcard_id)
+                if progress:
+                    all_progress[flashcard_id] = progress
 
-    all_progress = {}
+            return all_progress
 
-    for file_path in PROGRESS_DIR.glob(pattern):
-        # Extract flashcard_id from filename
-        filename = file_path.stem  # Remove .json extension
-        parts = filename.split('_progress')[0].split('_', 1)
-        if len(parts) == 2:
-            flashcard_id = parts[1]
-            progress = load_user_progress(user_id, flashcard_id)
-            if progress:
-                all_progress[flashcard_id] = progress
-
-    return all_progress
+        except Exception as e:
+            logger.error("Error loading all user progress", user_id=user_id, error=str(e))
+            return {}

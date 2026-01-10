@@ -12,7 +12,7 @@ from typing import Dict, Any, Optional, List, Tuple
 
 # Import logging configuration
 from .logging_config import setup_logging, get_logger, LoggingMiddleware, log_function_call
-from .auth import AuthenticatedUser, get_optional_current_user, login_with_email_password
+from .auth import AuthenticatedUser, get_optional_current_user, get_current_user
 from .download_logger import initialize_download_log_store, log_flashcard_download
 from .storage import FlashcardDocument, get_flashcard_storage
 from .pdf_generator import generate_speed_quiz_pdf
@@ -129,12 +129,11 @@ async def api_root():
     return {"message": "Welcome to Ommiquiz API"}
 
 
-@api_router.post("/auth/login", response_model=LoginResponse)
-async def auth_login(payload: LoginRequest):
-    """Authenticate a user with Auth0 using email and password credentials."""
-
-    token_data = await login_with_email_password(payload.email, payload.password)
-    return token_data
+# Authentication endpoint removed - use Supabase client directly for authentication
+# @api_router.post("/auth/login")
+# async def auth_login(payload: LoginRequest):
+#     """Authenticate a user with Supabase (handled by frontend)"""
+#     pass
 
 
 def _extract_flashcard_metadata(document: FlashcardDocument) -> Dict[str, Any]:
@@ -428,7 +427,7 @@ async def get_user_progress(
                 user_id=user.user_id,
                 flashcard_id=flashcard_id)
 
-    progress = progress_storage.load_user_progress(user.user_id, flashcard_id)
+    progress = await progress_storage.load_user_progress(user.user_id, flashcard_id)
 
     return {
         "flashcard_id": flashcard_id,
@@ -477,7 +476,7 @@ async def save_user_progress(
                     detail=f"Invalid box value for card {card_id}: {box_value}. Must be 1, 2, or 3."
                 )
 
-    success = progress_storage.save_user_progress(user.user_id, flashcard_id, progress_data)
+    success = await progress_storage.save_user_progress(user.user_id, flashcard_id, progress_data)
 
     if success:
         return {
@@ -506,7 +505,7 @@ async def delete_user_progress(
                 user_id=user.user_id,
                 flashcard_id=flashcard_id)
 
-    success = progress_storage.delete_user_progress(user.user_id, flashcard_id)
+    success = await progress_storage.delete_user_progress(user.user_id, flashcard_id)
 
     if success:
         return {
@@ -515,6 +514,110 @@ async def delete_user_progress(
         }
     else:
         raise HTTPException(status_code=500, detail="Failed to delete progress")
+
+
+@api_router.get("/users/me/learning-report")
+async def get_learning_report(
+    user: AuthenticatedUser = Depends(get_current_user),
+    flashcard_id: Optional[str] = Query(None, description="Optional filter for specific flashcard set"),
+    days: int = Query(30, description="Number of days to include in report (default 30)")
+):
+    """
+    Generate learning report for the authenticated user.
+
+    Returns aggregated statistics and session history for the specified time period.
+
+    Query parameters:
+    - flashcard_id: Optional - filter for a specific flashcard set
+    - days: Number of days to include (default 30)
+
+    Requires authentication.
+    """
+    from datetime import timedelta
+    from sqlalchemy import select
+    from .models import QuizSession
+    from .database import AsyncSessionLocal
+
+    logger.info("Generating learning report",
+                user_id=user.user_id,
+                flashcard_id=flashcard_id,
+                days=days)
+
+    async with AsyncSessionLocal() as session:
+        try:
+            # Calculate date range
+            cutoff_date = datetime.now() - timedelta(days=days)
+
+            # Base query
+            query = select(QuizSession).where(
+                QuizSession.user_id == user.user_id,
+                QuizSession.completed_at >= cutoff_date
+            )
+
+            # Add flashcard filter if specified
+            if flashcard_id:
+                query = query.where(QuizSession.flashcard_id == flashcard_id)
+
+            # Order by completion time (newest first)
+            query = query.order_by(QuizSession.completed_at.desc())
+
+            result = await session.execute(query)
+            sessions = result.scalars().all()
+
+            # Calculate aggregate statistics
+            total_sessions = len(sessions)
+            total_cards_reviewed = sum(s.cards_reviewed for s in sessions)
+            total_box1 = sum(s.box1_count for s in sessions)
+            total_box2 = sum(s.box2_count for s in sessions)
+            total_box3 = sum(s.box3_count for s in sessions)
+            total_duration = sum(s.duration_seconds or 0 for s in sessions)
+
+            # Format session details
+            session_details = [
+                {
+                    "id": s.id,
+                    "flashcard_id": s.flashcard_id,
+                    "flashcard_title": s.flashcard_title,
+                    "started_at": s.started_at.isoformat() + "Z",
+                    "completed_at": s.completed_at.isoformat() + "Z",
+                    "cards_reviewed": s.cards_reviewed,
+                    "box1_count": s.box1_count,
+                    "box2_count": s.box2_count,
+                    "box3_count": s.box3_count,
+                    "duration_seconds": s.duration_seconds
+                }
+                for s in sessions
+            ]
+
+            logger.info("Learning report generated successfully",
+                       user_id=user.user_id,
+                       total_sessions=total_sessions,
+                       total_cards_reviewed=total_cards_reviewed)
+
+            return {
+                "user_id": user.user_id,
+                "report_period_days": days,
+                "flashcard_filter": flashcard_id,
+                "summary": {
+                    "total_sessions": total_sessions,
+                    "total_cards_reviewed": total_cards_reviewed,
+                    "total_learned": total_box1,
+                    "total_uncertain": total_box2,
+                    "total_not_learned": total_box3,
+                    "total_duration_seconds": total_duration,
+                    "average_session_duration": total_duration / total_sessions if total_sessions > 0 else 0
+                },
+                "sessions": session_details
+            }
+
+        except Exception as e:
+            logger.error("Error generating learning report",
+                        user_id=user.user_id,
+                        error=str(e))
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to generate learning report: {str(e)}"
+            )
 
 
 @api_router.get("/health")
