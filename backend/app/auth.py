@@ -72,12 +72,12 @@ async def _fetch_jwks(supabase_url: str) -> dict:
         return _jwks_cache
 
     try:
-        jwks_url = f"{supabase_url}/auth/v1/jwks"
+        jwks_url = f"{supabase_url}/auth/v1/.well-known/jwks.json"
         async with httpx.AsyncClient() as client:
             response = await client.get(jwks_url, timeout=10.0)
             response.raise_for_status()
             _jwks_cache = response.json()
-            logger.info("Fetched JWKS from Supabase")
+            logger.info("Fetched JWKS from Supabase", jwks_url=jwks_url)
             return _jwks_cache
     except Exception as exc:
         logger.error("Failed to fetch JWKS", error=str(exc))
