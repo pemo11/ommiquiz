@@ -372,6 +372,153 @@
   text-align: center;
 }
 
+.login-switch-link,
+.signup-switch-link {
+  background: transparent;
+  border: none;
+  color: #667eea;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  font-size: inherit;
+}
+
+.login-switch-link:hover,
+.signup-switch-link:hover {
+  color: #5568d3;
+}
+
+/* Signup Form Styles */
+.signup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1000;
+}
+
+.signup-modal {
+  background: #ffffff;
+  max-width: 420px;
+  width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  padding: 1.5rem;
+}
+
+.signup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.signup-header h2 {
+  margin: 0;
+  color: #1f2937;
+}
+
+.signup-close {
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #6b7280;
+}
+
+.signup-close:hover {
+  color: #111827;
+}
+
+.signup-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.signup-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: #374151;
+  font-weight: 600;
+}
+
+.signup-label input {
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.signup-label input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+.signup-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.signup-submit,
+.signup-cancel {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.signup-submit {
+  background-color: #10b981;
+  color: #ffffff;
+}
+
+.signup-submit:hover {
+  background-color: #059669;
+}
+
+.signup-cancel {
+  background-color: #f3f4f6;
+  color: #1f2937;
+}
+
+.signup-cancel:hover {
+  background-color: #e5e7eb;
+}
+
+.signup-error {
+  background-color: #fef2f2;
+  color: #dc2626;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #fecdd3;
+}
+
+.signup-success {
+  background-color: #f0fdf4;
+  color: #16a34a;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid #bbf7d0;
+  font-weight: 600;
+}
+
+.signup-hint {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
 .about-btn,
 .admin-btn {
   background-color: #667eea;

@@ -6,7 +6,7 @@ import AdminPanel from './components/AdminPanel';
 import AboutModal from './components/AboutModal';
 import { FRONTEND_VERSION } from './version';
 import LanguageSelector from './components/LanguageSelector';
-import { signIn, signOut, getSession, onAuthStateChange } from './supabase';
+import { signIn, signUp, signOut, getSession, onAuthStateChange } from './supabase';
 
 // Add debug logging for version number
 console.log('🔥 === FRONTEND VERSION DEBUG ===');
@@ -65,6 +65,13 @@ function App() {
   const [loginPassword, setLoginPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState(null);
+  const [showSignupForm, setShowSignupForm] = useState(false);
+  const [signupEmail, setSignupEmail] = useState('');
+  const [signupPassword, setSignupPassword] = useState('');
+  const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
+  const [signupError, setSignupError] = useState(null);
+  const [signupSuccess, setSignupSuccess] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -383,6 +390,87 @@ function App() {
     }
   };
 
+  const handleSignupClick = () => {
+    setShowSignupForm(true);
+    setShowLoginForm(false);
+    setSignupError(null);
+    setSignupSuccess(false);
+    setSignupEmail('');
+    setSignupPassword('');
+    setSignupConfirmPassword('');
+  };
+
+  const handleSignupClose = () => {
+    setShowSignupForm(false);
+    setSignupError(null);
+    setSignupSuccess(false);
+    setSignupEmail('');
+    setSignupPassword('');
+    setSignupConfirmPassword('');
+    setShowSignupPassword(false);
+  };
+
+  const handleSignupSubmit = async (event) => {
+    event.preventDefault();
+    setSignupError(null);
+    setSignupSuccess(false);
+
+    // Validate passwords match
+    if (signupPassword !== signupConfirmPassword) {
+      setSignupError('Passwords do not match');
+      return;
+    }
+
+    // Validate password strength
+    if (signupPassword.length < 6) {
+      setSignupError('Password must be at least 6 characters long');
+      return;
+    }
+
+    try {
+      const { user, session, error } = await signUp(signupEmail, signupPassword);
+
+      if (error) {
+        console.error('Signup error:', error);
+        setSignupError(error.message || 'Failed to create account');
+        return;
+      }
+
+      // Signup successful
+      setSignupSuccess(true);
+      console.log('Signup successful:', signupEmail);
+
+      // If user is immediately available (auto-confirmed), log them in
+      if (session && user) {
+        setUser(user);
+        setIsLoggedIn(true);
+        setTimeout(() => {
+          setShowSignupForm(false);
+          setSignupEmail('');
+          setSignupPassword('');
+          setSignupConfirmPassword('');
+          setSignupSuccess(false);
+        }, 2000);
+      }
+    } catch (err) {
+      console.error('Unexpected signup error:', err);
+      setSignupError('An error occurred during signup. Please try again.');
+    }
+  };
+
+  const handleSwitchToLogin = () => {
+    setShowSignupForm(false);
+    setShowLoginForm(true);
+    setSignupError(null);
+    setSignupSuccess(false);
+  };
+
+  const handleSwitchToSignup = () => {
+    setShowLoginForm(false);
+    setShowSignupForm(true);
+    setLoginError(null);
+  };
+
   return (
     <div className="App">
       <header className="App-header">
@@ -501,7 +589,101 @@ function App() {
                   Login
                 </button>
               </div>
-              <p className="login-hint">Use your Supabase account credentials to login.</p>
+              <p className="login-hint">
+                Don't have an account?{' '}
+                <button type="button" className="login-switch-link" onClick={handleSwitchToSignup}>
+                  Sign up here
+                </button>
+              </p>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {showSignupForm && (
+        <div className="signup-overlay" role="dialog" aria-modal="true">
+          <div className="signup-modal">
+            <div className="signup-header">
+              <h2>Create Account</h2>
+              <button
+                className="signup-close"
+                onClick={handleSignupClose}
+                aria-label="Close signup form"
+              >
+                ×
+              </button>
+            </div>
+            <form className="signup-form" onSubmit={handleSignupSubmit}>
+              <label className="signup-label">
+                Email
+                <input
+                  type="email"
+                  value={signupEmail}
+                  onChange={(e) => setSignupEmail(e.target.value)}
+                  placeholder="your.email@example.com"
+                  required
+                />
+              </label>
+              <label className="signup-label">
+                Password
+                <div className="password-input-container">
+                  <input
+                    type={showSignupPassword ? 'text' : 'password'}
+                    value={signupPassword}
+                    onChange={(e) => setSignupPassword(e.target.value)}
+                    placeholder="At least 6 characters"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowSignupPassword(!showSignupPassword)}
+                    className="password-toggle-btn"
+                    title={showSignupPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showSignupPassword ? '👁️‍🗨️' : '👁️'}
+                  </button>
+                </div>
+              </label>
+              <label className="signup-label">
+                Confirm Password
+                <div className="password-input-container">
+                  <input
+                    type={showSignupPassword ? 'text' : 'password'}
+                    value={signupConfirmPassword}
+                    onChange={(e) => setSignupConfirmPassword(e.target.value)}
+                    placeholder="Re-enter your password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowSignupPassword(!showSignupPassword)}
+                    className="password-toggle-btn"
+                    title={showSignupPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showSignupPassword ? '👁️‍🗨️' : '👁️'}
+                  </button>
+                </div>
+              </label>
+              {signupError && <div className="signup-error">{signupError}</div>}
+              {signupSuccess && (
+                <div className="signup-success">
+                  Account created successfully! {user ? 'Logging you in...' : 'Please check your email to confirm your account.'}
+                </div>
+              )}
+              <div className="signup-actions">
+                <button type="button" className="signup-cancel" onClick={handleSignupClose}>
+                  Cancel
+                </button>
+                <button type="submit" className="signup-submit">
+                  Sign Up
+                </button>
+              </div>
+              <p className="signup-hint">
+                Already have an account?{' '}
+                <button type="button" className="signup-switch-link" onClick={handleSwitchToLogin}>
+                  Login here
+                </button>
+              </p>
             </form>
           </div>
         </div>
