@@ -6,6 +6,7 @@ import AdminPanel from './components/AdminPanel';
 import AboutModal from './components/AboutModal';
 import { FRONTEND_VERSION } from './version';
 import LanguageSelector from './components/LanguageSelector';
+import { signIn, signOut, getSession, onAuthStateChange } from './supabase';
 
 // Add debug logging for version number
 console.log('🔥 === FRONTEND VERSION DEBUG ===');
@@ -60,11 +61,56 @@ function App() {
   const [showAdmin, setShowAdmin] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showLoginForm, setShowLoginForm] = useState(false);
-  const [loginEmail, setLoginEmail] = useState('ommi-admin'); // Pre-fill username
+  const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false); // Add password visibility state
+  const [showPassword, setShowPassword] = useState(false);
   const [loginError, setLoginError] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // Check for existing session on mount
+  useEffect(() => {
+    checkSession();
+
+    // Subscribe to auth state changes
+    const { data: authListener } = onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event, session);
+
+      if (session?.user) {
+        setUser(session.user);
+        setIsLoggedIn(true);
+        // Store token in localStorage for API calls
+        localStorage.setItem('authToken', session.access_token);
+      } else {
+        setUser(null);
+        setIsLoggedIn(false);
+        localStorage.removeItem('authToken');
+      }
+      setAuthLoading(false);
+    });
+
+    // Cleanup subscription
+    return () => {
+      authListener?.subscription?.unsubscribe();
+    };
+  }, []);
+
+  const checkSession = async () => {
+    try {
+      const { session } = await getSession();
+
+      if (session?.user) {
+        setUser(session.user);
+        setIsLoggedIn(true);
+        localStorage.setItem('authToken', session.access_token);
+      }
+    } catch (error) {
+      console.error('Error checking session:', error);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchFlashcardList();
@@ -279,28 +325,61 @@ function App() {
   const handleLoginClick = () => {
     setShowLoginForm(true);
     setLoginError(null);
-    setLoginEmail('ommi-admin'); // Ensure username is pre-filled when opening
+    setLoginEmail('');
   };
 
   const handleLoginClose = () => {
     setShowLoginForm(false);
     setLoginError(null);
-    setLoginEmail('ommi-admin'); // Keep username pre-filled
+    setLoginEmail('');
     setLoginPassword('');
-    setShowPassword(false); // Reset password visibility
+    setShowPassword(false);
   };
 
-  const handleLoginSubmit = (event) => {
+  const handleLoginSubmit = async (event) => {
     event.preventDefault();
+    setLoginError(null);
 
-    if (loginEmail === 'ommi-admin' && loginPassword === 'demo+123') {
-      setIsLoggedIn(true);
-      setShowLoginForm(false);
-      setLoginError(null);
-      setLoginEmail('');
-      setLoginPassword('');
-    } else {
-      setLoginError('Invalid email or password.');
+    try {
+      const { user, session, error } = await signIn(loginEmail, loginPassword);
+
+      if (error) {
+        console.error('Login error:', error);
+        setLoginError(error.message || 'Invalid email or password.');
+        return;
+      }
+
+      if (session && user) {
+        setUser(user);
+        setIsLoggedIn(true);
+        setShowLoginForm(false);
+        setLoginEmail('');
+        setLoginPassword('');
+        // Token is automatically stored by the auth state change listener
+        console.log('Login successful:', user.email);
+      }
+    } catch (err) {
+      console.error('Unexpected login error:', err);
+      setLoginError('An error occurred during login. Please try again.');
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await signOut();
+
+      if (error) {
+        console.error('Logout error:', error);
+        return;
+      }
+
+      setUser(null);
+      setIsLoggedIn(false);
+      setShowAdmin(false);
+      localStorage.removeItem('authToken');
+      console.log('Logout successful');
+    } catch (err) {
+      console.error('Unexpected logout error:', err);
     }
   };
 
@@ -317,9 +396,19 @@ function App() {
               <button onClick={handleAboutOpen} className="about-btn">
                 About
               </button>
+              {isLoggedIn && user && (
+                <span className="user-email" title={user.email}>
+                  {user.email}
+                </span>
+              )}
               {!showAdmin && (
                 <button onClick={isLoggedIn ? handleAdminToggle : handleLoginClick} className="admin-btn">
                   Admin
+                </button>
+              )}
+              {isLoggedIn && (
+                <button onClick={handleLogout} className="logout-btn">
+                  Logout
                 </button>
               )}
             </div>
@@ -374,12 +463,12 @@ function App() {
             </div>
             <form className="login-form" onSubmit={handleLoginSubmit}>
               <label className="login-label">
-                Username
+                Email
                 <input
-                  type="text"
+                  type="email"
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
-                  placeholder="ommi-admin"
+                  placeholder="your.email@example.com"
                   required
                 />
               </label>
@@ -412,7 +501,7 @@ function App() {
                   Login
                 </button>
               </div>
-              <p className="login-hint">Use ommi-admin with password demo+123 to continue.</p>
+              <p className="login-hint">Use your Supabase account credentials to login.</p>
             </form>
           </div>
         </div>
