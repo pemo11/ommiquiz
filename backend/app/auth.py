@@ -4,14 +4,19 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from typing import Optional
+import httpx
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
+from jose import JWTError, jwt, jwk
+from jose.backends import RSAKey, ECKey
 
 from .logging_config import get_logger
 
 logger = get_logger("ommiquiz.auth")
+
+# Cache for JWKS keys
+_jwks_cache: Optional[dict] = None
 
 
 @dataclass
@@ -37,12 +42,8 @@ def _require_supabase_settings() -> dict[str, str]:
     supabase_url = os.getenv("SUPABASE_URL")
     jwt_secret = os.getenv("SUPABASE_JWT_SECRET")
 
-    if not supabase_url or not jwt_secret:
-        logger.warning(
-            "Supabase configuration missing",
-            supabase_url=bool(supabase_url),
-            jwt_secret=bool(jwt_secret)
-        )
+    if not supabase_url:
+        logger.warning("Supabase URL is not configured")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Authentication provider is not configured",
@@ -50,13 +51,82 @@ def _require_supabase_settings() -> dict[str, str]:
 
     return {
         "supabase_url": supabase_url,
-        "jwt_secret": jwt_secret,
+        "jwt_secret": jwt_secret,  # Optional for ES256
     }
 
 
-def _decode_supabase_token(token: str) -> dict:
+async def _fetch_jwks(supabase_url: str) -> dict:
+    """
+    Fetch JWKS (JSON Web Key Set) from Supabase.
+
+    Args:
+        supabase_url: Supabase project URL
+
+    Returns:
+        JWKS dictionary with keys
+    """
+    global _jwks_cache
+
+    # Return cached JWKS if available
+    if _jwks_cache is not None:
+        return _jwks_cache
+
+    try:
+        jwks_url = f"{supabase_url}/auth/v1/jwks"
+        async with httpx.AsyncClient() as client:
+            response = await client.get(jwks_url, timeout=10.0)
+            response.raise_for_status()
+            _jwks_cache = response.json()
+            logger.info("Fetched JWKS from Supabase")
+            return _jwks_cache
+    except Exception as exc:
+        logger.error("Failed to fetch JWKS", error=str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to fetch authentication keys"
+        ) from exc
+
+
+def _get_signing_key(token: str, jwks: dict) -> str:
+    """
+    Get the signing key for a JWT token from JWKS.
+
+    Args:
+        token: JWT token
+        jwks: JWKS dictionary
+
+    Returns:
+        Public key for verification
+    """
+    try:
+        # Decode header without verification to get kid
+        unverified_header = jwt.get_unverified_header(token)
+        kid = unverified_header.get("kid")
+
+        if not kid:
+            raise ValueError("Token missing 'kid' header")
+
+        # Find matching key in JWKS
+        for key_data in jwks.get("keys", []):
+            if key_data.get("kid") == kid:
+                # Convert JWK to PEM format
+                key_obj = jwk.construct(key_data)
+                return key_obj.to_pem().decode('utf-8')
+
+        raise ValueError(f"Key with kid '{kid}' not found in JWKS")
+
+    except Exception as exc:
+        logger.warning("Failed to get signing key", error=str(exc))
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token format"
+        ) from exc
+
+
+async def _decode_supabase_token(token: str) -> dict:
     """
     Decode and verify a Supabase JWT token.
+    Supports both HS256 (with JWT secret) and ES256 (with JWKS).
 
     Args:
         token: The JWT token to verify
@@ -70,14 +140,45 @@ def _decode_supabase_token(token: str) -> dict:
     settings = _require_supabase_settings()
 
     try:
-        # Verify JWT with Supabase secret (HS256 algorithm)
-        payload = jwt.decode(
-            token,
-            settings["jwt_secret"],
-            algorithms=["HS256"],
-            audience="authenticated",
-        )
-        return payload
+        # Get algorithm from token header
+        unverified_header = jwt.get_unverified_header(token)
+        algorithm = unverified_header.get("alg", "HS256")
+
+        if algorithm == "HS256":
+            # Use JWT secret for HS256
+            if not settings["jwt_secret"]:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="JWT secret not configured"
+                )
+
+            payload = jwt.decode(
+                token,
+                settings["jwt_secret"],
+                algorithms=["HS256"],
+                audience="authenticated",
+            )
+            return payload
+
+        elif algorithm in ["ES256", "RS256"]:
+            # Use JWKS for asymmetric algorithms
+            jwks = await _fetch_jwks(settings["supabase_url"])
+            public_key = _get_signing_key(token, jwks)
+
+            payload = jwt.decode(
+                token,
+                public_key,
+                algorithms=[algorithm],
+                audience="authenticated",
+            )
+            return payload
+
+        else:
+            logger.warning(f"Unsupported algorithm: {algorithm}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Unsupported token algorithm: {algorithm}"
+            )
 
     except jwt.ExpiredSignatureError:
         logger.info("Token expired")
@@ -119,7 +220,7 @@ async def get_current_user(
         )
 
     token = credentials.credentials
-    payload = _decode_supabase_token(token)
+    payload = await _decode_supabase_token(token)
 
     user_id = payload.get("sub")
     email = payload.get("email")
