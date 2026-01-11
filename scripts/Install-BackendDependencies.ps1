@@ -10,8 +10,7 @@ Write-Host "This script will install Supabase dependencies for the backend.`n" -
 # Dependencies to add
 $newDependencies = @"
 
-# Supabase dependencies
-supabase==2.3.0
+# PostgreSQL dependencies (asyncpg only - no supabase client needed)
 asyncpg==0.29.0
 "@
 

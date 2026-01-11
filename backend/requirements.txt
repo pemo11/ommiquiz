@@ -9,6 +9,6 @@ python-jose==3.3.0
 boto3==1.34.162
 reportlab==4.0.7
 
-# Supabase and PostgreSQL dependencies
-supabase==2.3.0
+# PostgreSQL dependencies
+# Note: supabase Python client not needed - we use asyncpg directly
 asyncpg==0.29.0
