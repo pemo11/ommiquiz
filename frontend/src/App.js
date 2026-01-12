@@ -491,7 +491,7 @@ function App() {
               )}
               {!showAdmin && (
                 <button onClick={isLoggedIn ? handleAdminToggle : handleLoginClick} className="admin-btn">
-                  Admin
+                  Login
                 </button>
               )}
               {isLoggedIn && (
