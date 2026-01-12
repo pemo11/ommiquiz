@@ -12,7 +12,7 @@ from typing import Dict, Any, Optional, List, Tuple
 
 # Import logging configuration
 from .logging_config import setup_logging, get_logger, LoggingMiddleware, log_function_call
-from .auth import AuthenticatedUser, get_optional_current_user, get_current_user
+from .auth import AuthenticatedUser, get_optional_current_user, get_current_user, get_current_admin
 from .download_logger import initialize_download_log_store, log_flashcard_download
 from .storage import FlashcardDocument, get_flashcard_storage
 from .pdf_generator import generate_speed_quiz_pdf
@@ -624,6 +624,219 @@ async def get_learning_report(
         )
 
 
+# ============================================================================
+# User Management Endpoints (Admin only)
+# ============================================================================
+
+@api_router.get("/admin/users")
+async def list_users(
+    admin: AuthenticatedUser = Depends(get_current_admin),
+    limit: int = Query(100, description="Maximum number of users to return"),
+    offset: int = Query(0, description="Number of users to skip")
+):
+    """List all users with their admin status (Admin only)."""
+    logger.info("Admin listing users", admin_user=admin.email, limit=limit, offset=offset)
+
+    from .database import get_db_pool
+    pool = await get_db_pool()
+
+    try:
+        async with pool.acquire() as conn:
+            # Get total count
+            total = await conn.fetchval("SELECT COUNT(*) FROM user_profiles")
+
+            # Get paginated users
+            users = await conn.fetch(
+                """
+                SELECT id, email, display_name, is_admin, created_at, updated_at
+                FROM user_profiles
+                ORDER BY created_at DESC
+                LIMIT $1 OFFSET $2
+                """,
+                limit, offset
+            )
+
+            user_list = [
+                {
+                    "id": str(row['id']),
+                    "email": row['email'],
+                    "display_name": row['display_name'],
+                    "is_admin": row['is_admin'],
+                    "created_at": row['created_at'].isoformat() + "Z",
+                    "updated_at": row['updated_at'].isoformat() + "Z" if row['updated_at'] else None
+                }
+                for row in users
+            ]
+
+            logger.info(
+                "Users listed successfully",
+                admin_user=admin.email,
+                total=total,
+                returned=len(user_list)
+            )
+
+            return {
+                "users": user_list,
+                "total": total,
+                "limit": limit,
+                "offset": offset
+            }
+
+    except Exception as e:
+        logger.error("Error listing users", admin_user=admin.email, error=str(e))
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to list users: {str(e)}"
+        )
+
+
+@api_router.put("/admin/users/{user_id}/admin-status")
+async def update_admin_status(
+    user_id: str,
+    is_admin: bool = Query(..., description="Set admin status"),
+    admin: AuthenticatedUser = Depends(get_current_admin)
+):
+    """Grant or revoke admin privileges for a user (Admin only)."""
+    logger.info(
+        "Admin updating admin status",
+        admin_user=admin.email,
+        target_user_id=user_id,
+        new_status=is_admin
+    )
+
+    # Prevent self-revocation
+    if user_id == admin.user_id and not is_admin:
+        logger.warning("Admin attempted self-revocation", admin_user=admin.email)
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot revoke your own admin privileges"
+        )
+
+    from .database import get_db_pool
+    pool = await get_db_pool()
+
+    try:
+        async with pool.acquire() as conn:
+            # Verify user exists
+            user = await conn.fetchrow(
+                "SELECT email FROM user_profiles WHERE id = $1",
+                user_id
+            )
+
+            if not user:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"User {user_id} not found"
+                )
+
+            # Update admin status
+            await conn.execute(
+                """
+                UPDATE user_profiles
+                SET is_admin = $1, updated_at = NOW()
+                WHERE id = $2
+                """,
+                is_admin, user_id
+            )
+
+            action = "granted" if is_admin else "revoked"
+            logger.info(
+                f"Admin privileges {action}",
+                admin_user=admin.email,
+                target_user_email=user['email'],
+                target_user_id=user_id
+            )
+
+            return {
+                "success": True,
+                "message": f"Admin privileges {action} for {user['email']}",
+                "user_id": user_id,
+                "is_admin": is_admin
+            }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(
+            "Error updating admin status",
+            admin_user=admin.email,
+            target_user_id=user_id,
+            error=str(e)
+        )
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to update admin status: {str(e)}"
+        )
+
+
+@api_router.get("/users/me")
+async def get_current_user_profile(
+    user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Get current user's profile including admin status."""
+    logger.info("User fetching own profile", user_id=user.user_id, email=user.email)
+
+    from .database import get_db_pool
+    pool = await get_db_pool()
+
+    try:
+        async with pool.acquire() as conn:
+            profile = await conn.fetchrow(
+                """
+                SELECT id, email, display_name, is_admin, created_at, updated_at
+                FROM user_profiles
+                WHERE id = $1
+                """,
+                user.user_id
+            )
+
+            if not profile:
+                # Create profile if it doesn't exist (for legacy users)
+                logger.info(
+                    "Creating profile for legacy user",
+                    user_id=user.user_id,
+                    email=user.email
+                )
+                await conn.execute(
+                    """
+                    INSERT INTO user_profiles (id, email, is_admin)
+                    VALUES ($1, $2, FALSE)
+                    ON CONFLICT (id) DO NOTHING
+                    """,
+                    user.user_id, user.email
+                )
+
+                # Fetch again
+                profile = await conn.fetchrow(
+                    """
+                    SELECT id, email, display_name, is_admin, created_at, updated_at
+                    FROM user_profiles
+                    WHERE id = $1
+                    """,
+                    user.user_id
+                )
+
+            return {
+                "id": str(profile['id']),
+                "email": profile['email'],
+                "display_name": profile['display_name'],
+                "is_admin": profile['is_admin'],
+                "created_at": profile['created_at'].isoformat() + "Z",
+                "updated_at": profile['updated_at'].isoformat() + "Z" if profile['updated_at'] else None
+            }
+
+    except Exception as e:
+        logger.error(
+            "Error fetching user profile",
+            user_id=user.user_id,
+            error=str(e)
+        )
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch user profile: {str(e)}"
+        )
+
+
 @api_router.get("/health")
 async def health_check():
     """Health check endpoint"""
@@ -799,10 +1012,18 @@ class FlashcardUpdateRequest(BaseModel):
     old_id: str | None = None  # For rename operations
 
 @api_router.put("/flashcards/{flashcard_id}")
-async def update_flashcard(flashcard_id: str, request: FlashcardUpdateRequest):
-    """Create or update a flashcard file"""
+async def update_flashcard(
+    flashcard_id: str,
+    request: FlashcardUpdateRequest,
+    admin: AuthenticatedUser = Depends(get_current_admin)
+):
+    """Create or update a flashcard file (Admin only)"""
 
-    logger.info("Updating flashcard", flashcard_id=flashcard_id)
+    logger.info(
+        "Admin updating flashcard",
+        flashcard_id=flashcard_id,
+        admin_user=admin.email
+    )
 
     # Validate ID format
     if not VALID_ID_PATTERN.match(flashcard_id):
@@ -947,10 +1168,19 @@ async def update_flashcard(flashcard_id: str, request: FlashcardUpdateRequest):
         )
 
 @api_router.post("/flashcards/upload")
-async def upload_flashcard(file: UploadFile = File(...), overwrite: str = Form(default="false")):
-    """Upload and validate a new flashcard YAML file"""
-    
-    logger.info("Uploading flashcard", filename=file.filename, overwrite=overwrite)
+async def upload_flashcard(
+    file: UploadFile = File(...),
+    overwrite: str = Form(default="false"),
+    admin: AuthenticatedUser = Depends(get_current_admin)
+):
+    """Upload and validate a new flashcard YAML file (Admin only)"""
+
+    logger.info(
+        "Admin uploading flashcard",
+        filename=file.filename,
+        overwrite=overwrite,
+        admin_user=admin.email
+    )
     
     # Validate file extension
     if not (file.filename.endswith('.yaml') or file.filename.endswith('.yml')):
@@ -1070,10 +1300,17 @@ async def upload_flashcard(file: UploadFile = File(...), overwrite: str = Form(d
 
 
 @api_router.delete("/flashcards/{flashcard_id}")
-async def delete_flashcard(flashcard_id: str):
-    """Delete a flashcard file"""
+async def delete_flashcard(
+    flashcard_id: str,
+    admin: AuthenticatedUser = Depends(get_current_admin)
+):
+    """Delete a flashcard file (Admin only)"""
 
-    logger.info("Deleting flashcard", flashcard_id=flashcard_id)
+    logger.info(
+        "Admin deleting flashcard",
+        flashcard_id=flashcard_id,
+        admin_user=admin.email
+    )
 
     # First try to find by ID-based filename
     document = get_flashcard_document(flashcard_id)

@@ -241,6 +241,59 @@ async def get_current_user(
     )
 
 
+async def get_current_admin(
+    user: AuthenticatedUser = Depends(get_current_user)
+) -> AuthenticatedUser:
+    """
+    Validate that the current user has admin privileges.
+
+    Requires valid JWT token AND is_admin=true in user_profiles table.
+
+    Args:
+        user: Authenticated user from get_current_user
+
+    Returns:
+        AuthenticatedUser instance with admin privileges
+
+    Raises:
+        HTTPException(403): If user is not an admin
+    """
+    from .database import get_db_pool
+
+    pool = await get_db_pool()
+
+    async with pool.acquire() as conn:
+        result = await conn.fetchrow(
+            "SELECT is_admin FROM user_profiles WHERE id = $1",
+            user.user_id
+        )
+
+        if not result:
+            logger.warning(
+                "User profile not found for authenticated user",
+                user_id=user.user_id,
+                email=user.email
+            )
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="User profile not found"
+            )
+
+        if not result['is_admin']:
+            logger.warning(
+                "Non-admin user attempted admin action",
+                user_id=user.user_id,
+                email=user.email
+            )
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Admin privileges required"
+            )
+
+    logger.info("Admin authenticated", user_id=user.user_id, email=user.email)
+    return user
+
+
 async def get_optional_current_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(_http_bearer),
 ) -> Optional[AuthenticatedUser]:

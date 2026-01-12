@@ -55,6 +55,10 @@ function AdminPanel({ onBack }) {
   const [catalogData, setCatalogData] = useState(null);
   const [catalogLoading, setCatalogLoading] = useState(false);
   const [catalogError, setCatalogError] = useState(null);
+  const [showUserManagement, setShowUserManagement] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState(null);
 
   const formatCatalogTimestamp = (value) => {
     if (!value) return '—';
@@ -101,6 +105,93 @@ function AdminPanel({ onBack }) {
   const handleHideStatistics = () => {
     setShowStatistics(false);
     setCatalogError(null);
+  };
+
+  // User Management Functions
+  const fetchUsers = async () => {
+    try {
+      setUsersLoading(true);
+      setUsersError(null);
+
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch(`${API_URL}/admin/users`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch users: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      setUsers(data.users);
+    } catch (err) {
+      console.error('Error fetching users:', err);
+      setUsersError(err.message);
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
+  const handleToggleAdminStatus = async (userId, currentStatus) => {
+    const newStatus = !currentStatus;
+    const action = newStatus ? 'grant' : 'revoke';
+
+    if (!window.confirm(`Are you sure you want to ${action} admin privileges for this user?`)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch(`${API_URL}/admin/users/${userId}/admin-status?is_admin=${newStatus}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `Failed to update admin status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setMessage(data.message);
+
+      // Refresh user list
+      await fetchUsers();
+    } catch (err) {
+      console.error('Error updating admin status:', err);
+      setError(err.message);
+    }
+  };
+
+  const handleShowUserManagement = () => {
+    setShowUserManagement(true);
+    setShowStatistics(false);
+    setSelectedFlashcard(null);
+    setEditingFlashcard(null);
+    setShowYamlImport(false);
+    if (users.length === 0) {
+      fetchUsers();
+    }
+  };
+
+  const handleHideUserManagement = () => {
+    setShowUserManagement(false);
+    setUsersError(null);
   };
 
   const fetchFlashcardList = async () => {
@@ -1135,6 +1226,76 @@ function AdminPanel({ onBack }) {
             <div className="loading">No catalog data available.</div>
           )}
         </div>
+      ) : showUserManagement ? (
+        <div className="user-management-view">
+          <div className="user-management-header">
+            <button onClick={handleHideUserManagement} className="back-to-list-button">
+              Back to List
+            </button>
+            <h3>User Management</h3>
+            <button onClick={fetchUsers} className="refresh-users-button" disabled={usersLoading}>
+              {usersLoading ? 'Refreshing...' : '↻ Refresh'}
+            </button>
+          </div>
+
+          {usersError && (
+            <div className="error-message">
+              <p>Error: {usersError}</p>
+            </div>
+          )}
+
+          {usersLoading && users.length === 0 ? (
+            <div className="loading">Loading users...</div>
+          ) : users.length > 0 ? (
+            <>
+              <div className="users-table-container">
+                <table className="users-table">
+                  <thead>
+                    <tr>
+                      <th>Email</th>
+                      <th>Display Name</th>
+                      <th>Admin Status</th>
+                      <th>Created</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map(user => (
+                      <tr key={user.id} className={user.is_admin ? 'admin-user' : ''}>
+                        <td>{user.email}</td>
+                        <td>{user.display_name || '—'}</td>
+                        <td>
+                          <span className={`admin-badge ${user.is_admin ? 'admin' : 'regular'}`}>
+                            {user.is_admin ? 'Admin' : 'Regular'}
+                          </span>
+                        </td>
+                        <td>{new Date(user.created_at).toLocaleDateString()}</td>
+                        <td>
+                          <button
+                            onClick={() => handleToggleAdminStatus(user.id, user.is_admin)}
+                            className={`toggle-admin-btn ${user.is_admin ? 'revoke' : 'grant'}`}
+                          >
+                            {user.is_admin ? 'Revoke Admin' : 'Grant Admin'}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="user-stats">
+                <p><strong>Total Users:</strong> {users.length}</p>
+                <p><strong>Admins:</strong> {users.filter(u => u.is_admin).length}</p>
+                <p><strong>Regular Users:</strong> {users.filter(u => !u.is_admin).length}</p>
+              </div>
+            </>
+          ) : (
+            <div className="no-users-message">
+              <p>No users found</p>
+            </div>
+          )}
+        </div>
       ) : !selectedFlashcard && !showYamlImport ? (
         <div className="flashcard-list-section">
           <div className="flashcard-list-header">
@@ -1148,6 +1309,9 @@ function AdminPanel({ onBack }) {
               </button>
               <button onClick={handleShowStatistics} className="statistics-button">
                 📊 Statistics
+              </button>
+              <button onClick={handleShowUserManagement} className="user-management-button">
+                👥 User Management
               </button>
             </div>
           </div>

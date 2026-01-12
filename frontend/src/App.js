@@ -74,14 +74,39 @@ function App() {
   const [signupSuccess, setSignupSuccess] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+
+  // Fetch user profile with admin status
+  const fetchUserProfile = async (accessToken) => {
+    try {
+      const response = await fetch(`${API_URL}/users/me`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        console.error('Failed to fetch user profile:', response.status);
+        return null;
+      }
+
+      const profile = await response.json();
+      console.log('User profile fetched:', profile);
+      return profile;
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+      return null;
+    }
+  };
 
   // Check for existing session on mount
   useEffect(() => {
     checkSession();
 
     // Subscribe to auth state changes
-    const { data: authListener } = onAuthStateChange((event, session) => {
+    const { data: authListener } = onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, session);
 
       if (session?.user) {
@@ -89,9 +114,14 @@ function App() {
         setIsLoggedIn(true);
         // Store token in localStorage for API calls
         localStorage.setItem('authToken', session.access_token);
+
+        // Fetch user profile to get admin status
+        const profile = await fetchUserProfile(session.access_token);
+        setUserProfile(profile);
       } else {
         setUser(null);
         setIsLoggedIn(false);
+        setUserProfile(null);
         localStorage.removeItem('authToken');
       }
       setAuthLoading(false);
@@ -111,6 +141,10 @@ function App() {
         setUser(session.user);
         setIsLoggedIn(true);
         localStorage.setItem('authToken', session.access_token);
+
+        // Fetch user profile to get admin status
+        const profile = await fetchUserProfile(session.access_token);
+        setUserProfile(profile);
       }
     } catch (error) {
       console.error('Error checking session:', error);
@@ -362,7 +396,11 @@ function App() {
         setShowLoginForm(false);
         setLoginEmail('');
         setLoginPassword('');
-        // Token is automatically stored by the auth state change listener
+
+        // Fetch user profile to get admin status
+        const profile = await fetchUserProfile(session.access_token);
+        setUserProfile(profile);
+
         console.log('Login successful:', user.email);
       }
     } catch (err) {
@@ -382,6 +420,7 @@ function App() {
 
       setUser(null);
       setIsLoggedIn(false);
+      setUserProfile(null);
       setShowAdmin(false);
       localStorage.removeItem('authToken');
       console.log('Logout successful');
@@ -489,11 +528,24 @@ function App() {
                   {user.email}
                 </span>
               )}
-              {!showAdmin && (
-                <button onClick={isLoggedIn ? handleAdminToggle : handleLoginClick} className="login-btn">
+
+              {/* Login button only for non-authenticated users */}
+              {!isLoggedIn && (
+                <button onClick={handleLoginClick} className="login-btn">
                   Login
                 </button>
               )}
+
+              {/* Admin button only for authenticated admins */}
+              {isLoggedIn && userProfile?.is_admin && (
+                <button
+                  onClick={handleAdminToggle}
+                  className={showAdmin ? "admin-btn active" : "admin-btn"}
+                >
+                  {showAdmin ? 'Exit Admin' : 'Admin'}
+                </button>
+              )}
+
               {isLoggedIn && (
                 <button onClick={handleLogout} className="logout-btn">
                   Logout
