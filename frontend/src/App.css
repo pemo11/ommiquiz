@@ -520,7 +520,7 @@
 }
 
 .about-btn,
-.admin-btn {
+.login-btn {
   background-color: #667eea;
   color: white;
   border: none;
@@ -550,22 +550,22 @@
   transform: translateY(-2px);
 }
 
-.admin-btn {
+.login-btn {
   background-color: #667eea;
   color: white;
 }
 
-.admin-btn:hover {
+.login-btn:hover {
   background-color: #5568d3;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
-.admin-btn.active {
+.login-btn.active {
   background-color: #28a745;
 }
 
-.admin-btn.active:hover {
+.login-btn.active:hover {
   background-color: #218838;
 }
 
