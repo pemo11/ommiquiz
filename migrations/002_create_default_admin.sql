@@ -3,7 +3,7 @@
 -- ============================================================================
 -- WICHTIG: Zuerst manuell in Supabase Dashboard erstellen:
 -- 1. Supabase Dashboard > Authentication > Users > "Add User" klicken
--- 2. Email: ommiadmin@example.com
+-- 2. Email: ommiadmin@ommiquiz.de
 -- 3. Password: demo+123
 -- 4. "Auto Confirm User": YES (aktivieren!)
 -- 5. Benutzer erstellen
@@ -15,7 +15,7 @@ BEGIN;
 -- Grant admin privileges to the default admin account
 UPDATE public.user_profiles
 SET is_admin = TRUE, updated_at = NOW()
-WHERE email = 'ommiadmin@example.com';
+WHERE email = 'ommiadmin@ommiquiz.de';
 
 -- Verify the update was successful
 DO $$
@@ -24,12 +24,12 @@ DECLARE
 BEGIN
     SELECT COUNT(*) INTO admin_count
     FROM public.user_profiles
-    WHERE email = 'ommiadmin@example.com' AND is_admin = TRUE;
+    WHERE email = 'ommiadmin@ommiquiz.de' AND is_admin = TRUE;
 
     IF admin_count = 0 THEN
         RAISE NOTICE 'WARNING: Admin user not found or not updated. Please ensure the user exists in auth.users first.';
     ELSE
-        RAISE NOTICE 'SUCCESS: Admin privileges granted to ommiadmin@example.com';
+        RAISE NOTICE 'SUCCESS: Admin privileges granted to ommiadmin@ommiquiz.de';
     END IF;
 END $$;
 
@@ -42,7 +42,7 @@ COMMIT;
 --
 -- SELECT id, email, is_admin, created_at, updated_at
 -- FROM public.user_profiles
--- WHERE email = 'ommiadmin@example.com';
+-- WHERE email = 'ommiadmin@ommiquiz.de';
 --
 -- Expected result: One row with is_admin = true
 -- ============================================================================

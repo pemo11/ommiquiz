@@ -624,6 +624,132 @@ async def get_learning_report(
         )
 
 
+@api_router.get("/users/me/quiz-history-pdf")
+async def get_quiz_history_pdf(
+    user: AuthenticatedUser = Depends(get_current_user),
+    days: int = Query(30, description="Number of days to include in report (default 30)")
+):
+    """
+    Generate and download a PDF report of quiz session history.
+
+    Returns a PDF file with:
+    - Summary statistics (total sessions, cards reviewed, box distribution)
+    - Detailed session history table
+    - Performance metrics
+
+    Query parameters:
+    - days: Number of days to include (default 30)
+
+    Requires authentication.
+    """
+    from datetime import timedelta
+    from .database import get_db_pool
+    from .quiz_history_pdf_generator import generate_quiz_history_pdf
+
+    logger.info("Generating quiz history PDF",
+                user_id=user.user_id,
+                days=days)
+
+    pool = await get_db_pool()
+
+    try:
+        # Get user information from authentication token
+        user_email = user.email or 'Unknown'
+        # Check metadata for username
+        user_name = None
+        if user.metadata:
+            user_name = user.metadata.get('username') or user.metadata.get('name')
+
+        async with pool.acquire() as conn:
+            # Calculate date range
+            cutoff_date = datetime.now() - timedelta(days=days)
+
+            # Get all sessions for user
+            query = """
+                SELECT id, flashcard_id, flashcard_title, started_at, completed_at,
+                       cards_reviewed, box1_count, box2_count, box3_count, duration_seconds
+                FROM quiz_sessions
+                WHERE user_id = $1 AND completed_at >= $2
+                ORDER BY completed_at DESC
+            """
+            sessions = await conn.fetch(query, user.user_id, cutoff_date)
+
+            # Calculate aggregate statistics
+            total_sessions = len(sessions)
+            total_cards_reviewed = sum(row['cards_reviewed'] for row in sessions)
+            total_box1 = sum(row['box1_count'] for row in sessions)
+            total_box2 = sum(row['box2_count'] for row in sessions)
+            total_box3 = sum(row['box3_count'] for row in sessions)
+            total_duration = sum(row['duration_seconds'] or 0 for row in sessions)
+
+            # Format session details
+            session_details = [
+                {
+                    "id": row['id'],
+                    "flashcard_id": row['flashcard_id'],
+                    "flashcard_title": row['flashcard_title'],
+                    "started_at": row['started_at'].isoformat() + "Z" if row['started_at'] else None,
+                    "completed_at": row['completed_at'].isoformat() + "Z" if row['completed_at'] else None,
+                    "cards_reviewed": row['cards_reviewed'],
+                    "box1_count": row['box1_count'],
+                    "box2_count": row['box2_count'],
+                    "box3_count": row['box3_count'],
+                    "duration_seconds": row['duration_seconds']
+                }
+                for row in sessions
+            ]
+
+            # Build report data structure
+            report_data = {
+                "user_id": user.user_id,
+                "user_email": user_email,
+                "user_name": user_name,
+                "report_period_days": days,
+                "summary": {
+                    "total_sessions": total_sessions,
+                    "total_cards_reviewed": total_cards_reviewed,
+                    "total_learned": total_box1,
+                    "total_uncertain": total_box2,
+                    "total_not_learned": total_box3,
+                    "total_duration_seconds": total_duration,
+                    "average_session_duration": total_duration / total_sessions if total_sessions > 0 else 0
+                },
+                "sessions": session_details
+            }
+
+            # Generate PDF
+            pdf_buffer = generate_quiz_history_pdf(report_data)
+
+            logger.info("Quiz history PDF generated successfully",
+                       user_id=user.user_id,
+                       total_sessions=total_sessions)
+
+            # Create filename
+            from datetime import date
+            today = date.today().isoformat()
+            filename = f"quiz-history-{today}.pdf"
+
+            # Return PDF as downloadable file
+            from fastapi.responses import StreamingResponse
+
+            return StreamingResponse(
+                pdf_buffer,
+                media_type="application/pdf",
+                headers={
+                    "Content-Disposition": f"attachment; filename={filename}"
+                }
+            )
+
+    except Exception as e:
+        logger.error("Error generating quiz history PDF",
+                    user_id=user.user_id,
+                    error=str(e))
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to generate PDF report: {str(e)}"
+        )
+
+
 # ============================================================================
 # User Management Endpoints (Admin only)
 # ============================================================================

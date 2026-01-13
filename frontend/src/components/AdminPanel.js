@@ -1120,6 +1120,33 @@ function AdminPanel({ onBack }) {
         <h2>🔧 Admin Panel</h2>
       </div>
 
+      {/* Navigation Tabs */}
+      <div className="admin-navigation">
+        <button
+          onClick={() => {
+            setShowStatistics(false);
+            setShowUserManagement(false);
+            setSelectedFlashcard(null);
+            setEditingFlashcard(null);
+          }}
+          className={!showStatistics && !showUserManagement ? "nav-tab active" : "nav-tab"}
+        >
+          📋 Manage Flashcards
+        </button>
+        <button
+          onClick={handleShowStatistics}
+          className={showStatistics ? "nav-tab active" : "nav-tab"}
+        >
+          📊 Statistics
+        </button>
+        <button
+          onClick={handleShowUserManagement}
+          className={showUserManagement ? "nav-tab active" : "nav-tab"}
+        >
+          👥 User Management
+        </button>
+      </div>
+
       {message && (
         <div className="success-message">
           {message}
@@ -1306,12 +1333,6 @@ function AdminPanel({ onBack }) {
               </button>
               <button onClick={createFromYaml} className="import-yaml-button">
                 📋 Import from YAML
-              </button>
-              <button onClick={handleShowStatistics} className="statistics-button">
-                📊 Statistics
-              </button>
-              <button onClick={handleShowUserManagement} className="user-management-button">
-                👥 User Management
               </button>
             </div>
           </div>

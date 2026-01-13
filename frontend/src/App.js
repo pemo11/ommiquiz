@@ -3,6 +3,7 @@ import './App.css';
 import FlashcardViewer from './components/FlashcardViewer';
 import FlashcardSelector from './components/FlashcardSelector';
 import AdminPanel from './components/AdminPanel';
+import QuizReport from './components/QuizReport';
 import AboutModal from './components/AboutModal';
 import { FRONTEND_VERSION } from './version';
 import LanguageSelector from './components/LanguageSelector';
@@ -59,6 +60,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [showReport, setShowReport] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
   const [showLoginForm, setShowLoginForm] = useState(false);
   const [loginEmail, setLoginEmail] = useState('');
@@ -356,6 +358,10 @@ function App() {
     fetchFlashcardList(); // Refresh the list in case changes were made
   };
 
+  const handleReportBack = () => {
+    setShowReport(false);
+  };
+
   const handleAboutOpen = () => {
     setShowAbout(true);
   };
@@ -561,6 +567,16 @@ function App() {
                 </button>
               )}
 
+              {/* Report button for all authenticated users */}
+              {isLoggedIn && (
+                <button
+                  onClick={() => setShowReport(true)}
+                  className={showReport ? "report-btn active" : "report-btn"}
+                >
+                  Report
+                </button>
+              )}
+
               {isLoggedIn && (
                 <button onClick={handleLogout} className="logout-btn">
                   Logout
@@ -580,19 +596,21 @@ function App() {
       <main className="App-main">
         {showAdmin ? (
           <AdminPanel onBack={handleAdminBack} />
+        ) : showReport ? (
+          <QuizReport onBack={handleReportBack} />
         ) : (
           <>
             {loading && !selectedFlashcard && (
               <div className="loading">Loading...</div>
             )}
-            
+
             {!loading && !selectedFlashcard && !error && (
               <FlashcardSelector
                 flashcards={flashcards}
                 onSelect={handleSelectFlashcard}
               />
             )}
-            
+
             {selectedFlashcard && (
               <FlashcardViewer
                 flashcard={selectedFlashcard}
