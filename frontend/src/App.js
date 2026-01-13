@@ -429,6 +429,7 @@ function App() {
       setIsLoggedIn(false);
       setUserProfile(null);
       setShowAdmin(false);
+      setShowReport(false);
       localStorage.removeItem('authToken');
       console.log('Logout successful');
     } catch (err) {
