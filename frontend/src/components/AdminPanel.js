@@ -578,24 +578,38 @@ function AdminPanel({ onBack }) {
           requestBody.old_id = selectedFlashcard.id;
         }
 
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          throw new Error('No authentication token found');
+        }
+
         response = await fetch(`${API_URL}/flashcards/${editingFlashcard.id}`, {
           method: 'PUT',
           headers: {
+            'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(requestBody)
         });
       } else {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          throw new Error('No authentication token found');
+        }
+
         const blob = new Blob([yamlData], { type: 'text/yaml' });
         const formData = new FormData();
         formData.append('file', blob, `${editingFlashcard.id}.yml`);
-        
+
         if (forceOverwrite) {
           formData.append('overwrite', 'true');
         }
 
         response = await fetch(`${API_URL}/flashcards/upload`, {
           method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
           body: formData
         });
       }
