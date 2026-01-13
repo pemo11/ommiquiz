@@ -792,18 +792,23 @@ async def get_current_user_profile(
 
             if not profile:
                 # Create profile if it doesn't exist (for legacy users)
+                # Extract display_name from user metadata if available
+                user_metadata = user.metadata.get('user_metadata', {}) if user.metadata else {}
+                display_name = user_metadata.get('display_name') or user_metadata.get('username')
+
                 logger.info(
                     "Creating profile for legacy user",
                     user_id=user.user_id,
-                    email=user.email
+                    email=user.email,
+                    display_name=display_name
                 )
                 await conn.execute(
                     """
-                    INSERT INTO user_profiles (id, email, is_admin)
-                    VALUES ($1, $2, FALSE)
+                    INSERT INTO user_profiles (id, email, display_name, is_admin)
+                    VALUES ($1, $2, $3, FALSE)
                     ON CONFLICT (id) DO NOTHING
                     """,
-                    user.user_id, user.email
+                    user.user_id, user.email, display_name
                 )
 
                 # Fetch again

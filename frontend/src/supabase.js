@@ -34,10 +34,16 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
  * @param {string} password - User's password
  * @returns {Promise<{user, session, error}>}
  */
-export async function signUp(email, password) {
+export async function signUp(email, password, username) {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+      data: {
+        username: username,
+        display_name: username
+      }
+    }
   })
 
   return { user: data?.user, session: data?.session, error }

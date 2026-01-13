@@ -67,6 +67,7 @@ function App() {
   const [loginError, setLoginError] = useState(null);
   const [showSignupForm, setShowSignupForm] = useState(false);
   const [signupEmail, setSignupEmail] = useState('');
+  const [signupUsername, setSignupUsername] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const [signupConfirmPassword, setSignupConfirmPassword] = useState('');
   const [showSignupPassword, setShowSignupPassword] = useState(false);
@@ -444,6 +445,7 @@ function App() {
     setSignupError(null);
     setSignupSuccess(false);
     setSignupEmail('');
+    setSignupUsername('');
     setSignupPassword('');
     setSignupConfirmPassword('');
     setShowSignupPassword(false);
@@ -453,6 +455,18 @@ function App() {
     event.preventDefault();
     setSignupError(null);
     setSignupSuccess(false);
+
+    // Validate username
+    if (!signupUsername || signupUsername.length < 2 || signupUsername.length > 8) {
+      setSignupError('Username must be between 2 and 8 characters');
+      return;
+    }
+
+    // Validate username contains only alphanumeric characters
+    if (!/^[a-zA-Z0-9]+$/.test(signupUsername)) {
+      setSignupError('Username can only contain letters and numbers');
+      return;
+    }
 
     // Validate passwords match
     if (signupPassword !== signupConfirmPassword) {
@@ -467,7 +481,7 @@ function App() {
     }
 
     try {
-      const { user, session, error } = await signUp(signupEmail, signupPassword);
+      const { user, session, error } = await signUp(signupEmail, signupPassword, signupUsername);
 
       if (error) {
         console.error('Signup error:', error);
@@ -486,6 +500,7 @@ function App() {
         setTimeout(() => {
           setShowSignupForm(false);
           setSignupEmail('');
+          setSignupUsername('');
           setSignupPassword('');
           setSignupConfirmPassword('');
           setSignupSuccess(false);
@@ -673,6 +688,20 @@ function App() {
                   value={signupEmail}
                   onChange={(e) => setSignupEmail(e.target.value)}
                   placeholder="your.email@example.com"
+                  required
+                />
+              </label>
+              <label className="signup-label">
+                Username (2-8 characters)
+                <input
+                  type="text"
+                  value={signupUsername}
+                  onChange={(e) => setSignupUsername(e.target.value)}
+                  placeholder="myusername"
+                  minLength={2}
+                  maxLength={8}
+                  pattern="[a-zA-Z0-9]+"
+                  title="Username must be 2-8 characters, letters and numbers only"
                   required
                 />
               </label>
