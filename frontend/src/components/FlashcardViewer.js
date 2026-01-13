@@ -273,6 +273,7 @@ function FlashcardViewer({ flashcard, onBack }) {
   const [appliedMixSummary, setAppliedMixSummary] = useState('levelMix.defaultSummary');
   const [showStartScreen, setShowStartScreen] = useState(true);
   const [selectedMode, setSelectedMode] = useState(null); // 'regular', 'postponed', 'speed'
+  const [quizCompletedAt, setQuizCompletedAt] = useState(null); // Timestamp when quiz was completed
   const touchStartRef = useRef(null);
   const gestureHandledRef = useRef(false);
 
@@ -481,6 +482,7 @@ function FlashcardViewer({ flashcard, onBack }) {
     // When we reach the last card, show the summary
     // Use a timeout to ensure state updates are processed before showing summary
     setTimeout(() => {
+      setQuizCompletedAt(new Date());
       setShowSummary(true);
     }, 0);
   };
@@ -1010,6 +1012,7 @@ function FlashcardViewer({ flashcard, onBack }) {
     const isAtEndOfOrder = currentOrderIndex >= cardOrder.length - 1;
 
     if (!showSummary && allCardsProcessed && isAtEndOfOrder) {
+      setQuizCompletedAt(new Date());
       setShowSummary(true);
     }
   }, [cardResults, cardOrder.length, currentOrderIndex, showSummary]);
@@ -1079,7 +1082,14 @@ function FlashcardViewer({ flashcard, onBack }) {
           )}
 
           <div className="detailed-results">
-            <h3>Detailed Results</h3>
+            <div className="detailed-results-header">
+              <h3>Detailed Results</h3>
+              {quizCompletedAt && (
+                <div className="quiz-completion-time">
+                  Completed: {quizCompletedAt.toLocaleDateString()} at {quizCompletedAt.toLocaleTimeString()}
+                </div>
+              )}
+            </div>
             {stats.results.map((result, index) => (
               <div key={index} className={`result-item ${result.correct ? 'correct-result' : 'incorrect-result'}`}>
                 <div className="result-header">
