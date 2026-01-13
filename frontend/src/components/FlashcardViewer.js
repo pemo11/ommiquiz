@@ -277,6 +277,12 @@ function FlashcardViewer({ flashcard, onBack }) {
   const touchStartRef = useRef(null);
   const gestureHandledRef = useRef(false);
 
+  // Audio mode state
+  const [audioMode, setAudioMode] = useState(false);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+  const [audioDelay, setAudioDelay] = useState(5); // Seconds between question and answer
+  const audioTimeoutRef = useRef(null);
+
   console.log('FlashcardViewer received flashcard:', flashcard);
   
   console.log('Cards array:', cards);
@@ -292,6 +298,121 @@ function FlashcardViewer({ flashcard, onBack }) {
 
   const availableLevelCounts = useMemo(() => countCardLevels(flashcard.cards || []), [flashcard.cards]);
   const appliedLevelCounts = useMemo(() => countCardLevels(cards), [cards]);
+
+  // Audio mode functions
+  const stopAudio = () => {
+    window.speechSynthesis.cancel();
+    if (audioTimeoutRef.current) {
+      clearTimeout(audioTimeoutRef.current);
+      audioTimeoutRef.current = null;
+    }
+    setIsAudioPlaying(false);
+  };
+
+  const speakText = (text, lang = 'de-DE') => {
+    if (!text) return;
+
+    // Strip HTML tags for cleaner speech
+    const cleanText = text.replace(/<[^>]*>/g, '');
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = lang;
+    utterance.rate = 1.0;
+
+    return new Promise((resolve) => {
+      utterance.onend = resolve;
+      utterance.onerror = resolve;
+      window.speechSynthesis.speak(utterance);
+    });
+  };
+
+  const playAudioForCard = async () => {
+    if (!currentCard) return;
+
+    stopAudio();
+    setIsAudioPlaying(true);
+
+    try {
+      // Determine language from flashcard metadata
+      const lang = flashcard.language === 'en' ? 'en-US' : 'de-DE';
+
+      // Speak question
+      await speakText(currentCard.question, lang);
+
+      // Wait for configured delay
+      await new Promise(resolve => {
+        audioTimeoutRef.current = setTimeout(resolve, audioDelay * 1000);
+      });
+
+      // Check if still in audio mode (user might have stopped)
+      if (!audioMode || !isAudioPlaying) return;
+
+      // Reveal answer
+      setIsFlipped(true);
+      setShowCorrectAnswers(true);
+
+      // Speak answer
+      let answerText = '';
+      if (cardType === 'multiple' && currentCard.correctAnswers) {
+        // For multiple choice, read the correct answers
+        const correctAnswers = currentCard.answers.filter((_, idx) =>
+          currentCard.correctAnswers.includes(idx)
+        );
+        answerText = 'Korrekte Antworten: ' + correctAnswers.join(', ');
+      } else if (currentCard.answer) {
+        answerText = currentCard.answer;
+      }
+
+      await speakText(answerText, lang);
+
+      setIsAudioPlaying(false);
+    } catch (error) {
+      console.error('Audio playback error:', error);
+      setIsAudioPlaying(false);
+    }
+  };
+
+  const toggleAudioMode = () => {
+    const newMode = !audioMode;
+    setAudioMode(newMode);
+
+    if (!newMode) {
+      stopAudio();
+    } else {
+      // Start audio when enabled
+      playAudioForCard();
+    }
+  };
+
+  // Auto-play audio when card changes in audio mode
+  useEffect(() => {
+    if (audioMode && !showSummary && currentCard) {
+      // Reset card state
+      setIsFlipped(false);
+      setShowCorrectAnswers(false);
+      setSelectedAnswers([]);
+
+      // Play audio after a short delay to allow UI to update
+      setTimeout(() => {
+        if (audioMode) {
+          playAudioForCard();
+        }
+      }, 500);
+    }
+
+    return () => {
+      if (audioTimeoutRef.current) {
+        clearTimeout(audioTimeoutRef.current);
+      }
+    };
+  }, [currentCardIndex, audioMode]);
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      stopAudio();
+    };
+  }, []);
 
   const handleApplyLevelMix = () => {
     try {
@@ -1599,6 +1720,48 @@ function FlashcardViewer({ flashcard, onBack }) {
           </div>
         </div>
       )}
+
+      {/* Audio Mode Controls */}
+      <div className="audio-controls">
+        <button
+          onClick={toggleAudioMode}
+          className={`audio-toggle-btn ${audioMode ? 'active' : ''}`}
+          title={audioMode ? 'Disable Audio Mode' : 'Enable Audio Mode'}
+        >
+          {audioMode ? '🔊 Audio ON' : '🔇 Audio OFF'}
+        </button>
+
+        {audioMode && (
+          <>
+            <button
+              onClick={stopAudio}
+              disabled={!isAudioPlaying}
+              className="audio-control-btn"
+              title="Stop Audio"
+            >
+              ⏹️ Stop
+            </button>
+
+            <div className="audio-delay-control">
+              <label>
+                Delay: {audioDelay}s
+                <input
+                  type="range"
+                  min="3"
+                  max="15"
+                  value={audioDelay}
+                  onChange={(e) => setAudioDelay(parseInt(e.target.value))}
+                  className="audio-delay-slider"
+                />
+              </label>
+            </div>
+
+            {isAudioPlaying && (
+              <span className="audio-status">▶️ Playing...</span>
+            )}
+          </>
+        )}
+      </div>
 
       <div className="navigation-buttons">
         <button
