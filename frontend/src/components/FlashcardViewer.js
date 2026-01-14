@@ -283,6 +283,11 @@ function FlashcardViewer({ flashcard, onBack }) {
   const [audioDelay, setAudioDelay] = useState(5); // Seconds between question and answer
   const audioTimeoutRef = useRef(null);
 
+  // Auto-play mode state
+  const [autoPlayMode, setAutoPlayMode] = useState(false);
+  const [autoPlayDelay, setAutoPlayDelay] = useState(5); // Seconds to show answer before advancing
+  const autoPlayTimeoutRef = useRef(null);
+
   console.log('FlashcardViewer received flashcard:', flashcard);
   
   console.log('Cards array:', cards);
@@ -432,6 +437,76 @@ function FlashcardViewer({ flashcard, onBack }) {
   useEffect(() => {
     return () => {
       stopAudio();
+    };
+  }, []);
+
+  // Auto-play mode functions
+  const stopAutoPlay = () => {
+    if (autoPlayTimeoutRef.current) {
+      clearTimeout(autoPlayTimeoutRef.current);
+      autoPlayTimeoutRef.current = null;
+    }
+  };
+
+  const toggleAutoPlayMode = () => {
+    const newMode = !autoPlayMode;
+    setAutoPlayMode(newMode);
+
+    if (!newMode) {
+      stopAutoPlay();
+    }
+  };
+
+  // Auto-play logic: flip card and advance automatically
+  useEffect(() => {
+    if (autoPlayMode && !showSummary && currentCard && !audioMode) {
+      console.log('Auto-play: Starting for card', currentOrderIndex + 1);
+
+      // If card is already flipped, just wait and advance
+      if (isFlipped || showCorrectAnswers) {
+        console.log('Auto-play: Card already flipped, waiting to advance');
+        autoPlayTimeoutRef.current = setTimeout(() => {
+          if (autoPlayMode && currentOrderIndex < cardOrder.length - 1) {
+            console.log('Auto-play: Advancing to next card');
+            handleNext();
+          } else if (currentOrderIndex === cardOrder.length - 1) {
+            console.log('Auto-play: Reached last card, stopping');
+            setAutoPlayMode(false);
+          }
+        }, autoPlayDelay * 1000);
+      } else {
+        // Card is not flipped, wait then flip
+        console.log('Auto-play: Waiting to flip card');
+        autoPlayTimeoutRef.current = setTimeout(() => {
+          if (autoPlayMode) {
+            console.log('Auto-play: Flipping card');
+            setIsFlipped(true);
+            setShowCorrectAnswers(true);
+
+            // After showing answer, wait again then advance
+            autoPlayTimeoutRef.current = setTimeout(() => {
+              if (autoPlayMode && currentOrderIndex < cardOrder.length - 1) {
+                console.log('Auto-play: Advancing to next card');
+                handleNext();
+              } else if (currentOrderIndex === cardOrder.length - 1) {
+                console.log('Auto-play: Reached last card, stopping');
+                setAutoPlayMode(false);
+              }
+            }, autoPlayDelay * 1000);
+          }
+        }, autoPlayDelay * 1000);
+      }
+
+      return () => {
+        stopAutoPlay();
+      };
+    }
+  }, [autoPlayMode, currentCardIndex, currentOrderIndex, isFlipped, showCorrectAnswers, showSummary, audioMode, autoPlayDelay, cardOrder.length, handleNext]);
+
+  // Cleanup auto-play on unmount
+  useEffect(() => {
+    return () => {
+      stopAutoPlay();
     };
   }, []);
 
@@ -1784,6 +1859,52 @@ function FlashcardViewer({ flashcard, onBack }) {
               <span className="audio-status">▶️ Playing...</span>
             )}
           </>
+        )}
+      </div>
+
+      {/* Auto-Play Mode Controls */}
+      <div className="autoplay-controls">
+        <button
+          onClick={toggleAutoPlayMode}
+          className={`autoplay-toggle-btn ${autoPlayMode ? 'active' : ''}`}
+          title={autoPlayMode ? 'Disable Auto-Play' : 'Enable Auto-Play'}
+          disabled={audioMode}
+        >
+          {autoPlayMode ? '🔄 Auto-Play ON' : '⏸️ Auto-Play OFF'}
+        </button>
+
+        {autoPlayMode && (
+          <>
+            <button
+              onClick={stopAutoPlay}
+              className="autoplay-control-btn"
+              title="Stop Auto-Play"
+            >
+              ⏹️ Stop
+            </button>
+
+            <div className="autoplay-delay-control">
+              <label>
+                Delay: {autoPlayDelay}s
+                <input
+                  type="range"
+                  min="3"
+                  max="15"
+                  value={autoPlayDelay}
+                  onChange={(e) => setAutoPlayDelay(parseInt(e.target.value))}
+                  className="autoplay-delay-slider"
+                />
+              </label>
+            </div>
+
+            <span className="autoplay-status">▶️ Auto-playing...</span>
+          </>
+        )}
+
+        {audioMode && (
+          <span className="mode-info" title="Auto-play is disabled when audio mode is active">
+            ℹ️ Disabled during audio mode
+          </span>
         )}
       </div>
 
