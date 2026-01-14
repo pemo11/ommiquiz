@@ -74,6 +74,28 @@
   opacity: 0.6;
 }
 
+.download-json-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  font-weight: 600;
+}
+
+.download-json-button:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.download-json-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .error-message {
   background-color: #f8d7da;
   color: #721c24;

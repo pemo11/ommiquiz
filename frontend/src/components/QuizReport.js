@@ -97,6 +97,31 @@ function QuizReport({ onBack }) {
     }
   };
 
+  const handleDownloadJSON = () => {
+    try {
+      if (!reportData) {
+        throw new Error('No report data available');
+      }
+
+      // Create a formatted JSON string
+      const jsonString = JSON.stringify(reportData, null, 2);
+
+      // Create blob and download
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `quiz-statistics-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Error downloading JSON:', err);
+      setError(err.message);
+    }
+  };
+
   const formatDuration = (seconds) => {
     if (!seconds) return 'N/A';
     if (seconds < 60) return `${seconds}s`;
@@ -157,6 +182,13 @@ function QuizReport({ onBack }) {
             disabled={loading || !reportData}
           >
             📥 Download PDF
+          </button>
+          <button
+            onClick={handleDownloadJSON}
+            className="download-json-button"
+            disabled={loading || !reportData}
+          >
+            💾 Download JSON
           </button>
         </div>
       </div>
