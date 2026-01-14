@@ -68,7 +68,8 @@ async def load_user_progress(user_id: str, flashcard_id: str) -> Dict:
             # Get session history (last 20 sessions)
             sessions_query = """
                 SELECT id, started_at, completed_at, cards_reviewed,
-                       box1_count, box2_count, box3_count, duration_seconds
+                       box1_count, box2_count, box3_count, duration_seconds,
+                       average_time_to_flip_seconds
                 FROM quiz_sessions
                 WHERE user_id = $1 AND flashcard_id = $2
                 ORDER BY completed_at DESC
@@ -87,7 +88,8 @@ async def load_user_progress(user_id: str, flashcard_id: str) -> Dict:
                         "box2": row['box2_count'],
                         "box3": row['box3_count']
                     },
-                    "duration_seconds": row['duration_seconds']
+                    "duration_seconds": row['duration_seconds'],
+                    "average_time_to_flip_seconds": row['average_time_to_flip_seconds']
                 }
                 for row in session_rows
             ]
@@ -211,8 +213,9 @@ async def save_user_progress(user_id: str, flashcard_id: str, progress: Dict) ->
                     insert_session_query = """
                         INSERT INTO quiz_sessions
                             (user_id, flashcard_id, flashcard_title, started_at, completed_at,
-                             cards_reviewed, box1_count, box2_count, box3_count, duration_seconds)
-                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                             cards_reviewed, box1_count, box2_count, box3_count, duration_seconds,
+                             average_time_to_flip_seconds)
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                     """
                     await conn.execute(
                         insert_session_query,
@@ -225,7 +228,8 @@ async def save_user_progress(user_id: str, flashcard_id: str, progress: Dict) ->
                         box_dist.get("box1", 0),
                         box_dist.get("box2", 0),
                         box_dist.get("box3", 0),
-                        summary.get("duration_seconds")
+                        summary.get("duration_seconds"),
+                        summary.get("average_time_to_flip_seconds")
                     )
 
         logger.info(

@@ -288,6 +288,10 @@ function FlashcardViewer({ flashcard, onBack }) {
   const [autoPlayDelay, setAutoPlayDelay] = useState(5); // Seconds to show answer before advancing
   const autoPlayTimeoutRef = useRef(null);
 
+  // Time-to-flip tracking
+  const [cardDisplayTime, setCardDisplayTime] = useState(null); // Timestamp when current card was displayed
+  const [flipTimes, setFlipTimes] = useState([]); // Array of flip durations in seconds for all cards
+
   console.log('FlashcardViewer received flashcard:', flashcard);
   
   console.log('Cards array:', cards);
@@ -597,6 +601,8 @@ function FlashcardViewer({ flashcard, onBack }) {
     setShowCelebration(false);
     setElapsedTime(0);
     setStartTime(Date.now());
+    setFlipTimes([]);
+    setCardDisplayTime(null);
   };
 
   useEffect(() => {
@@ -617,6 +623,35 @@ function FlashcardViewer({ flashcard, onBack }) {
     console.log('cardResults for current card:', cardResults[currentCardIndex]);
     console.log('-------------------');
   }, [showCorrectAnswers, currentCardAnswered, currentCardIndex, cardResults]);
+
+  // Track card display time for time-to-flip metric
+  useEffect(() => {
+    // When a new card is displayed (not flipped), record the timestamp
+    if (!isFlipped && !audioMode && !autoPlayMode) {
+      setCardDisplayTime(Date.now());
+      console.log('Card displayed at:', new Date(Date.now()).toISOString());
+    }
+  }, [currentCardIndex, isFlipped, audioMode, autoPlayMode]);
+
+  // Record time-to-flip when card is flipped
+  useEffect(() => {
+    // When card is flipped and we have a display time, calculate duration
+    if (isFlipped && cardDisplayTime && !audioMode && !autoPlayMode) {
+      const flipTime = Date.now();
+      const durationMs = flipTime - cardDisplayTime;
+      const durationSeconds = durationMs / 1000;
+
+      // Only record reasonable flip times (between 0.5 and 300 seconds)
+      // This filters out audio/auto-play flips and unrealistic values
+      if (durationSeconds >= 0.5 && durationSeconds <= 300) {
+        setFlipTimes(prev => [...prev, durationSeconds]);
+        console.log(`Card flipped after ${durationSeconds.toFixed(2)} seconds`);
+      }
+
+      // Reset display time after recording
+      setCardDisplayTime(null);
+    }
+  }, [isFlipped, cardDisplayTime, audioMode, autoPlayMode]);
 
   // Reset selections when card changes
   useEffect(() => {
@@ -1144,6 +1179,12 @@ function FlashcardViewer({ flashcard, onBack }) {
     }
 
     const stats = calculateStats();
+
+    // Calculate average time-to-flip
+    const averageTimeToFlip = flipTimes.length > 0
+      ? flipTimes.reduce((sum, time) => sum + time, 0) / flipTimes.length
+      : null;
+
     const progressData = {
       cards: Object.entries(currentSessionBoxes).reduce((acc, [cardId, box]) => {
         acc[cardId] = {
@@ -1160,8 +1201,11 @@ function FlashcardViewer({ flashcard, onBack }) {
           box1: stats.box1Count,
           box2: stats.box2Count,
           box3: stats.box3Count
-        }
-      }
+        },
+        duration_seconds: elapsedTime,
+        average_time_to_flip_seconds: averageTimeToFlip
+      },
+      flashcard_title: flashcard.title || flashcard.id
     };
 
     try {

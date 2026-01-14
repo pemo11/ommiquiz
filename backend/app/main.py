@@ -552,7 +552,8 @@ async def get_learning_report(
             if flashcard_id:
                 query = """
                     SELECT id, flashcard_id, flashcard_title, started_at, completed_at,
-                           cards_reviewed, box1_count, box2_count, box3_count, duration_seconds
+                           cards_reviewed, box1_count, box2_count, box3_count, duration_seconds,
+                           average_time_to_flip_seconds
                     FROM quiz_sessions
                     WHERE user_id = $1 AND flashcard_id = $2 AND completed_at >= $3
                     ORDER BY completed_at DESC
@@ -561,7 +562,8 @@ async def get_learning_report(
             else:
                 query = """
                     SELECT id, flashcard_id, flashcard_title, started_at, completed_at,
-                           cards_reviewed, box1_count, box2_count, box3_count, duration_seconds
+                           cards_reviewed, box1_count, box2_count, box3_count, duration_seconds,
+                           average_time_to_flip_seconds
                     FROM quiz_sessions
                     WHERE user_id = $1 AND completed_at >= $2
                     ORDER BY completed_at DESC
@@ -576,6 +578,10 @@ async def get_learning_report(
             total_box3 = sum(row['box3_count'] for row in sessions)
             total_duration = sum(row['duration_seconds'] or 0 for row in sessions)
 
+            # Calculate average time-to-flip across all sessions
+            flip_times = [row['average_time_to_flip_seconds'] for row in sessions if row['average_time_to_flip_seconds'] is not None]
+            average_time_to_flip = sum(flip_times) / len(flip_times) if flip_times else None
+
             # Format session details
             session_details = [
                 {
@@ -588,7 +594,8 @@ async def get_learning_report(
                     "box1_count": row['box1_count'],
                     "box2_count": row['box2_count'],
                     "box3_count": row['box3_count'],
-                    "duration_seconds": row['duration_seconds']
+                    "duration_seconds": row['duration_seconds'],
+                    "average_time_to_flip_seconds": row['average_time_to_flip_seconds']
                 }
                 for row in sessions
             ]
@@ -609,7 +616,8 @@ async def get_learning_report(
                     "total_uncertain": total_box2,
                     "total_not_learned": total_box3,
                     "total_duration_seconds": total_duration,
-                    "average_session_duration": total_duration / total_sessions if total_sessions > 0 else 0
+                    "average_session_duration": total_duration / total_sessions if total_sessions > 0 else 0,
+                    "average_time_to_flip_seconds": average_time_to_flip
                 },
                 "sessions": session_details
             }
@@ -667,7 +675,8 @@ async def get_quiz_history_pdf(
             # Get all sessions for user
             query = """
                 SELECT id, flashcard_id, flashcard_title, started_at, completed_at,
-                       cards_reviewed, box1_count, box2_count, box3_count, duration_seconds
+                       cards_reviewed, box1_count, box2_count, box3_count, duration_seconds,
+                       average_time_to_flip_seconds
                 FROM quiz_sessions
                 WHERE user_id = $1 AND completed_at >= $2
                 ORDER BY completed_at DESC
@@ -682,6 +691,10 @@ async def get_quiz_history_pdf(
             total_box3 = sum(row['box3_count'] for row in sessions)
             total_duration = sum(row['duration_seconds'] or 0 for row in sessions)
 
+            # Calculate average time-to-flip across all sessions
+            flip_times = [row['average_time_to_flip_seconds'] for row in sessions if row['average_time_to_flip_seconds'] is not None]
+            average_time_to_flip = sum(flip_times) / len(flip_times) if flip_times else None
+
             # Format session details
             session_details = [
                 {
@@ -694,7 +707,8 @@ async def get_quiz_history_pdf(
                     "box1_count": row['box1_count'],
                     "box2_count": row['box2_count'],
                     "box3_count": row['box3_count'],
-                    "duration_seconds": row['duration_seconds']
+                    "duration_seconds": row['duration_seconds'],
+                    "average_time_to_flip_seconds": row['average_time_to_flip_seconds']
                 }
                 for row in sessions
             ]
@@ -712,7 +726,8 @@ async def get_quiz_history_pdf(
                     "total_uncertain": total_box2,
                     "total_not_learned": total_box3,
                     "total_duration_seconds": total_duration,
-                    "average_session_duration": total_duration / total_sessions if total_sessions > 0 else 0
+                    "average_session_duration": total_duration / total_sessions if total_sessions > 0 else 0,
+                    "average_time_to_flip_seconds": average_time_to_flip
                 },
                 "sessions": session_details
             }

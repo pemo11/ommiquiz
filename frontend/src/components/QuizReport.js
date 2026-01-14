@@ -238,6 +238,14 @@ function QuizReport({ onBack }) {
                   {formatDuration(Math.round(reportData.summary.average_session_duration))}
                 </span>
               </div>
+              {reportData.summary.average_time_to_flip_seconds && (
+                <div className="summary-card">
+                  <span className="summary-label">Avg. Think Time</span>
+                  <span className="summary-value">
+                    {reportData.summary.average_time_to_flip_seconds.toFixed(1)}s
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -262,6 +270,7 @@ function QuizReport({ onBack }) {
                       <th>Box Distribution</th>
                       <th>Score</th>
                       <th>Duration</th>
+                      <th>Avg. Think</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -287,6 +296,11 @@ function QuizReport({ onBack }) {
                         </td>
                         <td className="centered">
                           {formatDuration(session.duration_seconds)}
+                        </td>
+                        <td className="centered">
+                          {session.average_time_to_flip_seconds
+                            ? `${session.average_time_to_flip_seconds.toFixed(1)}s`
+                            : 'N/A'}
                         </td>
                       </tr>
                     ))}
