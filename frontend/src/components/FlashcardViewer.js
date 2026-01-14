@@ -326,15 +326,22 @@ function FlashcardViewer({ flashcard, onBack }) {
     });
   };
 
-  const playAudioForCard = async () => {
+  const playAudioForCard = React.useCallback(async () => {
     if (!currentCard) return;
 
     stopAudio();
     setIsAudioPlaying(true);
 
     try {
-      // Determine language from flashcard metadata
-      const lang = flashcard.language === 'en' ? 'en-US' : 'de-DE';
+      // Determine language - check card language first, then flashcard language
+      let lang = 'de-DE';
+      if (currentCard.language === 'en' || flashcard.language === 'en') {
+        lang = 'en-US';
+      } else if (currentCard.language === 'de' || flashcard.language === 'de') {
+        lang = 'de-DE';
+      }
+
+      console.log('Audio mode: Using language', lang, 'for card');
 
       // Speak question
       await speakText(currentCard.question, lang);
@@ -344,15 +351,25 @@ function FlashcardViewer({ flashcard, onBack }) {
         audioTimeoutRef.current = setTimeout(resolve, audioDelay * 1000);
       });
 
-      // Check if still in audio mode (user might have stopped)
-      if (!audioMode || !isAudioPlaying) return;
+      // Use a ref check instead of state to avoid stale closure
+      if (!audioMode) {
+        console.log('Audio mode was disabled during delay');
+        return;
+      }
 
       // Reveal answer
       setIsFlipped(true);
       setShowCorrectAnswers(true);
 
+      // Small delay to let UI update
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       // Speak answer
       let answerText = '';
+      const rawCardType = currentCard?.type ||
+                          (Array.isArray(currentCard?.correctAnswers) || Array.isArray(currentCard?.answers) ? 'multiple' : 'single');
+      const cardType = (typeof rawCardType === 'string' ? rawCardType.toLowerCase() : rawCardType) || 'single';
+
       if (cardType === 'multiple' && currentCard.correctAnswers) {
         // For multiple choice, read the correct answers
         const correctAnswers = currentCard.answers.filter((_, idx) =>
@@ -366,11 +383,12 @@ function FlashcardViewer({ flashcard, onBack }) {
       await speakText(answerText, lang);
 
       setIsAudioPlaying(false);
+      console.log('Audio playback completed for card');
     } catch (error) {
       console.error('Audio playback error:', error);
       setIsAudioPlaying(false);
     }
-  };
+  }, [currentCard, flashcard.language, audioDelay, audioMode]);
 
   const toggleAudioMode = () => {
     const newMode = !audioMode;
@@ -387,25 +405,28 @@ function FlashcardViewer({ flashcard, onBack }) {
   // Auto-play audio when card changes in audio mode
   useEffect(() => {
     if (audioMode && !showSummary && currentCard) {
+      console.log('Audio mode: Card changed, resetting and playing audio');
       // Reset card state
       setIsFlipped(false);
       setShowCorrectAnswers(false);
       setSelectedAnswers([]);
 
       // Play audio after a short delay to allow UI to update
-      setTimeout(() => {
+      const playTimeout = setTimeout(() => {
         if (audioMode) {
+          console.log('Audio mode: Starting playback for new card');
           playAudioForCard();
         }
       }, 500);
-    }
 
-    return () => {
-      if (audioTimeoutRef.current) {
-        clearTimeout(audioTimeoutRef.current);
-      }
-    };
-  }, [currentCardIndex, audioMode]);
+      return () => {
+        clearTimeout(playTimeout);
+        if (audioTimeoutRef.current) {
+          clearTimeout(audioTimeoutRef.current);
+        }
+      };
+    }
+  }, [currentCardIndex, audioMode, showSummary, currentCard, playAudioForCard]);
 
   // Cleanup audio on unmount
   useEffect(() => {
@@ -1333,17 +1354,20 @@ function FlashcardViewer({ flashcard, onBack }) {
                 <div className="mode-count">{cards.length} cards</div>
               </button>
 
-              <button
-                className={`mode-card ${selectedMode === 'speed' ? 'selected' : ''}`}
-                onClick={() => setSelectedMode('speed')}
-              >
-                <div className="mode-icon">⚡</div>
-                <div className="mode-title">{t('quiz.speedMode')}</div>
-                <div className="mode-description">{t('quiz.speedModeDesc')}</div>
-                <div className="mode-count">
-                  {Math.min(12, cards.length)} cards
-                </div>
-              </button>
+              {/* Speed mode only shown if more than 12 cards */}
+              {cards.length > 12 && (
+                <button
+                  className={`mode-card ${selectedMode === 'speed' ? 'selected' : ''}`}
+                  onClick={() => setSelectedMode('speed')}
+                >
+                  <div className="mode-icon">⚡</div>
+                  <div className="mode-title">{t('quiz.speedMode')}</div>
+                  <div className="mode-description">{t('quiz.speedModeDesc')}</div>
+                  <div className="mode-count">
+                    12 cards
+                  </div>
+                </button>
+              )}
             </div>
 
             <button
