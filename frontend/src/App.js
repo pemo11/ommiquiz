@@ -15,14 +15,6 @@ console.log('📦 FRONTEND_VERSION from import:', FRONTEND_VERSION);
 console.log('🌍 process.env.NODE_ENV:', process.env.NODE_ENV);
 console.log('🔧 process.env.REACT_APP_VERSION:', process.env.REACT_APP_VERSION);
 
-// Try to get package.json version directly
-try {
-  const packageJson = require('../package.json');
-  console.log('📋 Package.json version direct:', packageJson.version);
-} catch (error) {
-  console.log('❌ Could not load package.json directly:', error.message);
-}
-
 console.log('✨ Frontend app starting with version:', FRONTEND_VERSION);
 console.log('🔥 === END VERSION DEBUG ===');
 
