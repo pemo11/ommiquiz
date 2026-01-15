@@ -185,6 +185,41 @@ function AdminPanel({ onBack }) {
     }
   };
 
+  const handleDeleteUser = async (userId, userEmail) => {
+    if (!window.confirm(`Are you sure you want to delete user "${userEmail}"? This will permanently delete all their data including learning progress and quiz sessions. This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch(`${API_URL}/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `Failed to delete user: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setMessage(data.message);
+
+      // Refresh user list
+      await fetchUsers();
+    } catch (err) {
+      console.error('Error deleting user:', err);
+      setError(err.message);
+    }
+  };
+
   const handleShowUserManagement = () => {
     setShowUserManagement(true);
     setShowStatistics(false);
@@ -1329,12 +1364,22 @@ function AdminPanel({ onBack }) {
                         </td>
                         <td>{new Date(user.created_at).toLocaleDateString()}</td>
                         <td>
-                          <button
-                            onClick={() => handleToggleAdminStatus(user.id, user.is_admin)}
-                            className={`toggle-admin-btn ${user.is_admin ? 'revoke' : 'grant'}`}
-                          >
-                            {user.is_admin ? 'Revoke Admin' : 'Grant Admin'}
-                          </button>
+                          <div className="user-action-buttons">
+                            <button
+                              onClick={() => handleToggleAdminStatus(user.id, user.is_admin)}
+                              className={`toggle-admin-btn ${user.is_admin ? 'revoke' : 'grant'}`}
+                            >
+                              {user.is_admin ? 'Revoke Admin' : 'Grant Admin'}
+                            </button>
+                            <button
+                              onClick={() => handleDeleteUser(user.id, user.email)}
+                              className="delete-user-btn"
+                              disabled={user.email === 'ommiadmin@ommiquiz.de'}
+                              title={user.email === 'ommiadmin@ommiquiz.de' ? 'Cannot delete built-in admin user' : 'Delete this user'}
+                            >
+                              🗑️ Delete
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

@@ -910,6 +910,103 @@ async def update_admin_status(
         )
 
 
+@api_router.delete("/admin/users/{user_id}")
+async def delete_user(
+    user_id: str,
+    admin: AuthenticatedUser = Depends(get_current_admin)
+):
+    """Delete a user and all associated data (Admin only)."""
+    logger.info(
+        "Admin deleting user",
+        admin_user=admin.email,
+        target_user_id=user_id
+    )
+
+    # Prevent self-deletion
+    if user_id == admin.user_id:
+        logger.warning("Admin attempted self-deletion", admin_user=admin.email)
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot delete your own account"
+        )
+
+    from .database import get_db_pool
+    pool = await get_db_pool()
+
+    try:
+        async with pool.acquire() as conn:
+            # Verify user exists and get email
+            user = await conn.fetchrow(
+                "SELECT email, is_admin FROM user_profiles WHERE id = $1",
+                user_id
+            )
+
+            if not user:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"User {user_id} not found"
+                )
+
+            # Prevent deletion of built-in admin user
+            if user['email'] == 'ommiadmin@ommiquiz.de':
+                logger.warning(
+                    "Attempted to delete built-in admin",
+                    admin_user=admin.email,
+                    target_user=user['email']
+                )
+                raise HTTPException(
+                    status_code=403,
+                    detail="Cannot delete the built-in admin user"
+                )
+
+            # Delete user and all associated data in a transaction
+            async with conn.transaction():
+                # Delete quiz sessions
+                await conn.execute(
+                    "DELETE FROM quiz_sessions WHERE user_id = $1",
+                    user_id
+                )
+
+                # Delete learning progress
+                await conn.execute(
+                    "DELETE FROM learning_progress WHERE user_id = $1",
+                    user_id
+                )
+
+                # Delete user profile
+                await conn.execute(
+                    "DELETE FROM user_profiles WHERE id = $1",
+                    user_id
+                )
+
+            logger.info(
+                "User deleted successfully",
+                admin_user=admin.email,
+                deleted_user_email=user['email'],
+                deleted_user_id=user_id
+            )
+
+            return {
+                "success": True,
+                "message": f"User {user['email']} deleted successfully",
+                "user_id": user_id
+            }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(
+            "Error deleting user",
+            admin_user=admin.email,
+            target_user_id=user_id,
+            error=str(e)
+        )
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to delete user: {str(e)}"
+        )
+
+
 @api_router.get("/users/me")
 async def get_current_user_profile(
     user: AuthenticatedUser = Depends(get_current_user)
