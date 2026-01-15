@@ -6,7 +6,7 @@ BeforeAll {
     Import-Module $ModulePath -Force
 
     # Set base URL to production
-    Set-OmmiQuizApiBaseUrl -BaseUrl 'https://ommiquiz.de/api'
+    Set-OmmiQuizApiBaseUrl -BaseUrl 'https://nanoquiz-backend-ypez6.ondigitalocean.app/api'
 }
 
 Describe 'Logging Query Endpoints' {

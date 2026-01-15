@@ -6,7 +6,7 @@ BeforeAll {
     Import-Module $ModulePath -Force
 
     # Set base URL to production
-    Set-OmmiQuizApiBaseUrl -BaseUrl 'https://ommiquiz.de/api'
+    Set-OmmiQuizApiBaseUrl -BaseUrl 'https://nanoquiz-backend-ypez6.ondigitalocean.app/api'
 }
 
 Describe 'Version and Info Endpoints' {
@@ -103,7 +103,7 @@ Describe 'Base URL Configuration' {
 
         It 'Should return current base URL' {
             # First set to production URL
-            Set-OmmiQuizApiBaseUrl -BaseUrl 'https://ommiquiz.de/api'
+            Set-OmmiQuizApiBaseUrl -BaseUrl 'https://nanoquiz-backend-ypez6.ondigitalocean.app/api'
 
             $url = Get-OmmiQuizApiBaseUrl
 
@@ -115,5 +115,5 @@ Describe 'Base URL Configuration' {
 
 AfterAll {
     # Restore production URL
-    Set-OmmiQuizApiBaseUrl -BaseUrl 'https://ommiquiz.de/api'
+    Set-OmmiQuizApiBaseUrl -BaseUrl 'https://nanoquiz-backend-ypez6.ondigitalocean.app/api'
 }
