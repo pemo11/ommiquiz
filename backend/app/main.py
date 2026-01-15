@@ -948,7 +948,7 @@ async def delete_user(
                 )
 
             # Prevent deletion of built-in admin user
-            if user['email'] == 'ommiadmin@ommiquiz.de':
+            if user['email'] in ['ommiadmin@example.com', 'ommiadmin@ommiquiz.de']:
                 logger.warning(
                     "Attempted to delete built-in admin",
                     admin_user=admin.email,

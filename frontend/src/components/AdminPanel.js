@@ -1374,8 +1374,8 @@ function AdminPanel({ onBack }) {
                             <button
                               onClick={() => handleDeleteUser(user.id, user.email)}
                               className="delete-user-btn"
-                              disabled={user.email === 'ommiadmin@ommiquiz.de'}
-                              title={user.email === 'ommiadmin@ommiquiz.de' ? 'Cannot delete built-in admin user' : 'Delete this user'}
+                              disabled={user.email === 'ommiadmin@example.com' || user.email === 'ommiadmin@ommiquiz.de'}
+                              title={(user.email === 'ommiadmin@example.com' || user.email === 'ommiadmin@ommiquiz.de') ? 'Cannot delete built-in admin user' : 'Delete this user'}
                             >
                               🗑️ Delete
                             </button>
