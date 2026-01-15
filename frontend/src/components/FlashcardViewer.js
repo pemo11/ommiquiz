@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import './FlashcardViewer.css';
 import { useTranslation } from '../context/TranslationContext';
 
@@ -461,6 +461,63 @@ function FlashcardViewer({ flashcard, onBack }) {
     }
   };
 
+  // Define proceedToNextCard early to avoid hoisting issues
+  const proceedToNextCard = useCallback(() => {
+    const isLastCardInSession = currentOrderIndex >= cardOrder.length - 1;
+
+    if (!isLastCardInSession) {
+      const nextOrderIndex = currentOrderIndex + 1;
+      const nextCardIndex = cardOrder[nextOrderIndex];
+      setCurrentOrderIndex(nextOrderIndex);
+      setCurrentCardIndex(nextCardIndex);
+      setIsFlipped(false);
+      setSwipeDirection(null);
+      return;
+    }
+
+    // When we reach the last card, show the summary
+    // Use a timeout to ensure state updates are processed before showing summary
+    setTimeout(() => {
+      setQuizCompletedAt(new Date());
+      setShowSummary(true);
+    }, 0);
+  }, [currentOrderIndex, cardOrder, setCurrentOrderIndex, setCurrentCardIndex, setIsFlipped, setSwipeDirection, setQuizCompletedAt, setShowSummary]);
+
+  // Define handleNext early to avoid hoisting issues
+  const handleNext = useCallback(() => {
+    // If answers are shown but card not yet answered (Done/Postpone not clicked),
+    // clear the evaluation so user can try again when they return
+    if (showCorrectAnswers && !currentCardAnswered) {
+      setCardResults(prev => {
+        const newResults = { ...prev };
+        delete newResults[currentCardIndex];
+        return newResults;
+      });
+    } else if (!cardResults[currentCardIndex]) {
+      // Card was skipped without any interaction
+      const correctAnswers = currentCard?.correctAnswers || [];
+      setCardResults(prev => ({
+        ...prev,
+        [currentCardIndex]: {
+          type: cardType,
+          correct: false,
+          question: currentCard?.question,
+          answer: cardType === 'multiple'
+            ? currentCard?.answers?.filter((_, idx) => correctAnswers[idx]).join(', ')
+            : currentCard?.answer,
+          userAnswer: 'Postponed (not evaluated)',
+          selectedAnswers: cardType === 'multiple' ? [] : undefined,
+          correctAnswers,
+          level: currentCard?.level
+        }
+      }));
+      // Note: With the new box system, skipped cards are not automatically assigned a box
+      // They will remain unassigned until the user explicitly assigns them to a box
+    }
+
+    proceedToNextCard();
+  }, [showCorrectAnswers, currentCardAnswered, cardResults, currentCardIndex, currentCard, cardType, setCardResults, proceedToNextCard]);
+
   // Auto-play logic: flip card and advance automatically
   useEffect(() => {
     if (autoPlayMode && !showSummary && currentCard && !audioMode) {
@@ -718,27 +775,6 @@ function FlashcardViewer({ flashcard, onBack }) {
     setSessionType('full');
   }, [flashcard]);
 
-  const proceedToNextCard = () => {
-    const isLastCardInSession = currentOrderIndex >= cardOrder.length - 1;
-
-    if (!isLastCardInSession) {
-      const nextOrderIndex = currentOrderIndex + 1;
-      const nextCardIndex = cardOrder[nextOrderIndex];
-      setCurrentOrderIndex(nextOrderIndex);
-      setCurrentCardIndex(nextCardIndex);
-      setIsFlipped(false);
-      setSwipeDirection(null);
-      return;
-    }
-
-    // When we reach the last card, show the summary
-    // Use a timeout to ensure state updates are processed before showing summary
-    setTimeout(() => {
-      setQuizCompletedAt(new Date());
-      setShowSummary(true);
-    }, 0);
-  };
-
   const handleCardClick = () => {
     if (gestureHandledRef.current) {
       gestureHandledRef.current = false;
@@ -916,40 +952,6 @@ function FlashcardViewer({ flashcard, onBack }) {
   const handleMultipleChoiceEvaluation = (markAsCorrect) => {
     // Map to box assignment: markAsCorrect -> Box 1, !markAsCorrect -> Box 3
     handleBoxAssignment(markAsCorrect ? 1 : 3);
-  };
-
-  const handleNext = () => {
-    // If answers are shown but card not yet answered (Done/Postpone not clicked),
-    // clear the evaluation so user can try again when they return
-    if (showCorrectAnswers && !currentCardAnswered) {
-      setCardResults(prev => {
-        const newResults = { ...prev };
-        delete newResults[currentCardIndex];
-        return newResults;
-      });
-    } else if (!cardResults[currentCardIndex]) {
-      // Card was skipped without any interaction
-      const correctAnswers = currentCard?.correctAnswers || [];
-      setCardResults(prev => ({
-        ...prev,
-        [currentCardIndex]: {
-          type: cardType,
-          correct: false,
-          question: currentCard?.question,
-          answer: cardType === 'multiple'
-            ? currentCard?.answers?.filter((_, idx) => correctAnswers[idx]).join(', ')
-            : currentCard?.answer,
-          userAnswer: 'Postponed (not evaluated)',
-          selectedAnswers: cardType === 'multiple' ? [] : undefined,
-          correctAnswers,
-          level: currentCard?.level
-        }
-      }));
-      // Note: With the new box system, skipped cards are not automatically assigned a box
-      // They will remain unassigned until the user explicitly assigns them to a box
-    }
-
-    proceedToNextCard();
   };
 
   const handlePrevious = () => {

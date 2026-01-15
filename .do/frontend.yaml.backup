@@ -10,14 +10,8 @@ static_sites:
     output_dir: build
     environment_slug: node-js
     envs:
-      - key: REACT_APP_VERSION
-        value: "1.0.26"
       - key: REACT_APP_API_URL
         value: "https://nanoquiz-backend-ypez6.ondigitalocean.app/api"
-      - key: REACT_APP_SUPABASE_URL
-        value: "https://zihxfkwzlxgpppzddfyb.supabase.co"
-      - key: REACT_APP_SUPABASE_ANON_KEY
-        value: "sb_publishable_06GTeAb6I9QWgNTOCH0LKw_H_4lzXnP"
       - key: NODE_ENV
         value: "production"
       - key: GENERATE_SOURCEMAP

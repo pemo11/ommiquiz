@@ -1,5 +1,4 @@
-import packageJson from '../package.json';
-
-// This file exports the frontend version from package.json
-// The version can be overridden using the REACT_APP_VERSION environment variable
-export const FRONTEND_VERSION = process.env.REACT_APP_VERSION || packageJson.version;
+// This file exports the frontend version
+// The version should be set using the REACT_APP_VERSION environment variable
+// Default fallback version if not set
+export const FRONTEND_VERSION = process.env.REACT_APP_VERSION || '1.0.26';
