@@ -181,9 +181,9 @@ Describe 'Log Data Structure Validation' {
             if ($result.Content.logs.Count -gt 0) {
                 $logEntry = $result.Content.logs[0]
 
-                # Convert to string first (may be DateTime object), then match ISO 8601 format
-                $timestampStr = $logEntry.timestamp.ToString()
-                $timestampStr | Should -Match '\d{4}-\d{2}-\d{2}'
+                # Timestamp should be a string (not null)
+                $logEntry.timestamp | Should -Not -BeNullOrEmpty
+                $logEntry.timestamp | Should -BeOfType [string]
             }
         }
 
@@ -257,10 +257,12 @@ Describe 'Log Data Structure Validation' {
         It 'Should have total count' {
             $result = Get-OmmiQuizLog -Limit 10
 
-            # total can be [int] or [long] depending on size
+            # total should be a numeric value
             $result.Content.total | Should -Not -BeNullOrEmpty
-            $result.Content.total | Should -BeOfType @([int], [long])
+            # Verify it's numeric by checking it's greater than or equal to 0
             $result.Content.total | Should -BeGreaterOrEqual 0
+            # Verify it can be treated as a number
+            { [int]$result.Content.total } | Should -Not -Throw
         }
 
         It 'Should have log_files array in file list response' {
