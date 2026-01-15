@@ -812,4 +812,608 @@ function Test-OmmiQuizSpeedQuizPdfEndpoint {
     }
 }
 
+# ============================================================================
+# Version & Info Endpoints
+# ============================================================================
+
+function Get-OmmiQuizVersion {
+    <#
+    .SYNOPSIS
+    Retrieves the API version information.
+
+    .EXAMPLE
+    Get-OmmiQuizVersion
+    #>
+    [CmdletBinding()]
+    param()
+
+    Invoke-OmmiQuizApiRequest -Path '/version' -Method 'GET' -ExpectedStatusCode 200
+}
+
+function Get-OmmiQuizRoot {
+    <#
+    .SYNOPSIS
+    Retrieves the root API information.
+
+    .EXAMPLE
+    Get-OmmiQuizRoot
+    #>
+    [CmdletBinding()]
+    param()
+
+    Invoke-OmmiQuizApiRequest -Path '/' -Method 'GET' -ExpectedStatusCode 200
+}
+
+# ============================================================================
+# Flashcard Management Endpoints (Admin)
+# ============================================================================
+
+function Update-OmmiQuizFlashcardSet {
+    <#
+    .SYNOPSIS
+    Updates an existing flashcard set.
+
+    .PARAMETER FlashcardId
+    The identifier of the flashcard set to update.
+
+    .PARAMETER FlashcardData
+    The flashcard data object or JSON string containing the updated flashcard set.
+
+    .PARAMETER AuthToken
+    Authentication token (JWT) for admin access.
+
+    .EXAMPLE
+    $data = @{ title = "Updated Title"; cards = @() } | ConvertTo-Json
+    Update-OmmiQuizFlashcardSet -FlashcardId "my-set" -FlashcardData $data -AuthToken $token
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$FlashcardId,
+
+        [Parameter(Mandatory)]
+        [object]$FlashcardData,
+
+        [Parameter(Mandatory)]
+        [string]$AuthToken
+    )
+
+    $headers = @{
+        'Authorization' = "Bearer $AuthToken"
+    }
+
+    Invoke-OmmiQuizApiRequest -Path "/flashcards/$FlashcardId" -Method 'PUT' -Body $FlashcardData -Headers $headers -ExpectedStatusCode 200
+}
+
+function New-OmmiQuizFlashcardSet {
+    <#
+    .SYNOPSIS
+    Uploads a new flashcard set from YAML file.
+
+    .PARAMETER FilePath
+    Path to the YAML file containing the flashcard set.
+
+    .PARAMETER AuthToken
+    Authentication token (JWT) for admin access.
+
+    .EXAMPLE
+    New-OmmiQuizFlashcardSet -FilePath "C:\flashcards\my-set.yml" -AuthToken $token
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [ValidateScript({Test-Path $_})]
+        [string]$FilePath,
+
+        [Parameter(Mandatory)]
+        [string]$AuthToken
+    )
+
+    $baseUrl = Get-OmmiQuizApiBaseUrl
+    $uri = [uri]::new([uri]$baseUrl, "flashcards/upload")
+
+    $fileContent = [System.IO.File]::ReadAllBytes($FilePath)
+    $fileName = [System.IO.Path]::GetFileName($FilePath)
+
+    $boundary = [System.Guid]::NewGuid().ToString()
+    $headers = @{
+        'Authorization' = "Bearer $AuthToken"
+        'Content-Type' = "multipart/form-data; boundary=$boundary"
+    }
+
+    # Build multipart form data
+    $bodyLines = @(
+        "--$boundary",
+        "Content-Disposition: form-data; name=`"file`"; filename=`"$fileName`"",
+        "Content-Type: application/x-yaml",
+        "",
+        [System.Text.Encoding]::UTF8.GetString($fileContent),
+        "--$boundary--"
+    )
+    $body = $bodyLines -join "`r`n"
+
+    try {
+        $response = Invoke-WebRequest -Uri $uri -Method POST -Headers $headers -Body $body -UseBasicParsing -ErrorAction Stop
+
+        [pscustomobject]@{
+            Uri = $uri.AbsoluteUri
+            Method = 'POST'
+            StatusCode = $response.StatusCode
+            Headers = $response.Headers
+            Content = $response.Content | ConvertFrom-Json
+        }
+    }
+    catch {
+        throw "Failed to upload flashcard set: $($_.Exception.Message)"
+    }
+}
+
+function Remove-OmmiQuizFlashcardSet {
+    <#
+    .SYNOPSIS
+    Deletes a flashcard set.
+
+    .PARAMETER FlashcardId
+    The identifier of the flashcard set to delete.
+
+    .PARAMETER AuthToken
+    Authentication token (JWT) for admin access.
+
+    .EXAMPLE
+    Remove-OmmiQuizFlashcardSet -FlashcardId "my-set" -AuthToken $token
+    #>
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact='High')]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$FlashcardId,
+
+        [Parameter(Mandatory)]
+        [string]$AuthToken
+    )
+
+    if ($PSCmdlet.ShouldProcess($FlashcardId, "Delete flashcard set")) {
+        $headers = @{
+            'Authorization' = "Bearer $AuthToken"
+        }
+
+        Invoke-OmmiQuizApiRequest -Path "/flashcards/$FlashcardId" -Method 'DELETE' -Headers $headers -ExpectedStatusCode 200
+    }
+}
+
+function Test-OmmiQuizFlashcardYaml {
+    <#
+    .SYNOPSIS
+    Validates a flashcard YAML file without uploading it.
+
+    .PARAMETER FilePath
+    Path to the YAML file to validate.
+
+    .PARAMETER AuthToken
+    Authentication token (JWT) for admin access.
+
+    .EXAMPLE
+    Test-OmmiQuizFlashcardYaml -FilePath "C:\flashcards\my-set.yml" -AuthToken $token
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [ValidateScript({Test-Path $_})]
+        [string]$FilePath,
+
+        [Parameter(Mandatory)]
+        [string]$AuthToken
+    )
+
+    $baseUrl = Get-OmmiQuizApiBaseUrl
+    $uri = [uri]::new([uri]$baseUrl, "flashcards/validate")
+
+    $fileContent = [System.IO.File]::ReadAllBytes($FilePath)
+    $fileName = [System.IO.Path]::GetFileName($FilePath)
+
+    $boundary = [System.Guid]::NewGuid().ToString()
+    $headers = @{
+        'Authorization' = "Bearer $AuthToken"
+        'Content-Type' = "multipart/form-data; boundary=$boundary"
+    }
+
+    # Build multipart form data
+    $bodyLines = @(
+        "--$boundary",
+        "Content-Disposition: form-data; name=`"file`"; filename=`"$fileName`"",
+        "Content-Type: application/x-yaml",
+        "",
+        [System.Text.Encoding]::UTF8.GetString($fileContent),
+        "--$boundary--"
+    )
+    $body = $bodyLines -join "`r`n"
+
+    try {
+        $response = Invoke-WebRequest -Uri $uri -Method POST -Headers $headers -Body $body -UseBasicParsing -ErrorAction Stop
+
+        [pscustomobject]@{
+            Uri = $uri.AbsoluteUri
+            Method = 'POST'
+            StatusCode = $response.StatusCode
+            Headers = $response.Headers
+            Content = $response.Content | ConvertFrom-Json
+        }
+    }
+    catch {
+        throw "Failed to validate flashcard YAML: $($_.Exception.Message)"
+    }
+}
+
+function Get-OmmiQuizFlashcardCatalog {
+    <#
+    .SYNOPSIS
+    Retrieves the flashcard catalog (list view).
+
+    .EXAMPLE
+    Get-OmmiQuizFlashcardCatalog
+    #>
+    [CmdletBinding()]
+    param()
+
+    Invoke-OmmiQuizApiRequest -Path '/flashcards/catalog' -Method 'GET' -ExpectedStatusCode 200
+}
+
+function Get-OmmiQuizFlashcardCatalogData {
+    <#
+    .SYNOPSIS
+    Retrieves the flashcard catalog metadata.
+
+    .EXAMPLE
+    Get-OmmiQuizFlashcardCatalogData
+    #>
+    [CmdletBinding()]
+    param()
+
+    Invoke-OmmiQuizApiRequest -Path '/flashcards/catalog/data' -Method 'GET' -ExpectedStatusCode 200
+}
+
+# ============================================================================
+# Progress Tracking Endpoints
+# ============================================================================
+
+function Get-OmmiQuizProgress {
+    <#
+    .SYNOPSIS
+    Retrieves user progress for a flashcard set.
+
+    .PARAMETER FlashcardId
+    The identifier of the flashcard set.
+
+    .PARAMETER AuthToken
+    Authentication token (JWT).
+
+    .EXAMPLE
+    Get-OmmiQuizProgress -FlashcardId "my-set" -AuthToken $token
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$FlashcardId,
+
+        [Parameter(Mandatory)]
+        [string]$AuthToken
+    )
+
+    $headers = @{
+        'Authorization' = "Bearer $AuthToken"
+    }
+
+    Invoke-OmmiQuizApiRequest -Path "/flashcards/$FlashcardId/progress" -Method 'GET' -Headers $headers -ExpectedStatusCode 200
+}
+
+function Set-OmmiQuizProgress {
+    <#
+    .SYNOPSIS
+    Saves user progress for a flashcard set.
+
+    .PARAMETER FlashcardId
+    The identifier of the flashcard set.
+
+    .PARAMETER ProgressData
+    The progress data object or JSON string.
+
+    .PARAMETER AuthToken
+    Authentication token (JWT).
+
+    .EXAMPLE
+    $progress = @{
+        cards = @{
+            "card1" = @{ box = 1; last_reviewed = (Get-Date).ToString("o"); review_count = 1 }
+        }
+        session_summary = @{
+            completed_at = (Get-Date).ToString("o")
+            cards_reviewed = 1
+            box_distribution = @{ box1 = 1; box2 = 0; box3 = 0 }
+        }
+    }
+    Set-OmmiQuizProgress -FlashcardId "my-set" -ProgressData $progress -AuthToken $token
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$FlashcardId,
+
+        [Parameter(Mandatory)]
+        [object]$ProgressData,
+
+        [Parameter(Mandatory)]
+        [string]$AuthToken
+    )
+
+    $headers = @{
+        'Authorization' = "Bearer $AuthToken"
+    }
+
+    Invoke-OmmiQuizApiRequest -Path "/flashcards/$FlashcardId/progress" -Method 'PUT' -Body $ProgressData -Headers $headers -ExpectedStatusCode 200
+}
+
+function Clear-OmmiQuizProgress {
+    <#
+    .SYNOPSIS
+    Deletes user progress for a flashcard set.
+
+    .PARAMETER FlashcardId
+    The identifier of the flashcard set.
+
+    .PARAMETER AuthToken
+    Authentication token (JWT).
+
+    .EXAMPLE
+    Clear-OmmiQuizProgress -FlashcardId "my-set" -AuthToken $token
+    #>
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact='High')]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$FlashcardId,
+
+        [Parameter(Mandatory)]
+        [string]$AuthToken
+    )
+
+    if ($PSCmdlet.ShouldProcess($FlashcardId, "Delete progress data")) {
+        $headers = @{
+            'Authorization' = "Bearer $AuthToken"
+        }
+
+        Invoke-OmmiQuizApiRequest -Path "/flashcards/$FlashcardId/progress" -Method 'DELETE' -Headers $headers -ExpectedStatusCode 200
+    }
+}
+
+# ============================================================================
+# User Reports Endpoints
+# ============================================================================
+
+function Get-OmmiQuizCurrentUser {
+    <#
+    .SYNOPSIS
+    Retrieves the current user's profile information.
+
+    .PARAMETER AuthToken
+    Authentication token (JWT).
+
+    .EXAMPLE
+    Get-OmmiQuizCurrentUser -AuthToken $token
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$AuthToken
+    )
+
+    $headers = @{
+        'Authorization' = "Bearer $AuthToken"
+    }
+
+    Invoke-OmmiQuizApiRequest -Path '/users/me' -Method 'GET' -Headers $headers -ExpectedStatusCode 200
+}
+
+function Get-OmmiQuizLearningReport {
+    <#
+    .SYNOPSIS
+    Retrieves the user's learning report.
+
+    .PARAMETER Days
+    Number of days to include in the report (default: 30).
+
+    .PARAMETER FlashcardId
+    Optional flashcard set ID to filter by.
+
+    .PARAMETER AuthToken
+    Authentication token (JWT).
+
+    .EXAMPLE
+    Get-OmmiQuizLearningReport -AuthToken $token
+
+    .EXAMPLE
+    Get-OmmiQuizLearningReport -Days 7 -FlashcardId "my-set" -AuthToken $token
+    #>
+    [CmdletBinding()]
+    param(
+        [int]$Days = 30,
+        [string]$FlashcardId,
+
+        [Parameter(Mandatory)]
+        [string]$AuthToken
+    )
+
+    $headers = @{
+        'Authorization' = "Bearer $AuthToken"
+    }
+
+    $queryParams = @("days=$Days")
+    if ($FlashcardId) {
+        $queryParams += "flashcard_id=$([uri]::EscapeDataString($FlashcardId))"
+    }
+
+    $queryString = if ($queryParams.Count -gt 0) { "?" + ($queryParams -join "&") } else { "" }
+    $path = "/users/me/learning-report$queryString"
+
+    Invoke-OmmiQuizApiRequest -Path $path -Method 'GET' -Headers $headers -ExpectedStatusCode 200
+}
+
+function Get-OmmiQuizQuizHistoryPdf {
+    <#
+    .SYNOPSIS
+    Downloads the user's quiz history as a PDF report.
+
+    .PARAMETER Days
+    Number of days to include in the report (default: 30).
+
+    .PARAMETER OutputPath
+    Optional path where the PDF should be saved.
+
+    .PARAMETER AuthToken
+    Authentication token (JWT).
+
+    .EXAMPLE
+    Get-OmmiQuizQuizHistoryPdf -AuthToken $token
+
+    .EXAMPLE
+    Get-OmmiQuizQuizHistoryPdf -Days 7 -OutputPath "C:\Reports\quiz-history.pdf" -AuthToken $token
+    #>
+    [CmdletBinding()]
+    param(
+        [int]$Days = 30,
+        [string]$OutputPath,
+
+        [Parameter(Mandatory)]
+        [string]$AuthToken
+    )
+
+    $baseUrl = Get-OmmiQuizApiBaseUrl
+    $path = "users/me/quiz-history-pdf?days=$Days"
+    $uri = [uri]::new([uri]$baseUrl, $path)
+
+    $headers = @{
+        'Authorization' = "Bearer $AuthToken"
+    }
+
+    try {
+        $response = Invoke-WebRequest -Uri $uri -Method GET -Headers $headers -UseBasicParsing -ErrorAction Stop
+
+        # Extract filename from Content-Disposition header
+        $filename = "quiz-history.pdf"
+        if ($response.Headers['Content-Disposition']) {
+            $disposition = [string]$response.Headers['Content-Disposition']
+            if ($disposition -match 'filename="?([^"]+)"?') {
+                $filename = $matches[1]
+            }
+        }
+
+        # Determine save path
+        $savePath = if ($OutputPath) {
+            $OutputPath
+        } else {
+            Join-Path -Path (Get-Location) -ChildPath $filename
+        }
+
+        # Save PDF
+        [System.IO.File]::WriteAllBytes($savePath, $response.Content)
+
+        $fileInfo = Get-Item -Path $savePath
+        $fileSizeKB = [math]::Round($fileInfo.Length / 1KB, 2)
+
+        [pscustomobject]@{
+            Success = $true
+            FilePath = $savePath
+            FileName = $fileInfo.Name
+            FileSizeKB = $fileSizeKB
+            StatusCode = $response.StatusCode
+            Message = "Successfully downloaded quiz history PDF ($fileSizeKB KB)"
+        }
+    }
+    catch {
+        [pscustomobject]@{
+            Success = $false
+            FilePath = $null
+            FileName = $null
+            FileSizeKB = 0
+            StatusCode = $null
+            Message = "Failed to download quiz history PDF: $($_.Exception.Message)"
+        }
+    }
+}
+
+# ============================================================================
+# Admin Endpoints
+# ============================================================================
+
+function Get-OmmiQuizAdminUsers {
+    <#
+    .SYNOPSIS
+    Retrieves the list of all users (admin only).
+
+    .PARAMETER AuthToken
+    Authentication token (JWT) for admin access.
+
+    .EXAMPLE
+    Get-OmmiQuizAdminUsers -AuthToken $adminToken
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)]
+        [string]$AuthToken
+    )
+
+    $headers = @{
+        'Authorization' = "Bearer $AuthToken"
+    }
+
+    Invoke-OmmiQuizApiRequest -Path '/admin/users' -Method 'GET' -Headers $headers -ExpectedStatusCode 200
+}
+
+function Set-OmmiQuizUserAdminStatus {
+    <#
+    .SYNOPSIS
+    Updates a user's admin status (admin only).
+
+    .PARAMETER UserId
+    The ID of the user to modify.
+
+    .PARAMETER IsAdmin
+    Boolean indicating whether the user should be an admin.
+
+    .PARAMETER AuthToken
+    Authentication token (JWT) for admin access.
+
+    .EXAMPLE
+    Set-OmmiQuizUserAdminStatus -UserId "user-uuid" -IsAdmin $true -AuthToken $adminToken
+    #>
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact='High')]
+    param(
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [string]$UserId,
+
+        [Parameter(Mandatory)]
+        [bool]$IsAdmin,
+
+        [Parameter(Mandatory)]
+        [string]$AuthToken
+    )
+
+    if ($PSCmdlet.ShouldProcess($UserId, "Set admin status to $IsAdmin")) {
+        $headers = @{
+            'Authorization' = "Bearer $AuthToken"
+        }
+
+        $body = @{
+            is_admin = $IsAdmin
+        }
+
+        Invoke-OmmiQuizApiRequest -Path "/admin/users/$UserId/admin-status" -Method 'PUT' -Body $body -Headers $headers -ExpectedStatusCode 200
+    }
+}
+
 Export-ModuleMember -Function *OmmiQuiz*
