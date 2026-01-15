@@ -181,9 +181,10 @@ Describe 'Log Data Structure Validation' {
             if ($result.Content.logs.Count -gt 0) {
                 $logEntry = $result.Content.logs[0]
 
-                # Timestamp should be a string (not null)
+                # Timestamp is automatically deserialized as DateTime object by PowerShell
                 $logEntry.timestamp | Should -Not -BeNullOrEmpty
-                $logEntry.timestamp | Should -BeOfType [string]
+                # Should be DateTime object
+                $logEntry.timestamp.GetType().Name | Should -BeIn @('DateTime', 'String')
             }
         }
 
