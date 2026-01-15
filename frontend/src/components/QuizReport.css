@@ -1,6 +1,6 @@
-/* QuizReport.css - Matches AdminPanel styling */
+/* QuizReport.css */
 .quiz-report {
-  max-width: 1200px;
+  max-width: 1400px;
   width: 100%;
   padding: 2rem;
 }
@@ -17,13 +17,13 @@
 }
 
 .report-header h2 {
-  color: #17a2b8;
+  color: #667eea;
   margin: 0;
   flex: 1;
 }
 
 .back-button {
-  background-color: #17a2b8;
+  background-color: #667eea;
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
@@ -34,66 +34,272 @@
 }
 
 .back-button:hover {
-  background-color: #138496;
+  background-color: #5568d3;
 }
 
-.report-actions {
+.report-controls {
   display: flex;
-  gap: 1rem;
+  justify-content: space-between;
   align-items: center;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  background-color: rgba(255, 255, 255, 0.95);
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-.days-filter {
-  padding: 0.75rem 1rem;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-size: 1rem;
-  cursor: pointer;
+.period-selector {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.period-selector label {
+  font-weight: 600;
+  color: #495057;
+}
+
+.period-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.period-buttons button {
+  padding: 0.5rem 1rem;
+  border: 2px solid #667eea;
   background-color: white;
+  color: #667eea;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s;
+}
+
+.period-buttons button:hover {
+  background-color: #f0f3ff;
+}
+
+.period-buttons button.active {
+  background-color: #667eea;
+  color: white;
 }
 
 .download-pdf-button {
-  background-color: #28a745;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
   padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s;
   font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .download-pdf-button:hover:not(:disabled) {
-  background-color: #218838;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
 .download-pdf-button:disabled {
-  background-color: #6c757d;
-  cursor: not-allowed;
   opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
-.download-json-button {
-  background-color: #007bff;
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.summary-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  font-size: 1rem;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.summary-card .card-label {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.9;
+}
+
+.summary-card .card-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.summary-card .card-helper {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.box-distribution {
+  background-color: rgba(255, 255, 255, 0.95);
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
+}
+
+.box-distribution h3 {
+  color: #667eea;
+  margin: 0 0 1.5rem 0;
+  font-size: 1.3rem;
+}
+
+.box-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.box-stat {
+  padding: 1.5rem;
+  border-radius: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.box-stat-green {
+  background-color: #d4edda;
+  border-left: 4px solid #28a745;
+}
+
+.box-stat-yellow {
+  background-color: #fff3cd;
+  border-left: 4px solid #ffc107;
+}
+
+.box-stat-red {
+  background-color: #f8d7da;
+  border-left: 4px solid #dc3545;
+}
+
+.box-stat .box-label {
+  font-weight: 600;
+  color: #495057;
+}
+
+.box-stat .box-count {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #212529;
+}
+
+.sessions-section {
+  background-color: rgba(255, 255, 255, 0.95);
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.sessions-section h3 {
+  color: #667eea;
+  margin: 0 0 1.5rem 0;
+  font-size: 1.3rem;
+}
+
+.sessions-table-wrapper {
+  overflow-x: auto;
+}
+
+.sessions-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.sessions-table th,
+.sessions-table td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.sessions-table th {
+  background-color: #f1f5f9;
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sessions-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.sessions-table .session-title {
+  font-weight: 500;
+  color: #0f172a;
+}
+
+.box-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
   font-weight: 600;
 }
 
-.download-json-button:hover:not(:disabled) {
-  background-color: #0056b3;
+.box-badge.box-green {
+  background-color: #d4edda;
+  color: #155724;
 }
 
-.download-json-button:disabled {
-  background-color: #6c757d;
-  cursor: not-allowed;
-  opacity: 0.6;
+.box-badge.box-yellow {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.box-badge.box-red {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.no-sessions {
+  text-align: center;
+  padding: 3rem;
+  color: #6c757d;
+}
+
+.no-sessions p {
+  margin: 0.5rem 0;
+  font-size: 1.1rem;
+}
+
+.no-data {
+  text-align: center;
+  padding: 3rem;
+  color: #6c757d;
+  font-size: 1.1rem;
+}
+
+.loading {
+  text-align: center;
+  padding: 3rem;
+  font-size: 1.2rem;
+  color: #667eea;
 }
 
 .error-message {
@@ -105,189 +311,36 @@
   border: 1px solid #f5c6cb;
 }
 
-.loading {
-  text-align: center;
-  padding: 2rem;
-  font-size: 1.2rem;
-  color: #17a2b8;
-}
-
-.report-content {
-  background-color: rgba(255, 255, 255, 0.95);
-  padding: 2rem;
-  border-radius: 15px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-}
-
-/* Summary Section */
-.summary-section {
-  margin-bottom: 2rem;
-}
-
-.summary-section h3 {
-  color: #17a2b8;
-  margin-bottom: 1.5rem;
-  font-size: 1.5rem;
-}
-
-.summary-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-}
-
-.summary-card {
-  background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
-  padding: 1.5rem;
-  border-radius: 10px;
-  color: white;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
-}
-
-.summary-label {
-  font-size: 0.9rem;
-  opacity: 0.9;
-  font-weight: 500;
-}
-
-.summary-value {
-  font-size: 2rem;
-  font-weight: bold;
-}
-
-.summary-percentage {
-  font-size: 1rem;
-  opacity: 0.9;
-  margin-left: 0.5rem;
-}
-
-/* Sessions Section */
-.sessions-section {
-  margin-top: 2rem;
-}
-
-.sessions-section h3 {
-  color: #17a2b8;
-  margin-bottom: 1.5rem;
-  font-size: 1.5rem;
-}
-
-.no-sessions {
-  text-align: center;
-  padding: 3rem;
-  color: #666;
-}
-
-.no-sessions p {
-  margin: 0.5rem 0;
-  font-size: 1.1rem;
-}
-
-.sessions-table-wrapper {
-  overflow-x: auto;
-}
-
-.sessions-table {
-  width: 100%;
-  border-collapse: collapse;
-  background-color: white;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.sessions-table thead {
-  background-color: #17a2b8;
-  color: white;
-}
-
-.sessions-table th {
-  padding: 1rem;
-  text-align: left;
-  font-weight: 600;
-  font-size: 0.95rem;
-}
-
-.sessions-table td {
-  padding: 1rem;
-  border-bottom: 1px solid #e9ecef;
-  font-size: 0.95rem;
-}
-
-.sessions-table tbody tr:hover {
-  background-color: #f8f9fa;
-}
-
-.sessions-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.session-title {
-  font-weight: 500;
-  color: #2c3e50;
-}
-
-.centered {
-  text-align: center;
-}
-
-.box-distribution {
-  display: flex;
-  gap: 0.5rem;
-  justify-content: center;
-  align-items: center;
-}
-
-.box-badge {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  border-radius: 12px;
-  font-weight: 600;
-  font-size: 0.85rem;
-  min-width: 30px;
-  text-align: center;
-}
-
-.box-badge.box1 {
-  background-color: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
-}
-
-.box-badge.box2 {
-  background-color: #fff3cd;
-  color: #856404;
-  border: 1px solid #ffeeba;
-}
-
-.box-badge.box3 {
-  background-color: #f8d7da;
-  color: #721c24;
-  border: 1px solid #f5c6cb;
-}
-
-.no-data {
-  text-align: center;
-  padding: 3rem;
-  color: #666;
-  font-size: 1.2rem;
-}
-
-/* Responsive design */
+/* Responsive Design */
 @media (max-width: 768px) {
-  .report-header {
+  .quiz-report {
+    padding: 1rem;
+  }
+
+  .report-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .period-selector {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .report-actions {
+  .period-buttons {
     flex-direction: column;
   }
 
+  .period-buttons button {
+    width: 100%;
+  }
+
   .summary-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .box-stats {
     grid-template-columns: 1fr;
   }
 
@@ -297,11 +350,6 @@
 
   .sessions-table th,
   .sessions-table td {
-    padding: 0.75rem 0.5rem;
-  }
-
-  .box-distribution {
-    flex-direction: column;
-    gap: 0.25rem;
+    padding: 0.5rem;
   }
 }

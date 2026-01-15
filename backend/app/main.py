@@ -718,14 +718,14 @@ async def get_quiz_history_pdf(
                 "user_id": user.user_id,
                 "user_email": user_email,
                 "user_name": user_name,
-                "report_period_days": days,
+                "days": days,
                 "summary": {
                     "total_sessions": total_sessions,
                     "total_cards_reviewed": total_cards_reviewed,
-                    "total_learned": total_box1,
-                    "total_uncertain": total_box2,
-                    "total_not_learned": total_box3,
-                    "total_duration_seconds": total_duration,
+                    "total_box1": total_box1,
+                    "total_box2": total_box2,
+                    "total_box3": total_box3,
+                    "total_duration": total_duration,
                     "average_session_duration": total_duration / total_sessions if total_sessions > 0 else 0,
                     "average_time_to_flip_seconds": average_time_to_flip
                 },
@@ -733,7 +733,7 @@ async def get_quiz_history_pdf(
             }
 
             # Generate PDF
-            pdf_buffer = generate_quiz_history_pdf(report_data)
+            pdf_buffer = generate_quiz_history_pdf(report_data, user_email)
 
             logger.info("Quiz history PDF generated successfully",
                        user_id=user.user_id,
