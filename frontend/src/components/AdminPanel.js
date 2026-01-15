@@ -107,6 +107,13 @@ function AdminPanel({ onBack }) {
     setCatalogError(null);
   };
 
+  const handleEditFromStatistics = async (flashcardId) => {
+    // Hide statistics view and open edit view
+    setShowStatistics(false);
+    // Fetch and open the flashcard for editing
+    await fetchFlashcard(flashcardId);
+  };
+
   // User Management Functions
   const fetchUsers = async () => {
     try {
@@ -1225,6 +1232,7 @@ function AdminPanel({ onBack }) {
                       <th>Card Count</th>
                       <th>Module</th>
                       <th>Topics</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1250,11 +1258,20 @@ function AdminPanel({ onBack }) {
                               ? flashcard.topics.join(', ')
                               : '—'}
                           </td>
+                          <td>
+                            <button
+                              onClick={() => handleEditFromStatistics(flashcard.id)}
+                              className="edit-button"
+                              title="Edit this flashcard set"
+                            >
+                              ✏️ Edit
+                            </button>
+                          </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="7" className="no-data">
+                        <td colSpan="8" className="no-data">
                           No flashcards found in catalog.
                         </td>
                       </tr>
