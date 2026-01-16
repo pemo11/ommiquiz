@@ -182,6 +182,53 @@ function QuizReport({ onBack }) {
   const timelineData = processTimelineData();
   const maxCardsInDay = Math.max(...timelineData.map(d => d.cardsReviewed), 1);
 
+  // Calculate learning streaks
+  const calculateStreaks = () => {
+    if (!timelineData || timelineData.length === 0) {
+      return { currentStreak: 0, longestStreak: 0, longestStreakInPeriod: 0 };
+    }
+
+    let currentStreak = 0;
+    let longestStreak = 0;
+    let tempStreak = 0;
+    let longestStreakInPeriod = 0;
+
+    // Calculate current streak (from today backwards)
+    const today = new Date().toISOString().split('T')[0];
+    let checkingCurrent = true;
+
+    for (let i = timelineData.length - 1; i >= 0; i--) {
+      const day = timelineData[i];
+      const isToday = day.date === today;
+      const hasActivity = day.sessions > 0;
+
+      if (checkingCurrent) {
+        if (hasActivity) {
+          currentStreak++;
+        } else if (!isToday) {
+          // Stop counting current streak if we hit an inactive day (but skip today if it's inactive)
+          checkingCurrent = false;
+        }
+      }
+
+      // Calculate longest streak in the period
+      if (hasActivity) {
+        tempStreak++;
+        longestStreakInPeriod = Math.max(longestStreakInPeriod, tempStreak);
+      } else {
+        tempStreak = 0;
+      }
+    }
+
+    // For overall longest streak, we'd need historical data beyond this period
+    // For now, use the longest in this period
+    longestStreak = longestStreakInPeriod;
+
+    return { currentStreak, longestStreak, longestStreakInPeriod };
+  };
+
+  const streaks = calculateStreaks();
+
   const formatTimelineDate = (dateString) => {
     const date = new Date(dateString);
     if (selectedDays <= 7) {
@@ -285,9 +332,33 @@ function QuizReport({ onBack }) {
 
           {/* Activity Timeline */}
           <div className="activity-timeline">
-            <h3>Activity Timeline</h3>
-            <div className="timeline-subtitle">
-              Cards reviewed over the past {selectedDays} days
+            <div className="timeline-header">
+              <div>
+                <h3>Activity Timeline</h3>
+                <div className="timeline-subtitle">
+                  Cards reviewed over the past {selectedDays} days
+                </div>
+              </div>
+              <div className="streak-counters">
+                <div className="streak-card current-streak">
+                  <div className="streak-icon">🔥</div>
+                  <div className="streak-content">
+                    <div className="streak-value">{streaks.currentStreak}</div>
+                    <div className="streak-label">
+                      {streaks.currentStreak === 1 ? 'Day Streak' : 'Days Streak'}
+                    </div>
+                  </div>
+                </div>
+                <div className="streak-card longest-streak">
+                  <div className="streak-icon">🏆</div>
+                  <div className="streak-content">
+                    <div className="streak-value">{streaks.longestStreakInPeriod}</div>
+                    <div className="streak-label">
+                      {streaks.longestStreakInPeriod === 1 ? 'Best Day' : 'Best Streak'}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
             <div className="timeline-chart">
               <div className="timeline-bars">

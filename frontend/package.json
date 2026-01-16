@@ -1,6 +1,6 @@
 {
   "name": "ommiquiz-frontend",
-  "version": "1.0.26",
+  "version": "1.0.27",
   "private": true,
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0",
