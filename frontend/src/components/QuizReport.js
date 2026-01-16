@@ -122,6 +122,84 @@ function QuizReport({ onBack }) {
     return 'box-badge';
   };
 
+  // Process timeline data: group sessions by day
+  const processTimelineData = () => {
+    if (!reportData || !reportData.sessions) return [];
+
+    // Group sessions by date
+    const dailyData = {};
+
+    reportData.sessions.forEach(session => {
+      const date = new Date(session.completed_at);
+      const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
+
+      if (!dailyData[dateKey]) {
+        dailyData[dateKey] = {
+          date: dateKey,
+          sessions: 0,
+          cardsReviewed: 0,
+          box1: 0,
+          box2: 0,
+          box3: 0,
+          totalDuration: 0
+        };
+      }
+
+      dailyData[dateKey].sessions += 1;
+      dailyData[dateKey].cardsReviewed += session.cards_reviewed;
+      dailyData[dateKey].box1 += session.box1_count;
+      dailyData[dateKey].box2 += session.box2_count;
+      dailyData[dateKey].box3 += session.box3_count;
+      dailyData[dateKey].totalDuration += session.duration_seconds || 0;
+    });
+
+    // Fill in missing days with zeros
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - selectedDays + 1);
+    const timelineData = [];
+
+    for (let i = 0; i < selectedDays; i++) {
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + i);
+      const dateKey = date.toISOString().split('T')[0];
+
+      timelineData.push(
+        dailyData[dateKey] || {
+          date: dateKey,
+          sessions: 0,
+          cardsReviewed: 0,
+          box1: 0,
+          box2: 0,
+          box3: 0,
+          totalDuration: 0
+        }
+      );
+    }
+
+    return timelineData;
+  };
+
+  const timelineData = processTimelineData();
+  const maxCardsInDay = Math.max(...timelineData.map(d => d.cardsReviewed), 1);
+
+  const formatTimelineDate = (dateString) => {
+    const date = new Date(dateString);
+    if (selectedDays <= 7) {
+      // Show full date for week view
+      return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    } else if (selectedDays <= 31) {
+      // Show day of month for month view
+      return date.getDate();
+    } else {
+      // Show month for longer periods
+      const day = date.getDate();
+      if (day === 1 || day === 15) {
+        return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      }
+      return '';
+    }
+  };
+
   return (
     <div className="quiz-report">
       <div className="report-header">
@@ -202,6 +280,49 @@ function QuizReport({ onBack }) {
               <div className="card-label">Mastered Cards</div>
               <div className="card-value">{reportData.summary.total_learned}</div>
               <div className="card-helper">Box 1 - Well learned</div>
+            </div>
+          </div>
+
+          {/* Activity Timeline */}
+          <div className="activity-timeline">
+            <h3>Activity Timeline</h3>
+            <div className="timeline-subtitle">
+              Cards reviewed over the past {selectedDays} days
+            </div>
+            <div className="timeline-chart">
+              <div className="timeline-bars">
+                {timelineData.map((day, index) => {
+                  const heightPercent = maxCardsInDay > 0 ? (day.cardsReviewed / maxCardsInDay) * 100 : 0;
+                  const hasActivity = day.sessions > 0;
+
+                  return (
+                    <div key={index} className="timeline-bar-container">
+                      <div
+                        className={`timeline-bar ${hasActivity ? 'has-activity' : ''}`}
+                        style={{ height: `${Math.max(heightPercent, hasActivity ? 5 : 0)}%` }}
+                        title={`${day.date}\n${day.sessions} session(s)\n${day.cardsReviewed} card(s)\nBox 1: ${day.box1} | Box 2: ${day.box2} | Box 3: ${day.box3}`}
+                      >
+                        {hasActivity && day.cardsReviewed > 0 && (
+                          <span className="bar-value">{day.cardsReviewed}</span>
+                        )}
+                      </div>
+                      <div className="timeline-date">
+                        {formatTimelineDate(day.date)}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="timeline-legend">
+                <div className="legend-item">
+                  <div className="legend-color timeline-active"></div>
+                  <span>Active days</span>
+                </div>
+                <div className="legend-item">
+                  <div className="legend-color timeline-inactive"></div>
+                  <span>Inactive days</span>
+                </div>
+              </div>
             </div>
           </div>
 
