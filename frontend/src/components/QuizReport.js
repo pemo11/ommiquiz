@@ -102,6 +102,70 @@ function QuizReport({ onBack }) {
     }
   };
 
+  const exportToCSV = () => {
+    if (!reportData || !reportData.sessions) {
+      return;
+    }
+
+    // Prepare CSV content
+    const csvRows = [];
+
+    // Add summary section
+    csvRows.push('Quiz History Report Summary');
+    csvRows.push(`Period: Last ${selectedDays} Days`);
+    csvRows.push(`Generated: ${new Date().toLocaleString()}`);
+    csvRows.push('');
+    csvRows.push('Summary Statistics');
+    csvRows.push(`Total Sessions,${reportData.summary.total_sessions}`);
+    csvRows.push(`Total Cards Reviewed,${reportData.summary.total_cards_reviewed}`);
+    csvRows.push(`Total Duration (seconds),${reportData.summary.total_duration_seconds}`);
+    csvRows.push(`Mastered Cards (Box 1),${reportData.summary.total_learned}`);
+    csvRows.push('');
+
+    // Add session details header
+    csvRows.push('Session Details');
+    csvRows.push('Date & Time,Flashcard Set,Cards Reviewed,Box 1,Box 2,Box 3,Duration (seconds)');
+
+    // Add session data
+    reportData.sessions.forEach(session => {
+      const row = [
+        session.completed_at ? new Date(session.completed_at).toLocaleString() : '',
+        session.flashcard_title || session.flashcard_id || '',
+        session.cards_reviewed || 0,
+        session.box1_count || 0,
+        session.box2_count || 0,
+        session.box3_count || 0,
+        session.duration_seconds || 0
+      ];
+
+      // Escape cells containing commas, quotes, or newlines
+      const escapedRow = row.map(cell => {
+        const cellStr = String(cell);
+        if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+          return `"${cellStr.replace(/"/g, '""')}"`;
+        }
+        return cellStr;
+      });
+
+      csvRows.push(escapedRow.join(','));
+    });
+
+    // Create blob and download
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    const timestamp = new Date().toISOString().split('T')[0];
+    link.setAttribute('href', url);
+    link.setAttribute('download', `quiz-history-${selectedDays}days-${timestamp}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const formatDuration = (seconds) => {
     if (!seconds) return '—';
     const minutes = Math.floor(seconds / 60);
@@ -324,13 +388,23 @@ function QuizReport({ onBack }) {
           </div>
         </div>
 
-        <button
-          onClick={handleDownloadPDF}
-          disabled={downloading || !reportData}
-          className="download-pdf-button"
-        >
-          {downloading ? '⏳ Generating PDF...' : '📥 Download PDF'}
-        </button>
+        <div className="report-action-buttons">
+          <button
+            onClick={handleDownloadPDF}
+            disabled={downloading || !reportData}
+            className="download-pdf-button"
+          >
+            {downloading ? '⏳ Generating PDF...' : '📥 Download PDF'}
+          </button>
+          <button
+            onClick={exportToCSV}
+            disabled={!reportData || !reportData.sessions || reportData.sessions.length === 0}
+            className="export-csv-button"
+            title="Export to CSV"
+          >
+            📊 Export CSV
+          </button>
+        </div>
       </div>
 
       {error && (

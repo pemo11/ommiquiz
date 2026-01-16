@@ -86,6 +86,12 @@
   color: white;
 }
 
+.report-action-buttons {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
 .download-pdf-button {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
@@ -107,6 +113,32 @@
 }
 
 .download-pdf-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.export-csv-button {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.export-csv-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+}
+
+.export-csv-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
