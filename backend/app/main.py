@@ -1007,6 +1007,81 @@ async def delete_user(
         )
 
 
+@api_router.get("/admin/login-history")
+async def get_login_history(
+    admin: AuthenticatedUser = Depends(get_current_admin),
+    days: int = Query(30, description="Number of days to include in report (default 30)")
+):
+    """Get user login/activity history (Admin only)."""
+    from datetime import timedelta
+    from .database import get_db_pool
+
+    logger.info("Admin fetching login history", admin_user=admin.email, days=days)
+
+    pool = await get_db_pool()
+
+    try:
+        async with pool.acquire() as conn:
+            cutoff_date = datetime.now() - timedelta(days=days)
+
+            # Get user profiles with their last activity from quiz_sessions
+            query = """
+                SELECT
+                    up.id,
+                    up.email,
+                    up.display_name,
+                    up.is_admin,
+                    up.created_at,
+                    up.updated_at,
+                    MAX(qs.completed_at) as last_activity,
+                    COUNT(qs.id) as total_sessions
+                FROM user_profiles up
+                LEFT JOIN quiz_sessions qs ON up.id = qs.user_id
+                    AND qs.completed_at >= $1
+                GROUP BY up.id, up.email, up.display_name, up.is_admin, up.created_at, up.updated_at
+                ORDER BY
+                    CASE
+                        WHEN MAX(qs.completed_at) IS NOT NULL THEN MAX(qs.completed_at)
+                        ELSE up.created_at
+                    END DESC
+            """
+
+            rows = await conn.fetch(query, cutoff_date)
+
+            history = []
+            for row in rows:
+                history.append({
+                    "user_id": row['id'],
+                    "email": row['email'],
+                    "display_name": row['display_name'],
+                    "is_admin": row['is_admin'],
+                    "created_at": row['created_at'].isoformat() + "Z" if row['created_at'] else None,
+                    "updated_at": row['updated_at'].isoformat() + "Z" if row['updated_at'] else None,
+                    "last_activity": row['last_activity'].isoformat() + "Z" if row['last_activity'] else None,
+                    "total_sessions": row['total_sessions'] or 0
+                })
+
+            logger.info(
+                "Login history retrieved",
+                admin_user=admin.email,
+                total_users=len(history),
+                days=days
+            )
+
+            return {
+                "period_days": days,
+                "total_users": len(history),
+                "history": history
+            }
+
+    except Exception as e:
+        logger.error("Error fetching login history", error=str(e), admin_user=admin.email)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch login history: {str(e)}"
+        )
+
+
 @api_router.get("/users/me")
 async def get_current_user_profile(
     user: AuthenticatedUser = Depends(get_current_user)

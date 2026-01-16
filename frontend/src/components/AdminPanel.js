@@ -59,6 +59,11 @@ function AdminPanel({ onBack }) {
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState(null);
+  const [showLoginHistory, setShowLoginHistory] = useState(false);
+  const [loginHistory, setLoginHistory] = useState([]);
+  const [loginHistoryLoading, setLoginHistoryLoading] = useState(false);
+  const [loginHistoryError, setLoginHistoryError] = useState(null);
+  const [loginHistoryDays, setLoginHistoryDays] = useState(30);
 
   const formatCatalogTimestamp = (value) => {
     if (!value) return '—';
@@ -234,6 +239,54 @@ function AdminPanel({ onBack }) {
   const handleHideUserManagement = () => {
     setShowUserManagement(false);
     setUsersError(null);
+  };
+
+  // Login History Functions
+  const fetchLoginHistory = async () => {
+    try {
+      setLoginHistoryLoading(true);
+      setLoginHistoryError(null);
+
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch(`${API_URL}/admin/login-history?days=${loginHistoryDays}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch login history: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      setLoginHistory(data.history);
+    } catch (err) {
+      console.error('Error fetching login history:', err);
+      setLoginHistoryError(err.message);
+    } finally {
+      setLoginHistoryLoading(false);
+    }
+  };
+
+  const handleShowLoginHistory = () => {
+    setShowLoginHistory(true);
+    setShowStatistics(false);
+    setShowUserManagement(false);
+    setSelectedFlashcard(null);
+    setEditingFlashcard(null);
+    setShowYamlImport(false);
+    fetchLoginHistory();
+  };
+
+  const handleHideLoginHistory = () => {
+    setShowLoginHistory(false);
+    setLoginHistoryError(null);
   };
 
   const fetchFlashcardList = async () => {
@@ -1182,10 +1235,11 @@ function AdminPanel({ onBack }) {
           onClick={() => {
             setShowStatistics(false);
             setShowUserManagement(false);
+            setShowLoginHistory(false);
             setSelectedFlashcard(null);
             setEditingFlashcard(null);
           }}
-          className={!showStatistics && !showUserManagement ? "nav-tab active" : "nav-tab"}
+          className={!showStatistics && !showUserManagement && !showLoginHistory ? "nav-tab active" : "nav-tab"}
         >
           📋 Manage Flashcards
         </button>
@@ -1200,6 +1254,12 @@ function AdminPanel({ onBack }) {
           className={showUserManagement ? "nav-tab active" : "nav-tab"}
         >
           👥 User Management
+        </button>
+        <button
+          onClick={handleShowLoginHistory}
+          className={showLoginHistory ? "nav-tab active" : "nav-tab"}
+        >
+          📅 Login History
         </button>
       </div>
 
@@ -1396,6 +1456,101 @@ function AdminPanel({ onBack }) {
           ) : (
             <div className="no-users-message">
               <p>No users found</p>
+            </div>
+          )}
+        </div>
+      ) : showLoginHistory ? (
+        <div className="login-history-view">
+          <div className="login-history-header">
+            <button onClick={handleHideLoginHistory} className="back-to-list-button">
+              Back to List
+            </button>
+            <h3>Login History & User Activity</h3>
+            <div className="history-controls">
+              <select
+                value={loginHistoryDays}
+                onChange={(e) => {
+                  setLoginHistoryDays(Number(e.target.value));
+                }}
+                className="history-period-select"
+              >
+                <option value={7}>Last 7 Days</option>
+                <option value={30}>Last 30 Days</option>
+                <option value={90}>Last 90 Days</option>
+                <option value={365}>Last Year</option>
+              </select>
+              <button
+                onClick={fetchLoginHistory}
+                className="refresh-history-button"
+                disabled={loginHistoryLoading}
+              >
+                {loginHistoryLoading ? 'Refreshing...' : '↻ Refresh'}
+              </button>
+            </div>
+          </div>
+
+          {loginHistoryError && (
+            <div className="error-message">
+              <p>Error: {loginHistoryError}</p>
+            </div>
+          )}
+
+          {loginHistoryLoading && loginHistory.length === 0 ? (
+            <div className="loading">Loading login history...</div>
+          ) : loginHistory.length > 0 ? (
+            <>
+              <div className="login-history-table-container">
+                <table className="login-history-table">
+                  <thead>
+                    <tr>
+                      <th>Email</th>
+                      <th>Display Name</th>
+                      <th>Role</th>
+                      <th>Account Created</th>
+                      <th>Last Activity</th>
+                      <th>Sessions (Period)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {loginHistory.map(record => (
+                      <tr key={record.user_id} className={record.is_admin ? 'admin-user' : ''}>
+                        <td>{record.email}</td>
+                        <td>{record.display_name || '—'}</td>
+                        <td>
+                          <span className={`admin-badge ${record.is_admin ? 'admin' : 'regular'}`}>
+                            {record.is_admin ? 'Admin' : 'User'}
+                          </span>
+                        </td>
+                        <td>{record.created_at ? new Date(record.created_at).toLocaleDateString() : '—'}</td>
+                        <td>
+                          {record.last_activity ? (
+                            <span className="last-activity">
+                              {new Date(record.last_activity).toLocaleString()}
+                            </span>
+                          ) : (
+                            <span className="no-activity">No activity</span>
+                          )}
+                        </td>
+                        <td>
+                          <span className={`session-count ${record.total_sessions > 0 ? 'active' : ''}`}>
+                            {record.total_sessions}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="history-stats">
+                <p><strong>Total Users:</strong> {loginHistory.length}</p>
+                <p><strong>Active Users (with sessions):</strong> {loginHistory.filter(r => r.total_sessions > 0).length}</p>
+                <p><strong>Inactive Users:</strong> {loginHistory.filter(r => r.total_sessions === 0).length}</p>
+              </div>
+            </>
+          ) : (
+            <div className="no-history-message">
+              <p>No login history found for the selected period</p>
             </div>
           )}
         </div>

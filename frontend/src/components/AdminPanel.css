@@ -1440,3 +1440,164 @@
   color: #6c757d;
   font-size: 1.1rem;
 }
+
+/* Login History Styles */
+.login-history-view {
+  background-color: white;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.login-history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.login-history-header h3 {
+  color: #667eea;
+  margin: 0;
+  font-size: 1.5rem;
+  flex: 1;
+}
+
+.history-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.history-period-select {
+  padding: 0.5rem 1rem;
+  border: 2px solid #667eea;
+  border-radius: 5px;
+  background-color: white;
+  color: #667eea;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.history-period-select:hover {
+  background-color: #f0f3ff;
+}
+
+.refresh-history-button {
+  background-color: #667eea;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s;
+}
+
+.refresh-history-button:hover:not(:disabled) {
+  background-color: #5568d3;
+  transform: translateY(-1px);
+}
+
+.refresh-history-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.login-history-table-container {
+  overflow-x: auto;
+  margin-bottom: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.login-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: white;
+}
+
+.login-history-table thead {
+  background-color: #f8f9fa;
+}
+
+.login-history-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  color: #495057;
+  border-bottom: 2px solid #dee2e6;
+  white-space: nowrap;
+}
+
+.login-history-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #e9ecef;
+  color: #212529;
+}
+
+.login-history-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.login-history-table tbody tr.admin-user {
+  background-color: #fff3cd;
+}
+
+.login-history-table tbody tr.admin-user:hover {
+  background-color: #ffe69c;
+}
+
+.last-activity {
+  color: #28a745;
+  font-weight: 500;
+}
+
+.no-activity {
+  color: #6c757d;
+  font-style: italic;
+}
+
+.session-count {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-weight: 600;
+  background-color: #e9ecef;
+  color: #6c757d;
+}
+
+.session-count.active {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.history-stats {
+  display: flex;
+  gap: 2rem;
+  padding: 1.5rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+
+.history-stats p {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.history-stats strong {
+  color: #212529;
+  margin-right: 0.5rem;
+  font-weight: 600;
+}
+
+.no-history-message {
+  text-align: center;
+  padding: 3rem;
+  color: #6c757d;
+  font-size: 1.1rem;
+}
