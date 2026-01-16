@@ -1082,6 +1082,85 @@ async def get_login_history(
         )
 
 
+@api_router.get("/admin/user-activity-stats")
+async def get_user_activity_stats(
+    admin: AuthenticatedUser = Depends(get_current_admin),
+    days: int = Query(30, description="Number of days to include in report (default 30)")
+):
+    """Get daily active user statistics for charting (Admin only)."""
+    from datetime import timedelta, date
+    from .database import get_db_pool
+
+    logger.info("Admin fetching user activity stats", admin_user=admin.email, days=days)
+
+    pool = await get_db_pool()
+
+    try:
+        async with pool.acquire() as conn:
+            start_date = datetime.now() - timedelta(days=days - 1)
+
+            # Get daily active users (users with at least one quiz session on that day)
+            query = """
+                WITH date_series AS (
+                    SELECT generate_series(
+                        DATE($1),
+                        DATE($2),
+                        interval '1 day'
+                    )::date as day
+                ),
+                daily_users AS (
+                    SELECT
+                        DATE(qs.completed_at) as activity_date,
+                        COUNT(DISTINCT qs.user_id) as active_users
+                    FROM quiz_sessions qs
+                    WHERE qs.completed_at >= $1
+                        AND qs.completed_at <= $2
+                    GROUP BY DATE(qs.completed_at)
+                )
+                SELECT
+                    ds.day,
+                    COALESCE(du.active_users, 0) as active_users
+                FROM date_series ds
+                LEFT JOIN daily_users du ON ds.day = du.activity_date
+                ORDER BY ds.day ASC
+            """
+
+            end_date = datetime.now()
+            rows = await conn.fetch(query, start_date, end_date)
+
+            daily_stats = [
+                {
+                    "date": row["day"].isoformat(),
+                    "active_users": row["active_users"]
+                }
+                for row in rows
+            ]
+
+            # Calculate summary statistics
+            total_active_users = sum(day["active_users"] for day in daily_stats)
+            avg_active_users = total_active_users / len(daily_stats) if daily_stats else 0
+            max_active_users = max((day["active_users"] for day in daily_stats), default=0)
+            days_with_activity = sum(1 for day in daily_stats if day["active_users"] > 0)
+
+            return {
+                "period_days": days,
+                "daily_stats": daily_stats,
+                "summary": {
+                    "total_active_users": total_active_users,
+                    "avg_active_users": round(avg_active_users, 2),
+                    "max_active_users": max_active_users,
+                    "days_with_activity": days_with_activity
+                }
+            }
+
+    except Exception as e:
+        logger.error("Error fetching user activity stats", error=str(e), admin_user=admin.email)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch user activity stats: {str(e)}"
+        )
+
+
 @api_router.get("/users/me")
 async def get_current_user_profile(
     user: AuthenticatedUser = Depends(get_current_user)

@@ -64,6 +64,11 @@ function AdminPanel({ onBack }) {
   const [loginHistoryLoading, setLoginHistoryLoading] = useState(false);
   const [loginHistoryError, setLoginHistoryError] = useState(null);
   const [loginHistoryDays, setLoginHistoryDays] = useState(30);
+  const [showUserActivity, setShowUserActivity] = useState(false);
+  const [userActivityStats, setUserActivityStats] = useState(null);
+  const [userActivityLoading, setUserActivityLoading] = useState(false);
+  const [userActivityError, setUserActivityError] = useState(null);
+  const [userActivityDays, setUserActivityDays] = useState(30);
 
   const formatCatalogTimestamp = (value) => {
     if (!value) return '—';
@@ -334,6 +339,54 @@ function AdminPanel({ onBack }) {
   const handleHideLoginHistory = () => {
     setShowLoginHistory(false);
     setLoginHistoryError(null);
+  };
+
+  const fetchUserActivityStats = async () => {
+    try {
+      setUserActivityLoading(true);
+      setUserActivityError(null);
+
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch(`${API_URL}/admin/user-activity-stats?days=${userActivityDays}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to fetch user activity stats: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      setUserActivityStats(data);
+    } catch (err) {
+      console.error('Error fetching user activity stats:', err);
+      setUserActivityError(err.message);
+    } finally {
+      setUserActivityLoading(false);
+    }
+  };
+
+  const handleShowUserActivity = () => {
+    setShowUserActivity(true);
+    setShowStatistics(false);
+    setShowUserManagement(false);
+    setShowLoginHistory(false);
+    setSelectedFlashcard(null);
+    setEditingFlashcard(null);
+    setShowYamlImport(false);
+    fetchUserActivityStats();
+  };
+
+  const handleHideUserActivity = () => {
+    setShowUserActivity(false);
+    setUserActivityError(null);
   };
 
   const fetchFlashcardList = async () => {
@@ -1286,7 +1339,7 @@ function AdminPanel({ onBack }) {
             setSelectedFlashcard(null);
             setEditingFlashcard(null);
           }}
-          className={!showStatistics && !showUserManagement && !showLoginHistory ? "nav-tab active" : "nav-tab"}
+          className={!showStatistics && !showUserManagement && !showLoginHistory && !showUserActivity ? "nav-tab active" : "nav-tab"}
         >
           📋 Manage Flashcards
         </button>
@@ -1307,6 +1360,12 @@ function AdminPanel({ onBack }) {
           className={showLoginHistory ? "nav-tab active" : "nav-tab"}
         >
           📅 Login History
+        </button>
+        <button
+          onClick={handleShowUserActivity}
+          className={showUserActivity ? "nav-tab active" : "nav-tab"}
+        >
+          📊 User Activity
         </button>
       </div>
 
@@ -1606,6 +1665,105 @@ function AdminPanel({ onBack }) {
           ) : (
             <div className="no-history-message">
               <p>No login history found for the selected period</p>
+            </div>
+          )}
+        </div>
+      ) : showUserActivity ? (
+        <div className="user-activity-view">
+          <div className="user-activity-header">
+            <button onClick={handleHideUserActivity} className="back-to-list-button">
+              Back to List
+            </button>
+            <h3>User Activity Statistics</h3>
+            <div className="activity-controls">
+              <select
+                value={userActivityDays}
+                onChange={(e) => {
+                  setUserActivityDays(Number(e.target.value));
+                }}
+                className="activity-period-select"
+              >
+                <option value={7}>Last 7 Days</option>
+                <option value={30}>Last 30 Days</option>
+                <option value={90}>Last 90 Days</option>
+                <option value={365}>Last Year</option>
+              </select>
+              <button
+                onClick={fetchUserActivityStats}
+                className="refresh-activity-button"
+                disabled={userActivityLoading}
+              >
+                {userActivityLoading ? 'Refreshing...' : '↻ Refresh'}
+              </button>
+            </div>
+          </div>
+
+          {userActivityError && (
+            <div className="error-message">
+              <p>Error: {userActivityError}</p>
+            </div>
+          )}
+
+          {userActivityLoading && !userActivityStats ? (
+            <div className="loading">Loading activity data...</div>
+          ) : userActivityStats ? (
+            <>
+              <div className="activity-summary">
+                <div className="summary-stat">
+                  <div className="stat-label">Average Daily Active Users</div>
+                  <div className="stat-value">{userActivityStats.summary.avg_active_users}</div>
+                </div>
+                <div className="summary-stat">
+                  <div className="stat-label">Peak Active Users</div>
+                  <div className="stat-value">{userActivityStats.summary.max_active_users}</div>
+                </div>
+                <div className="summary-stat">
+                  <div className="stat-label">Days with Activity</div>
+                  <div className="stat-value">{userActivityStats.summary.days_with_activity} / {userActivityStats.period_days}</div>
+                </div>
+              </div>
+
+              <div className="activity-chart-container">
+                <h4>Daily Active Users</h4>
+                <div className="activity-chart">
+                  {userActivityStats.daily_stats.map((day, index) => {
+                    const maxUsers = userActivityStats.summary.max_active_users || 1;
+                    const height = (day.active_users / maxUsers) * 100;
+                    const date = new Date(day.date);
+                    const showLabel = userActivityDays <= 7 ||
+                      (userActivityDays <= 30 && (date.getDate() === 1 || date.getDate() % 5 === 0)) ||
+                      (userActivityDays > 30 && (date.getDate() === 1 || date.getDate() === 15));
+
+                    return (
+                      <div key={index} className="activity-bar-container">
+                        <div
+                          className="activity-bar"
+                          style={{ height: `${height}%` }}
+                          title={`${day.date}: ${day.active_users} active users`}
+                        >
+                          {day.active_users > 0 && (
+                            <span className="bar-value">{day.active_users}</span>
+                          )}
+                        </div>
+                        {showLabel && (
+                          <div className="bar-label">
+                            {userActivityDays <= 7
+                              ? date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+                              : date.getDate()
+                            }
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="chart-y-label">Number of Users</div>
+                <div className="chart-x-label">Days (from {userActivityStats.daily_stats[0]?.date} to {userActivityStats.daily_stats[userActivityStats.daily_stats.length - 1]?.date})</div>
+              </div>
+            </>
+          ) : (
+            <div className="no-activity-message">
+              <p>No activity data found for the selected period</p>
             </div>
           )}
         </div>
