@@ -232,7 +232,7 @@ function QuizReport({ onBack }) {
   // Define streak milestones and badges
   const STREAK_MILESTONES = [
     { days: 3, name: 'Getting Started', icon: '🌱', color: '#a8e6cf', description: '3 day streak' },
-    { days: 7, name: 'One Week Warrior', icon: '⚡', color: '#ffd93d', description: '7 day streak' },
+    { days: 7, name: 'Short Distance Winner', icon: '⚡', color: '#ffd93d', description: '7 day streak' },
     { days: 14, name: 'Two Week Champion', icon: '💪', color: '#ffb347', description: '14 day streak' },
     { days: 30, name: 'Monthly Master', icon: '🔥', color: '#ff6b6b', description: '30 day streak' },
     { days: 60, name: 'Dedication Legend', icon: '🌟', color: '#a28dd8', description: '60 day streak' },
