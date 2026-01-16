@@ -229,6 +229,45 @@ function QuizReport({ onBack }) {
 
   const streaks = calculateStreaks();
 
+  // Define streak milestones and badges
+  const STREAK_MILESTONES = [
+    { days: 3, name: 'Getting Started', icon: '🌱', color: '#a8e6cf', description: '3 day streak' },
+    { days: 7, name: 'One Week Warrior', icon: '⚡', color: '#ffd93d', description: '7 day streak' },
+    { days: 14, name: 'Two Week Champion', icon: '💪', color: '#ffb347', description: '14 day streak' },
+    { days: 30, name: 'Monthly Master', icon: '🔥', color: '#ff6b6b', description: '30 day streak' },
+    { days: 60, name: 'Dedication Legend', icon: '🌟', color: '#a28dd8', description: '60 day streak' },
+    { days: 90, name: 'Quarterly Achiever', icon: '💎', color: '#6c5ce7', description: '90 day streak' },
+    { days: 180, name: 'Half Year Hero', icon: '👑', color: '#fd79a8', description: '180 day streak' },
+    { days: 365, name: 'Year Long Legend', icon: '🏆', color: '#ffd700', description: '365 day streak' }
+  ];
+
+  // Calculate earned badges and progress
+  const calculateAchievements = () => {
+    const currentStreak = streaks.longestStreakInPeriod;
+    const earnedBadges = STREAK_MILESTONES.filter(m => currentStreak >= m.days);
+    const nextMilestone = STREAK_MILESTONES.find(m => currentStreak < m.days);
+
+    let progressToNext = 0;
+    if (nextMilestone) {
+      const previousMilestone = earnedBadges.length > 0
+        ? earnedBadges[earnedBadges.length - 1].days
+        : 0;
+      const totalRequired = nextMilestone.days - previousMilestone;
+      const currentProgress = currentStreak - previousMilestone;
+      progressToNext = Math.min((currentProgress / totalRequired) * 100, 100);
+    }
+
+    return {
+      earned: earnedBadges,
+      next: nextMilestone,
+      progressPercent: progressToNext,
+      totalEarned: earnedBadges.length,
+      totalAvailable: STREAK_MILESTONES.length
+    };
+  };
+
+  const achievements = calculateAchievements();
+
   const formatTimelineDate = (dateString) => {
     const date = new Date(dateString);
     if (selectedDays <= 7) {
@@ -395,6 +434,104 @@ function QuizReport({ onBack }) {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Achievements Section */}
+          <div className="achievements-section">
+            <div className="achievements-header">
+              <h3>🎖️ Streak Achievements</h3>
+              <div className="achievements-progress">
+                <span className="progress-text">
+                  {achievements.totalEarned} of {achievements.totalAvailable} badges earned
+                </span>
+              </div>
+            </div>
+
+            {/* Earned Badges */}
+            {achievements.earned.length > 0 && (
+              <div className="badges-container">
+                <h4 className="badges-subtitle">Unlocked Badges</h4>
+                <div className="badges-grid">
+                  {achievements.earned.map((milestone, index) => (
+                    <div
+                      key={index}
+                      className="badge earned"
+                      style={{ backgroundColor: milestone.color }}
+                      title={`${milestone.name} - ${milestone.description}`}
+                    >
+                      <div className="badge-icon">{milestone.icon}</div>
+                      <div className="badge-content">
+                        <div className="badge-name">{milestone.name}</div>
+                        <div className="badge-requirement">{milestone.days} days</div>
+                      </div>
+                      <div className="badge-earned-mark">✓</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Next Milestone Progress */}
+            {achievements.next && (
+              <div className="next-milestone">
+                <h4 className="badges-subtitle">Next Milestone</h4>
+                <div className="milestone-card">
+                  <div className="milestone-info">
+                    <div
+                      className="milestone-badge-preview"
+                      style={{ backgroundColor: achievements.next.color + '40' }}
+                    >
+                      <div className="milestone-icon">{achievements.next.icon}</div>
+                    </div>
+                    <div className="milestone-details">
+                      <div className="milestone-name">{achievements.next.name}</div>
+                      <div className="milestone-requirement">
+                        {streaks.longestStreakInPeriod} / {achievements.next.days} days
+                      </div>
+                    </div>
+                  </div>
+                  <div className="progress-bar-container">
+                    <div
+                      className="progress-bar-fill"
+                      style={{
+                        width: `${achievements.progressPercent}%`,
+                        backgroundColor: achievements.next.color
+                      }}
+                    ></div>
+                  </div>
+                  <div className="progress-percentage">
+                    {Math.round(achievements.progressPercent)}% complete
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Upcoming Badges */}
+            {achievements.next && (
+              <div className="upcoming-badges">
+                <h4 className="badges-subtitle">Upcoming Badges</h4>
+                <div className="badges-grid upcoming">
+                  {STREAK_MILESTONES
+                    .filter(m => m.days > streaks.longestStreakInPeriod)
+                    .slice(0, 4)
+                    .map((milestone, index) => (
+                      <div
+                        key={index}
+                        className="badge locked"
+                        style={{ backgroundColor: '#e9ecef' }}
+                        title={`${milestone.name} - ${milestone.description}`}
+                      >
+                        <div className="badge-icon locked-icon">{milestone.icon}</div>
+                        <div className="badge-content">
+                          <div className="badge-name locked-name">{milestone.name}</div>
+                          <div className="badge-requirement locked-req">{milestone.days} days</div>
+                        </div>
+                        <div className="badge-lock">🔒</div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="box-distribution">
