@@ -274,6 +274,53 @@ function AdminPanel({ onBack }) {
     }
   };
 
+  const exportLoginHistoryToCSV = () => {
+    if (!loginHistory || loginHistory.length === 0) {
+      return;
+    }
+
+    // Prepare CSV header
+    const headers = ['Email', 'Display Name', 'Role', 'Account Created', 'Last Activity', 'Sessions'];
+
+    // Prepare CSV rows
+    const rows = loginHistory.map(record => {
+      return [
+        record.email || '',
+        record.display_name || '',
+        record.is_admin ? 'Admin' : 'User',
+        record.created_at ? new Date(record.created_at).toLocaleDateString() : '',
+        record.last_activity ? new Date(record.last_activity).toLocaleString() : 'No activity',
+        record.total_sessions || 0
+      ];
+    });
+
+    // Combine headers and rows
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => {
+        // Escape cells containing commas, quotes, or newlines
+        const cellStr = String(cell);
+        if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+          return `"${cellStr.replace(/"/g, '""')}"`;
+        }
+        return cellStr;
+      }).join(','))
+    ].join('\n');
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    const timestamp = new Date().toISOString().split('T')[0];
+    link.setAttribute('href', url);
+    link.setAttribute('download', `login-history-${loginHistoryDays}days-${timestamp}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleShowLoginHistory = () => {
     setShowLoginHistory(true);
     setShowStatistics(false);
@@ -1485,6 +1532,14 @@ function AdminPanel({ onBack }) {
                 disabled={loginHistoryLoading}
               >
                 {loginHistoryLoading ? 'Refreshing...' : '↻ Refresh'}
+              </button>
+              <button
+                onClick={exportLoginHistoryToCSV}
+                className="export-csv-button"
+                disabled={!loginHistory || loginHistory.length === 0}
+                title="Export to CSV"
+              >
+                📥 Export CSV
               </button>
             </div>
           </div>
