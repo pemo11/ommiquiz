@@ -389,6 +389,53 @@ function AdminPanel({ onBack }) {
     setUserActivityError(null);
   };
 
+  const exportUserActivityToCSV = () => {
+    if (!userActivityStats || !userActivityStats.daily_stats) {
+      return;
+    }
+
+    // Prepare CSV content
+    const csvRows = [];
+
+    // Add header section
+    csvRows.push('User Activity Statistics Report');
+    csvRows.push(`Period: Last ${userActivityDays} Days`);
+    csvRows.push(`Generated: ${new Date().toLocaleString()}`);
+    csvRows.push('');
+
+    // Add summary statistics
+    csvRows.push('Summary Statistics');
+    csvRows.push(`Average Daily Active Users,${userActivityStats.summary.avg_active_users}`);
+    csvRows.push(`Peak Active Users,${userActivityStats.summary.max_active_users}`);
+    csvRows.push(`Days with Activity,${userActivityStats.summary.days_with_activity}`);
+    csvRows.push(`Total Days in Period,${userActivityStats.period_days}`);
+    csvRows.push('');
+
+    // Add daily activity header
+    csvRows.push('Daily Activity');
+    csvRows.push('Date,Active Users');
+
+    // Add daily data
+    userActivityStats.daily_stats.forEach(day => {
+      csvRows.push(`${day.date},${day.active_users}`);
+    });
+
+    // Create blob and download
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    const timestamp = new Date().toISOString().split('T')[0];
+    link.setAttribute('href', url);
+    link.setAttribute('download', `user-activity-${userActivityDays}days-${timestamp}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const fetchFlashcardList = async () => {
     try {
       setLoading(true);
@@ -1694,6 +1741,14 @@ function AdminPanel({ onBack }) {
                 disabled={userActivityLoading}
               >
                 {userActivityLoading ? 'Refreshing...' : '↻ Refresh'}
+              </button>
+              <button
+                onClick={exportUserActivityToCSV}
+                className="export-csv-button"
+                disabled={!userActivityStats || !userActivityStats.daily_stats}
+                title="Export to CSV"
+              >
+                📥 Export CSV
               </button>
             </div>
           </div>
