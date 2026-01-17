@@ -1836,3 +1836,59 @@
   color: #6c757d;
   font-size: 1.1rem;
 }
+
+/* Rating Statistics Section */
+.rating-stats-section {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 2px solid #e9ecef;
+}
+
+.rating-stats-section h4 {
+  margin-bottom: 1.5rem;
+  color: #495057;
+  font-size: 1.3rem;
+}
+
+.rating-distribution {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 300px;
+}
+
+.rating-bar-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+
+.rating-star {
+  min-width: 40px;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.rating-bar-container {
+  flex: 1;
+  height: 20px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.rating-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ffd700 0%, #ffed4e 100%);
+  transition: width 0.3s ease;
+  min-width: 2px;
+}
+
+.rating-count {
+  min-width: 30px;
+  text-align: right;
+  font-weight: 500;
+  color: #666;
+}

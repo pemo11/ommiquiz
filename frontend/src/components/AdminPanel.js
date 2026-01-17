@@ -69,6 +69,9 @@ function AdminPanel({ onBack }) {
   const [userActivityLoading, setUserActivityLoading] = useState(false);
   const [userActivityError, setUserActivityError] = useState(null);
   const [userActivityDays, setUserActivityDays] = useState(30);
+  const [ratingStats, setRatingStats] = useState(null);
+  const [ratingStatsLoading, setRatingStatsLoading] = useState(false);
+  const [ratingStatsError, setRatingStatsError] = useState(null);
 
   const formatCatalogTimestamp = (value) => {
     if (!value) return '—';
@@ -102,6 +105,30 @@ function AdminPanel({ onBack }) {
     }
   };
 
+  const loadRatingStats = async () => {
+    try {
+      setRatingStatsLoading(true);
+      setRatingStatsError(null);
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/admin/flashcard-ratings-stats`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to load rating stats: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      setRatingStats(data);
+    } catch (err) {
+      setRatingStatsError(err.message);
+    } finally {
+      setRatingStatsLoading(false);
+    }
+  };
+
   const handleShowStatistics = () => {
     setShowStatistics(true);
     setSelectedFlashcard(null);
@@ -109,6 +136,9 @@ function AdminPanel({ onBack }) {
     setShowYamlImport(false);
     if (!catalogData) {
       loadCatalogData();
+    }
+    if (!ratingStats) {
+      loadRatingStats();
     }
   };
 
@@ -160,6 +190,42 @@ function AdminPanel({ onBack }) {
 
       csvRows.push(escapedRow.join(','));
     });
+
+    // Add rating statistics section if available
+    if (ratingStats && ratingStats.flashcard_stats && ratingStats.flashcard_stats.length > 0) {
+      csvRows.push('');
+      csvRows.push('');
+      csvRows.push('Card Rating Statistics');
+      csvRows.push(`Total Ratings: ${ratingStats.total_ratings || 0}`);
+      csvRows.push(`Average Rating: ${ratingStats.average_rating ? ratingStats.average_rating.toFixed(2) : 'N/A'}`);
+      csvRows.push(`Rated Flashcard Sets: ${ratingStats.flashcard_stats.length}`);
+      csvRows.push('');
+      csvRows.push('Flashcard Set,Flashcard ID,Total Ratings,Average Rating,5 Stars,4 Stars,3 Stars,2 Stars,1 Star');
+
+      ratingStats.flashcard_stats.forEach(stat => {
+        const row = [
+          stat.flashcard_title || stat.flashcard_id || '',
+          stat.flashcard_id || '',
+          stat.total_ratings || 0,
+          stat.average_rating ? stat.average_rating.toFixed(2) : 'N/A',
+          stat.rating_5_count || 0,
+          stat.rating_4_count || 0,
+          stat.rating_3_count || 0,
+          stat.rating_2_count || 0,
+          stat.rating_1_count || 0
+        ];
+
+        const escapedRow = row.map(cell => {
+          const cellStr = String(cell);
+          if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+            return `"${cellStr.replace(/"/g, '""')}"`;
+          }
+          return cellStr;
+        });
+
+        csvRows.push(escapedRow.join(','));
+      });
+    }
 
     // Create blob and download
     const csvContent = csvRows.join('\n');
@@ -1596,6 +1662,90 @@ function AdminPanel({ onBack }) {
                     )}
                   </tbody>
                 </table>
+              </div>
+
+              {/* Card Ratings Statistics Section */}
+              <div className="rating-stats-section">
+                <h4>Card Rating Statistics</h4>
+                {ratingStatsError && (
+                  <div className="error-message">
+                    <p>Error loading rating stats: {ratingStatsError}</p>
+                  </div>
+                )}
+                {ratingStatsLoading ? (
+                  <div className="loading">Loading rating statistics...</div>
+                ) : ratingStats && ratingStats.flashcard_stats && ratingStats.flashcard_stats.length > 0 ? (
+                  <>
+                    <div className="statistics-summary">
+                      <div className="stat-card">
+                        <span className="stat-label">Total Ratings</span>
+                        <span className="stat-value">{ratingStats.total_ratings || 0}</span>
+                        <span className="stat-helper">All ratings given by users</span>
+                      </div>
+                      <div className="stat-card">
+                        <span className="stat-label">Average Rating</span>
+                        <span className="stat-value">
+                          {ratingStats.average_rating ? `${ratingStats.average_rating.toFixed(2)} ⭐` : '—'}
+                        </span>
+                        <span className="stat-helper">Across all rated cards</span>
+                      </div>
+                      <div className="stat-card">
+                        <span className="stat-label">Rated Flashcard Sets</span>
+                        <span className="stat-value">{ratingStats.flashcard_stats.length}</span>
+                        <span className="stat-helper">Sets with at least one rating</span>
+                      </div>
+                    </div>
+
+                    <div className="statistics-table-wrapper">
+                      <table className="statistics-table">
+                        <thead>
+                          <tr>
+                            <th>Flashcard Set</th>
+                            <th>Total Ratings</th>
+                            <th>Average Rating</th>
+                            <th>Rating Distribution</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {ratingStats.flashcard_stats.map((stat) => (
+                            <tr key={stat.flashcard_id}>
+                              <td>
+                                <div className="stat-title">{stat.flashcard_title || stat.flashcard_id}</div>
+                                <div className="stat-description">{stat.flashcard_id}</div>
+                              </td>
+                              <td>{stat.total_ratings}</td>
+                              <td>{stat.average_rating ? `${stat.average_rating.toFixed(2)} ⭐` : '—'}</td>
+                              <td>
+                                <div className="rating-distribution">
+                                  {[5, 4, 3, 2, 1].map(star => {
+                                    const count = stat[`rating_${star}_count`] || 0;
+                                    const percentage = stat.total_ratings > 0
+                                      ? ((count / stat.total_ratings) * 100).toFixed(0)
+                                      : 0;
+                                    return (
+                                      <div key={star} className="rating-bar-item">
+                                        <span className="rating-star">{star}⭐</span>
+                                        <div className="rating-bar-container">
+                                          <div
+                                            className="rating-bar-fill"
+                                            style={{ width: `${percentage}%` }}
+                                          />
+                                        </div>
+                                        <span className="rating-count">{count}</span>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                ) : (
+                  <div className="no-data">No rating data available yet.</div>
+                )}
               </div>
             </>
           ) : (

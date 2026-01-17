@@ -292,6 +292,10 @@ function FlashcardViewer({ flashcard, onBack }) {
   const [cardDisplayTime, setCardDisplayTime] = useState(null); // Timestamp when current card was displayed
   const [flipTimes, setFlipTimes] = useState([]); // Array of flip durations in seconds for all cards
 
+  // Card ratings state
+  const [cardRatings, setCardRatings] = useState({}); // { cardId: rating (1-5) }
+  const [showRatingPrompt, setShowRatingPrompt] = useState(false);
+
   console.log('FlashcardViewer received flashcard:', flashcard);
   
   console.log('Cards array:', cards);
@@ -883,6 +887,41 @@ function FlashcardViewer({ flashcard, onBack }) {
     setTimeout(() => {
       proceedToNextCard();
     }, 500);
+  };
+
+  // Function to handle card rating
+  const handleCardRating = async (rating) => {
+    const cardId = currentCard.id;
+
+    // Update local state
+    setCardRatings(prev => ({ ...prev, [cardId]: rating }));
+    setShowRatingPrompt(false);
+
+    // Submit to backend
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        console.warn('No auth token found, rating not saved to server');
+        return;
+      }
+
+      const response = await fetch(
+        `${API_URL}/flashcards/${flashcard.id}/cards/${cardId}/rating?rating=${rating}`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        console.error('Failed to submit rating:', response.statusText);
+      }
+    } catch (error) {
+      console.error('Error submitting rating:', error);
+    }
   };
 
   // Old function - kept for swipe gestures, but will be deprecated in favor of handleBoxAssignment
@@ -1859,6 +1898,41 @@ function FlashcardViewer({ flashcard, onBack }) {
                   >
                     ❌ Box 3
                   </button>
+                </div>
+              )}
+
+              {/* Optional Card Rating */}
+              {currentCardAnswered && !showSummary && (
+                <div className="card-rating-section">
+                  <button
+                    className="rating-toggle-button"
+                    onClick={() => setShowRatingPrompt(!showRatingPrompt)}
+                  >
+                    {cardRatings[currentCard.id]
+                      ? `⭐ Rated ${cardRatings[currentCard.id]}/5`
+                      : '⭐ Rate this card (optional)'}
+                  </button>
+
+                  {showRatingPrompt && (
+                    <div className="star-rating-container">
+                      <div className="star-rating">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            className={`star-button ${cardRatings[currentCard.id] >= star ? 'filled' : ''}`}
+                            onClick={() => handleCardRating(star)}
+                            title={`${star} star${star > 1 ? 's' : ''}`}
+                          >
+                            {cardRatings[currentCard.id] >= star ? '★' : '☆'}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="rating-labels">
+                        <span>Difficult</span>
+                        <span>Easy</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

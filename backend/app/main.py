@@ -1161,6 +1161,179 @@ async def get_user_activity_stats(
         )
 
 
+@api_router.post("/flashcards/{flashcard_id}/cards/{card_id}/rating")
+async def submit_card_rating(
+    flashcard_id: str,
+    card_id: str,
+    rating: int = Query(..., ge=1, le=5, description="Rating from 1 to 5 stars"),
+    user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Submit or update a rating for a specific card."""
+    from .database import get_db_pool
+
+    logger.info(
+        "User submitting card rating",
+        user_id=user.user_id,
+        flashcard_id=flashcard_id,
+        card_id=card_id,
+        rating=rating
+    )
+
+    pool = await get_db_pool()
+
+    try:
+        async with pool.acquire() as conn:
+            # Insert or update rating using ON CONFLICT
+            result = await conn.fetchrow(
+                """
+                INSERT INTO card_ratings (user_id, flashcard_id, card_id, rating)
+                VALUES ($1, $2, $3, $4)
+                ON CONFLICT (user_id, flashcard_id, card_id)
+                DO UPDATE SET rating = $4, updated_at = NOW()
+                RETURNING id, rating, created_at, updated_at
+                """,
+                user.user_id,
+                flashcard_id,
+                card_id,
+                rating
+            )
+
+            return {
+                "success": True,
+                "rating": {
+                    "id": result["id"],
+                    "flashcard_id": flashcard_id,
+                    "card_id": card_id,
+                    "rating": result["rating"],
+                    "created_at": result["created_at"].isoformat(),
+                    "updated_at": result["updated_at"].isoformat()
+                }
+            }
+
+    except Exception as e:
+        logger.error(
+            "Error submitting card rating",
+            error=str(e),
+            user_id=user.user_id,
+            flashcard_id=flashcard_id,
+            card_id=card_id
+        )
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to submit rating: {str(e)}"
+        )
+
+
+@api_router.get("/flashcards/{flashcard_id}/ratings")
+async def get_flashcard_ratings(
+    flashcard_id: str,
+    user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Get user's ratings for a specific flashcard set."""
+    from .database import get_db_pool
+
+    logger.info(
+        "User fetching flashcard ratings",
+        user_id=user.user_id,
+        flashcard_id=flashcard_id
+    )
+
+    pool = await get_db_pool()
+
+    try:
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT card_id, rating, created_at, updated_at
+                FROM card_ratings
+                WHERE user_id = $1 AND flashcard_id = $2
+                ORDER BY updated_at DESC
+                """,
+                user.user_id,
+                flashcard_id
+            )
+
+            ratings = {
+                row["card_id"]: {
+                    "rating": row["rating"],
+                    "created_at": row["created_at"].isoformat(),
+                    "updated_at": row["updated_at"].isoformat()
+                }
+                for row in rows
+            }
+
+            return {
+                "flashcard_id": flashcard_id,
+                "ratings": ratings,
+                "total_rated": len(ratings)
+            }
+
+    except Exception as e:
+        logger.error(
+            "Error fetching flashcard ratings",
+            error=str(e),
+            user_id=user.user_id,
+            flashcard_id=flashcard_id
+        )
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch ratings: {str(e)}"
+        )
+
+
+@api_router.get("/admin/flashcard-ratings-stats")
+async def get_flashcard_ratings_stats(
+    admin: AuthenticatedUser = Depends(get_current_admin)
+):
+    """Get rating statistics for all flashcards (Admin only)."""
+    from .database import get_db_pool
+
+    logger.info("Admin fetching flashcard rating statistics", admin_user=admin.email)
+
+    pool = await get_db_pool()
+
+    try:
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT
+                    flashcard_id,
+                    COUNT(*) as total_ratings,
+                    ROUND(AVG(rating)::numeric, 2) as average_rating,
+                    MIN(rating) as min_rating,
+                    MAX(rating) as max_rating,
+                    COUNT(DISTINCT user_id) as unique_users
+                FROM card_ratings
+                GROUP BY flashcard_id
+                ORDER BY average_rating DESC, total_ratings DESC
+                """
+            )
+
+            stats = [
+                {
+                    "flashcard_id": row["flashcard_id"],
+                    "total_ratings": row["total_ratings"],
+                    "average_rating": float(row["average_rating"]) if row["average_rating"] else 0,
+                    "min_rating": row["min_rating"],
+                    "max_rating": row["max_rating"],
+                    "unique_users": row["unique_users"]
+                }
+                for row in rows
+            ]
+
+            return {
+                "total_flashcards_rated": len(stats),
+                "statistics": stats
+            }
+
+    except Exception as e:
+        logger.error("Error fetching flashcard rating stats", error=str(e), admin_user=admin.email)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch rating statistics: {str(e)}"
+        )
+
+
 @api_router.get("/users/me")
 async def get_current_user_profile(
     user: AuthenticatedUser = Depends(get_current_user)
