@@ -82,3 +82,34 @@ No ORM models - we use plain SQL queries with asyncpg.
 # Policies:
 #   - Users can view their own sessions
 #   - Users can insert their own sessions
+
+
+# =============================================================================
+# TABLE: card_ratings
+# =============================================================================
+# Stores user ratings (1-5 stars) for individual flashcards
+#
+# Columns:
+#   - id (SERIAL, PRIMARY KEY): Auto-incrementing ID
+#   - user_id (UUID, NOT NULL): References auth.users(id)
+#   - flashcard_id (TEXT, NOT NULL): Flashcard set identifier
+#   - card_id (TEXT, NOT NULL): Individual card identifier
+#   - rating (INTEGER, NOT NULL): Rating value (1-5 stars)
+#   - created_at (TIMESTAMPTZ): When the rating was given
+#   - updated_at (TIMESTAMPTZ): When the rating was last updated
+#
+# Constraints:
+#   - CHECK: rating >= 1 AND rating <= 5
+#   - UNIQUE: (user_id, flashcard_id, card_id)
+#
+# Indexes:
+#   - idx_card_ratings_user ON (user_id)
+#   - idx_card_ratings_flashcard ON (flashcard_id)
+#   - idx_card_ratings_user_flashcard ON (user_id, flashcard_id)
+#
+# Row Level Security: Enabled
+# Policies:
+#   - Users can view their own ratings
+#   - Users can insert their own ratings
+#   - Users can update their own ratings
+#   - Users can delete their own ratings
