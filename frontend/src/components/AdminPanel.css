@@ -289,6 +289,12 @@
   background-color: #d1d5db;
 }
 
+.statistics-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
 .refresh-stats-button {
   background-color: #10b981;
   color: white;

@@ -117,6 +117,66 @@ function AdminPanel({ onBack }) {
     setCatalogError(null);
   };
 
+  const exportStatisticsToCSV = () => {
+    if (!catalogData || !catalogData['flashcard-sets']) {
+      return;
+    }
+
+    // Prepare CSV content
+    const csvRows = [];
+
+    // Add header section
+    csvRows.push('Flashcard Statistics Report');
+    csvRows.push(`Generated: ${new Date().toLocaleString()}`);
+    csvRows.push(`Catalog Generated: ${formatCatalogTimestamp(catalogData.generatedAt)}`);
+    csvRows.push(`Total Flashcard Sets: ${catalogData.total ?? catalogData['flashcard-sets'].length}`);
+    csvRows.push('');
+
+    // Add flashcard details header
+    csvRows.push('Flashcard Sets');
+    csvRows.push('Title,ID,Author,Language,Card Count,Module,Topics,Description');
+
+    // Add flashcard data
+    catalogData['flashcard-sets'].forEach(flashcard => {
+      const row = [
+        flashcard.title || flashcard.id || '',
+        flashcard.id || '',
+        flashcard.author || 'Unknown',
+        flashcard.language || 'n/a',
+        typeof flashcard.cardcount === 'number' ? flashcard.cardcount : (typeof flashcard.cardCount === 'number' ? flashcard.cardCount : 'n/a'),
+        flashcard.module || 'n/a',
+        Array.isArray(flashcard.topics) && flashcard.topics.length > 0 ? flashcard.topics.join('; ') : '',
+        flashcard.description || ''
+      ];
+
+      // Escape cells containing commas, quotes, or newlines
+      const escapedRow = row.map(cell => {
+        const cellStr = String(cell);
+        if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+          return `"${cellStr.replace(/"/g, '""')}"`;
+        }
+        return cellStr;
+      });
+
+      csvRows.push(escapedRow.join(','));
+    });
+
+    // Create blob and download
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+
+    const timestamp = new Date().toISOString().split('T')[0];
+    link.setAttribute('href', url);
+    link.setAttribute('download', `flashcard-statistics-${timestamp}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const handleEditFromStatistics = async (flashcardId) => {
     // Hide statistics view and open edit view
     setShowStatistics(false);
@@ -1435,13 +1495,23 @@ function AdminPanel({ onBack }) {
               Back to List
             </button>
             <h3>Flashcard Statistics</h3>
-            <button
-              onClick={loadCatalogData}
-              className="refresh-stats-button"
-              disabled={catalogLoading}
-            >
-              {catalogLoading ? 'Refreshing...' : '↻ Refresh'}
-            </button>
+            <div className="statistics-controls">
+              <button
+                onClick={loadCatalogData}
+                className="refresh-stats-button"
+                disabled={catalogLoading}
+              >
+                {catalogLoading ? 'Refreshing...' : '↻ Refresh'}
+              </button>
+              <button
+                onClick={exportStatisticsToCSV}
+                className="export-csv-button"
+                disabled={!catalogData || !catalogData['flashcard-sets'] || catalogData['flashcard-sets'].length === 0}
+                title="Export to CSV"
+              >
+                📥 Export CSV
+              </button>
+            </div>
           </div>
 
           {catalogError && (
