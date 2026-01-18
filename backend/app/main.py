@@ -803,7 +803,7 @@ async def list_users(
                     "email": row['email'],
                     "display_name": row['display_name'],
                     "is_admin": row['is_admin'],
-                    "created_at": row['created_at'].isoformat() + "Z",
+                    "created_at": row['created_at'].isoformat() + "Z" if row['created_at'] else None,
                     "updated_at": row['updated_at'].isoformat() + "Z" if row['updated_at'] else None
                 }
                 for row in users

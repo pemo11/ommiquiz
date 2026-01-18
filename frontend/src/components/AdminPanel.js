@@ -1795,7 +1795,7 @@ function AdminPanel({ onBack }) {
                             {user.is_admin ? 'Admin' : 'Regular'}
                           </span>
                         </td>
-                        <td>{new Date(user.created_at).toLocaleDateString()}</td>
+                        <td>{user.created_at ? new Date(user.created_at).toLocaleDateString() : '—'}</td>
                         <td>
                           <div className="user-action-buttons">
                             <button
