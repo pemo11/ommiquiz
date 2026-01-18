@@ -628,7 +628,19 @@ function FlashcardViewer({ flashcard, onBack }) {
 
   const getBitmapSrc = (bitmap) => {
     if (!bitmap) return null;
-    return bitmap.startsWith('data:') ? bitmap : `data:image/png;base64,${bitmap}`;
+
+    // Check if it's a URL (starts with http:// or https://)
+    if (bitmap.startsWith('http://') || bitmap.startsWith('https://')) {
+      return bitmap;
+    }
+
+    // Check if it's already a data URI
+    if (bitmap.startsWith('data:')) {
+      return bitmap;
+    }
+
+    // Assume it's base64 data without prefix
+    return `data:image/png;base64,${bitmap}`;
   };
 
   const renderQuestionContent = () => {
@@ -642,7 +654,12 @@ function FlashcardViewer({ flashcard, onBack }) {
             src={imageSrc}
             alt="Question illustration"
             className="question-image"
+            loading="lazy"
             onClick={(e) => e.stopPropagation()}
+            onError={(e) => {
+              e.target.style.display = 'none';
+              console.warn('Failed to load image:', imageSrc);
+            }}
           />
         )}
       </div>

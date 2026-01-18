@@ -67,7 +67,12 @@ properties:
           type: string
           enum: ["A", "B", "C"]
           description: "Difficulty level"
-          
+
+        bitmap:
+          type: string
+          description: "Optional image for the question. Accepts HTTPS URL (e.g., S3), base64-encoded data, or data URI"
+          example: "https://my-bucket.s3.amazonaws.com/images/diagram.png"
+
       # Conditional validation based on what properties exist
       anyOf:
         - required: ["answer"]  # Single answer question

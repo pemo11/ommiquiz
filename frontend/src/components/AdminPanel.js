@@ -2369,14 +2369,35 @@ flashcards:
                     </div>
 
                     <div className="form-row">
-                      <label>Bitmap (optional):</label>
-                      <textarea
-                        value={card.bitmap || ''}
-                        onChange={(e) => updateCardField(cardIndex, 'bitmap', e.target.value)}
-                        rows="3"
-                        placeholder="Paste base64-encoded image data or a data URI"
-                      />
-                      <small>Attach an image to the question. Provide base64 data (optionally prefixed with a data URI).</small>
+                      <label>Image (optional):</label>
+
+                      {card.type === 'single' ? (
+                        <>
+                          <input
+                            type="url"
+                            value={card.bitmap || ''}
+                            onChange={(e) => updateCardField(cardIndex, 'bitmap', e.target.value)}
+                            placeholder="https://your-bucket.s3.amazonaws.com/image.png"
+                            style={{ padding: '0.5rem', fontSize: '1rem', width: '100%' }}
+                          />
+                          <small>
+                            Paste an HTTPS URL to an image from S3 or other source.
+                            Alternatively, use base64 data or data URI.
+                          </small>
+                        </>
+                      ) : (
+                        <>
+                          <textarea
+                            value={card.bitmap || ''}
+                            onChange={(e) => updateCardField(cardIndex, 'bitmap', e.target.value)}
+                            rows="3"
+                            placeholder="Paste base64-encoded image data or a data URI"
+                          />
+                          <small>
+                            Attach an image to the question. Provide base64 data (optionally prefixed with a data URI).
+                          </small>
+                        </>
+                      )}
                     </div>
 
                     <div className="form-row">

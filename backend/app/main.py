@@ -1560,8 +1560,34 @@ def validate_flashcard_yaml(data: Dict[str, Any]) -> Dict[str, Any]:
                         errors.append(f"Flashcard {i+1} has invalid type '{card['type']}'. Must be 'single' or 'multiple'")
 
                 # Optional bitmap validation
-                if "bitmap" in card and not isinstance(card["bitmap"], str):
-                    errors.append(f"Flashcard {i+1} field 'bitmap' must be a string containing image data")
+                if "bitmap" in card:
+                    if not isinstance(card["bitmap"], str):
+                        errors.append(f"Flashcard {i+1} field 'bitmap' must be a string")
+                    else:
+                        bitmap_value = card["bitmap"].strip()
+                        if bitmap_value:
+                            # Check if it's a URL
+                            if bitmap_value.startswith(('http://', 'https://')):
+                                # Validate URL format
+                                if not re.match(r'^https?://[^\s]+\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$', bitmap_value, re.IGNORECASE):
+                                    errors.append(
+                                        f"Flashcard {i+1} field 'bitmap' contains an invalid image URL. "
+                                        f"Must be a valid HTTP(S) URL ending with .jpg, .png, .gif, .webp, or .svg"
+                                    )
+                                # Warn about HTTP (not HTTPS)
+                                if bitmap_value.startswith('http://'):
+                                    logger.warning(f"Flashcard {i+1} uses HTTP URL for bitmap. HTTPS recommended.")
+                            # Validate data URI
+                            elif bitmap_value.startswith('data:'):
+                                if not re.match(r'^data:image/[a-zA-Z+]+;base64,[A-Za-z0-9+/=]+$', bitmap_value):
+                                    errors.append(f"Flashcard {i+1} field 'bitmap' contains malformed data URI")
+                            # Validate raw base64
+                            else:
+                                if not re.match(r'^[A-Za-z0-9+/=]+$', bitmap_value):
+                                    errors.append(
+                                        f"Flashcard {i+1} field 'bitmap' must be a URL (http://...), "
+                                        f"data URI (data:image/...), or valid base64 data"
+                                    )
     
     is_valid = len(errors) == 0
     logger.debug("Flashcard validation completed", 
