@@ -20,6 +20,8 @@ services:
       failure_threshold: 3
       success_threshold: 1
     envs:
+      - key: APP_VERSION
+        value: "1.0.28"
       - key: PYTHONUNBUFFERED
         value: "1"
       - key: LOG_LEVEL

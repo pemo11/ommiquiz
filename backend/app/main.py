@@ -1413,7 +1413,7 @@ async def health_check():
     logger.debug("Health check requested")
     return {
         "status": "healthy",
-        "version": os.getenv("APP_VERSION", "1.0.26")
+        "version": os.getenv("APP_VERSION", "1.0.28")
     }
 
 
