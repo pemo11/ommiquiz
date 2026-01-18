@@ -82,6 +82,36 @@ function AdminPanel({ onBack }) {
     return date.toLocaleString();
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return '—';
+    try {
+      const date = new Date(dateString);
+      if (Number.isNaN(date.getTime())) {
+        console.error('Invalid date:', dateString);
+        return '—';
+      }
+      return date.toLocaleDateString();
+    } catch (error) {
+      console.error('Error formatting date:', dateString, error);
+      return '—';
+    }
+  };
+
+  const formatDateTime = (dateString) => {
+    if (!dateString) return '—';
+    try {
+      const date = new Date(dateString);
+      if (Number.isNaN(date.getTime())) {
+        console.error('Invalid datetime:', dateString);
+        return '—';
+      }
+      return date.toLocaleString();
+    } catch (error) {
+      console.error('Error formatting datetime:', dateString, error);
+      return '—';
+    }
+  };
+
   useEffect(() => {
     fetchFlashcardList();
   }, []);
@@ -274,6 +304,12 @@ function AdminPanel({ onBack }) {
       }
 
       const data = await response.json();
+      console.log('Fetched users data:', data.users);
+      if (data.users && data.users.length > 0) {
+        console.log('First user sample:', data.users[0]);
+        console.log('created_at value:', data.users[0].created_at);
+        console.log('created_at type:', typeof data.users[0].created_at);
+      }
       setUsers(data.users);
     } catch (err) {
       console.error('Error fetching users:', err);
@@ -396,6 +432,12 @@ function AdminPanel({ onBack }) {
       }
 
       const data = await response.json();
+      console.log('Fetched login history data:', data.history);
+      if (data.history && data.history.length > 0) {
+        console.log('First record sample:', data.history[0]);
+        console.log('created_at value:', data.history[0].created_at);
+        console.log('last_sign_in_at value:', data.history[0].last_sign_in_at);
+      }
       setLoginHistory(data.history);
     } catch (err) {
       console.error('Error fetching login history:', err);
@@ -1795,7 +1837,7 @@ function AdminPanel({ onBack }) {
                             {user.is_admin ? 'Admin' : 'Regular'}
                           </span>
                         </td>
-                        <td>{user.created_at ? new Date(user.created_at).toLocaleDateString() : '—'}</td>
+                        <td>{formatDate(user.created_at)}</td>
                         <td>
                           <div className="user-action-buttons">
                             <button
@@ -1902,11 +1944,11 @@ function AdminPanel({ onBack }) {
                             {record.is_admin ? 'Admin' : 'User'}
                           </span>
                         </td>
-                        <td>{record.created_at ? new Date(record.created_at).toLocaleDateString() : '—'}</td>
+                        <td>{formatDate(record.created_at)}</td>
                         <td>
                           {record.last_sign_in_at ? (
                             <span className="last-activity">
-                              {new Date(record.last_sign_in_at).toLocaleString()}
+                              {formatDateTime(record.last_sign_in_at)}
                             </span>
                           ) : (
                             <span className="no-activity">Never logged in</span>
