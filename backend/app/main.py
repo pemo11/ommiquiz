@@ -786,12 +786,20 @@ async def list_users(
             # Get total count
             total = await conn.fetchval("SELECT COUNT(*) FROM user_profiles")
 
-            # Get paginated users
+            # Get paginated users - JOIN with auth.users to get actual creation dates
             users = await conn.fetch(
                 """
-                SELECT id, email, display_name, is_admin, created_at, updated_at
-                FROM user_profiles
-                ORDER BY created_at DESC
+                SELECT
+                    up.id,
+                    up.email,
+                    up.display_name,
+                    up.is_admin,
+                    au.created_at,
+                    au.last_sign_in_at,
+                    au.updated_at
+                FROM user_profiles up
+                LEFT JOIN auth.users au ON up.id = au.id
+                ORDER BY au.created_at DESC NULLS LAST
                 LIMIT $1 OFFSET $2
                 """,
                 limit, offset
@@ -804,6 +812,7 @@ async def list_users(
                     "display_name": row['display_name'],
                     "is_admin": row['is_admin'],
                     "created_at": row['created_at'].isoformat() + "Z" if row['created_at'] else None,
+                    "last_sign_in_at": row['last_sign_in_at'].isoformat() + "Z" if row['last_sign_in_at'] else None,
                     "updated_at": row['updated_at'].isoformat() + "Z" if row['updated_at'] else None
                 }
                 for row in users
@@ -1024,25 +1033,27 @@ async def get_login_history(
         async with pool.acquire() as conn:
             cutoff_date = datetime.now() - timedelta(days=days)
 
-            # Get user profiles with their last activity from quiz_sessions
+            # Get user profiles with data from auth.users and quiz activity
             query = """
                 SELECT
                     up.id,
                     up.email,
                     up.display_name,
                     up.is_admin,
-                    up.created_at,
-                    up.updated_at,
-                    MAX(qs.completed_at) as last_activity,
+                    au.created_at,
+                    au.last_sign_in_at,
+                    MAX(qs.completed_at) as last_quiz_activity,
                     COUNT(qs.id) as total_sessions
                 FROM user_profiles up
+                LEFT JOIN auth.users au ON up.id = au.id
                 LEFT JOIN quiz_sessions qs ON up.id = qs.user_id
                     AND qs.completed_at >= $1
-                GROUP BY up.id, up.email, up.display_name, up.is_admin, up.created_at, up.updated_at
+                GROUP BY up.id, up.email, up.display_name, up.is_admin, au.created_at, au.last_sign_in_at
                 ORDER BY
                     CASE
-                        WHEN MAX(qs.completed_at) IS NOT NULL THEN MAX(qs.completed_at)
-                        ELSE up.created_at
+                        WHEN au.last_sign_in_at IS NOT NULL THEN au.last_sign_in_at
+                        WHEN au.created_at IS NOT NULL THEN au.created_at
+                        ELSE NOW()
                     END DESC
             """
 
@@ -1056,8 +1067,8 @@ async def get_login_history(
                     "display_name": row['display_name'],
                     "is_admin": row['is_admin'],
                     "created_at": row['created_at'].isoformat() + "Z" if row['created_at'] else None,
-                    "updated_at": row['updated_at'].isoformat() + "Z" if row['updated_at'] else None,
-                    "last_activity": row['last_activity'].isoformat() + "Z" if row['last_activity'] else None,
+                    "last_sign_in_at": row['last_sign_in_at'].isoformat() + "Z" if row['last_sign_in_at'] else None,
+                    "last_activity": row['last_quiz_activity'].isoformat() + "Z" if row['last_quiz_activity'] else None,
                     "total_sessions": row['total_sessions'] or 0
                 })
 
@@ -1369,8 +1380,8 @@ async def get_current_user_profile(
                 )
                 await conn.execute(
                     """
-                    INSERT INTO user_profiles (id, email, display_name, is_admin)
-                    VALUES ($1, $2, $3, FALSE)
+                    INSERT INTO user_profiles (id, email, display_name, is_admin, created_at, updated_at)
+                    VALUES ($1, $2, $3, FALSE, NOW(), NOW())
                     ON CONFLICT (id) DO NOTHING
                     """,
                     user.user_id, user.email, display_name
@@ -1391,7 +1402,7 @@ async def get_current_user_profile(
                 "email": profile['email'],
                 "display_name": profile['display_name'],
                 "is_admin": profile['is_admin'],
-                "created_at": profile['created_at'].isoformat() + "Z",
+                "created_at": profile['created_at'].isoformat() + "Z" if profile['created_at'] else None,
                 "updated_at": profile['updated_at'].isoformat() + "Z" if profile['updated_at'] else None
             }
 

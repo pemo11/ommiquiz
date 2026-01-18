@@ -411,7 +411,7 @@ function AdminPanel({ onBack }) {
     }
 
     // Prepare CSV header
-    const headers = ['Email', 'Display Name', 'Role', 'Account Created', 'Last Activity', 'Sessions'];
+    const headers = ['Email', 'Display Name', 'Role', 'Account Created', 'Last Login', 'Sessions'];
 
     // Prepare CSV rows
     const rows = loginHistory.map(record => {
@@ -420,7 +420,7 @@ function AdminPanel({ onBack }) {
         record.display_name || '',
         record.is_admin ? 'Admin' : 'User',
         record.created_at ? new Date(record.created_at).toLocaleDateString() : '',
-        record.last_activity ? new Date(record.last_activity).toLocaleString() : 'No activity',
+        record.last_sign_in_at ? new Date(record.last_sign_in_at).toLocaleString() : 'Never logged in',
         record.total_sessions || 0
       ];
     });
@@ -1888,7 +1888,7 @@ function AdminPanel({ onBack }) {
                       <th>Display Name</th>
                       <th>Role</th>
                       <th>Account Created</th>
-                      <th>Last Activity</th>
+                      <th>Last Login</th>
                       <th>Sessions (Period)</th>
                     </tr>
                   </thead>
@@ -1904,12 +1904,12 @@ function AdminPanel({ onBack }) {
                         </td>
                         <td>{record.created_at ? new Date(record.created_at).toLocaleDateString() : '—'}</td>
                         <td>
-                          {record.last_activity ? (
+                          {record.last_sign_in_at ? (
                             <span className="last-activity">
-                              {new Date(record.last_activity).toLocaleString()}
+                              {new Date(record.last_sign_in_at).toLocaleString()}
                             </span>
                           ) : (
-                            <span className="no-activity">No activity</span>
+                            <span className="no-activity">Never logged in</span>
                           )}
                         </td>
                         <td>
