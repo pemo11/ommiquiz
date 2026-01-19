@@ -1333,6 +1333,32 @@ function AdminPanel({ onBack }) {
     }));
   };
 
+  const moveCardUp = (cardIndex) => {
+    if (cardIndex === 0) return; // Already at top
+
+    setEditingFlashcard(prev => {
+      const newFlashcards = [...prev.flashcards];
+      // Swap with previous card
+      [newFlashcards[cardIndex - 1], newFlashcards[cardIndex]] =
+      [newFlashcards[cardIndex], newFlashcards[cardIndex - 1]];
+
+      return { ...prev, flashcards: newFlashcards };
+    });
+  };
+
+  const moveCardDown = (cardIndex) => {
+    setEditingFlashcard(prev => {
+      if (cardIndex === prev.flashcards.length - 1) return prev; // Already at bottom
+
+      const newFlashcards = [...prev.flashcards];
+      // Swap with next card
+      [newFlashcards[cardIndex], newFlashcards[cardIndex + 1]] =
+      [newFlashcards[cardIndex + 1], newFlashcards[cardIndex]];
+
+      return { ...prev, flashcards: newFlashcards };
+    });
+  };
+
   const addAnswer = (cardIndex) => {
     setEditingFlashcard(prev => {
       const newFlashcards = [...prev.flashcards];
@@ -2370,12 +2396,30 @@ flashcards:
                   <div key={cardIndex} className="card-editor">
                     <div className="card-header">
                       <span>Card {cardIndex + 1}</span>
-                      <button
-                        onClick={() => deleteCard(cardIndex)}
-                        className="delete-card-button"
-                      >
-                        🗑️ Delete
-                      </button>
+                      <div className="card-controls">
+                        <button
+                          onClick={() => moveCardUp(cardIndex)}
+                          disabled={cardIndex === 0}
+                          className="move-card-button"
+                          title="Move card up"
+                        >
+                          ↑
+                        </button>
+                        <button
+                          onClick={() => moveCardDown(cardIndex)}
+                          disabled={cardIndex === editingFlashcard.flashcards.length - 1}
+                          className="move-card-button"
+                          title="Move card down"
+                        >
+                          ↓
+                        </button>
+                        <button
+                          onClick={() => deleteCard(cardIndex)}
+                          className="delete-card-button"
+                        >
+                          🗑️ Delete
+                        </button>
+                      </div>
                     </div>
 
                     <div className="form-row">
