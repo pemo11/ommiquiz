@@ -1522,6 +1522,7 @@ function FlashcardViewer({ flashcard, onBack }) {
             <div className="metadata">
               <span>{t('quiz.author')} {flashcard.author}</span>
               <span>{t('quiz.level')} {flashcard.level}</span>
+              <span>ID: {flashcard.id}</span>
               <span>Total Cards: {cards.length}</span>
             </div>
           </div>
@@ -1642,6 +1643,9 @@ function FlashcardViewer({ flashcard, onBack }) {
           </div>
           <div className="metadata-item">
             <strong>Language:</strong> {flashcard.language}
+          </div>
+          <div className="metadata-item">
+            <strong>ID:</strong> {flashcard.id}
           </div>
         </div>
       </div>
