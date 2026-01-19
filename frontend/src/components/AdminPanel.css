@@ -1604,36 +1604,68 @@
   background-color: #f8f9fa;
 }
 
-.login-history-table tbody tr.admin-user {
-  background-color: #fff3cd;
+.login-history-table tbody tr.login-attempt.success {
+  background-color: #d4edda;
 }
 
-.login-history-table tbody tr.admin-user:hover {
-  background-color: #ffe69c;
+.login-history-table tbody tr.login-attempt.success:hover {
+  background-color: #c3e6cb;
 }
 
-.last-activity {
-  color: #28a745;
-  font-weight: 500;
+.login-history-table tbody tr.login-attempt.failed {
+  background-color: #f8d7da;
 }
 
-.no-activity {
-  color: #6c757d;
-  font-style: italic;
+.login-history-table tbody tr.login-attempt.failed:hover {
+  background-color: #f5c6cb;
 }
 
-.session-count {
+.login-history-table tbody tr.login-attempt.signup {
+  background-color: #d1ecf1;
+}
+
+.login-history-table tbody tr.login-attempt.signup:hover {
+  background-color: #bee5eb;
+}
+
+.status-badge {
   display: inline-block;
   padding: 0.25rem 0.75rem;
   border-radius: 12px;
   font-weight: 600;
-  background-color: #e9ecef;
-  color: #6c757d;
+  font-size: 0.875rem;
 }
 
-.session-count.active {
-  background-color: #d4edda;
-  color: #155724;
+.status-badge.success {
+  background-color: #28a745;
+  color: white;
+}
+
+.status-badge.failed {
+  background-color: #dc3545;
+  color: white;
+}
+
+.status-badge.signup {
+  background-color: #17a2b8;
+  color: white;
+}
+
+.ip-address {
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  color: #495057;
+}
+
+.error-details {
+  max-width: 300px;
+}
+
+.error-text {
+  color: #dc3545;
+  font-size: 0.875rem;
+  font-style: italic;
+  cursor: help;
 }
 
 .history-stats {

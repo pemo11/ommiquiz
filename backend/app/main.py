@@ -1019,13 +1019,14 @@ async def delete_user(
 @api_router.get("/admin/login-history")
 async def get_login_history(
     admin: AuthenticatedUser = Depends(get_current_admin),
-    days: int = Query(30, description="Number of days to include in report (default 30)")
+    days: int = Query(30, description="Number of days to include in report (default 30)"),
+    limit: int = Query(100, description="Maximum number of entries to return (default 100)")
 ):
-    """Get user login/activity history (Admin only)."""
+    """Get all login attempts including successful and failed attempts (Admin only)."""
     from datetime import timedelta
     from .database import get_db_pool
 
-    logger.info("Admin fetching login history", admin_user=admin.email, days=days)
+    logger.info("Admin fetching login history", admin_user=admin.email, days=days, limit=limit)
 
     pool = await get_db_pool()
 
@@ -1033,55 +1034,66 @@ async def get_login_history(
         async with pool.acquire() as conn:
             cutoff_date = datetime.now() - timedelta(days=days)
 
-            # Get user profiles with data from auth.users and quiz activity
+            # Query auth.audit_log_entries for all login attempts
             query = """
                 SELECT
-                    up.id,
+                    ale.id as log_id,
+                    ale.created_at as attempt_time,
+                    ale.ip_address,
+                    ale.payload->>'action' as action,
+                    ale.payload->>'error_message' as error_message,
+                    (ale.payload->>'actor_id')::uuid as user_id,
                     up.email,
                     up.display_name,
-                    up.is_admin,
-                    au.created_at,
-                    au.last_sign_in_at,
-                    MAX(qs.completed_at) as last_quiz_activity,
-                    COUNT(qs.id) as total_sessions
-                FROM user_profiles up
-                LEFT JOIN auth.users au ON up.id = au.id
-                LEFT JOIN quiz_sessions qs ON up.id = qs.user_id
-                    AND qs.completed_at >= $1
-                GROUP BY up.id, up.email, up.display_name, up.is_admin, au.created_at, au.last_sign_in_at
-                ORDER BY
-                    CASE
-                        WHEN au.last_sign_in_at IS NOT NULL THEN au.last_sign_in_at
-                        WHEN au.created_at IS NOT NULL THEN au.created_at
-                        ELSE NOW()
-                    END DESC
+                    up.is_admin
+                FROM auth.audit_log_entries ale
+                LEFT JOIN public.user_profiles up ON (ale.payload->>'actor_id')::uuid = up.id
+                WHERE ale.created_at >= $1
+                    AND ale.payload->>'action' IN ('user_signedin', 'login', 'user_signup')
+                ORDER BY ale.created_at DESC
+                LIMIT $2
             """
 
-            rows = await conn.fetch(query, cutoff_date)
+            rows = await conn.fetch(query, cutoff_date, limit)
 
             history = []
             for row in rows:
+                # Determine success status based on action and error_message
+                action = row['action']
+                success = action in ('user_signedin', 'login') and not row['error_message']
+
+                # Determine login type
+                if action == 'user_signup':
+                    login_type = 'signup'
+                elif success:
+                    login_type = 'success'
+                else:
+                    login_type = 'failed'
+
                 history.append({
-                    "user_id": row['id'],
-                    "email": row['email'],
+                    "log_id": str(row['log_id']),
+                    "timestamp": row['attempt_time'].isoformat() if row['attempt_time'] else None,
+                    "user_id": str(row['user_id']) if row['user_id'] else None,
+                    "email": row['email'] or 'Unknown',
                     "display_name": row['display_name'],
-                    "is_admin": row['is_admin'],
-                    "created_at": row['created_at'].isoformat() if row['created_at'] else None,
-                    "last_sign_in_at": row['last_sign_in_at'].isoformat() if row['last_sign_in_at'] else None,
-                    "last_activity": row['last_quiz_activity'].isoformat() if row['last_quiz_activity'] else None,
-                    "total_sessions": row['total_sessions'] or 0
+                    "is_admin": row['is_admin'] if row['is_admin'] is not None else False,
+                    "ip_address": row['ip_address'],
+                    "action": action,
+                    "success": success,
+                    "login_type": login_type,
+                    "error_message": row['error_message']
                 })
 
             logger.info(
                 "Login history retrieved",
                 admin_user=admin.email,
-                total_users=len(history),
+                total_attempts=len(history),
                 days=days
             )
 
             return {
                 "period_days": days,
-                "total_users": len(history),
+                "total_attempts": len(history),
                 "history": history
             }
 

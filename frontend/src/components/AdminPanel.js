@@ -441,17 +441,18 @@ function AdminPanel({ onBack }) {
     }
 
     // Prepare CSV header
-    const headers = ['Email', 'Display Name', 'Role', 'Account Created', 'Last Login', 'Sessions'];
+    const headers = ['Timestamp', 'Email', 'Display Name', 'Role', 'Status', 'IP Address', 'Error Message'];
 
     // Prepare CSV rows
     const rows = loginHistory.map(record => {
       return [
+        record.timestamp ? new Date(record.timestamp).toLocaleString() : '',
         record.email || '',
         record.display_name || '',
         record.is_admin ? 'Admin' : 'User',
-        record.created_at ? new Date(record.created_at).toLocaleDateString() : '',
-        record.last_sign_in_at ? new Date(record.last_sign_in_at).toLocaleString() : 'Never logged in',
-        record.total_sessions || 0
+        record.login_type === 'success' ? 'Success' : record.login_type === 'failed' ? 'Failed' : 'Signup',
+        record.ip_address || '',
+        record.error_message || ''
       ];
     });
 
@@ -1940,17 +1941,19 @@ function AdminPanel({ onBack }) {
                 <table className="login-history-table">
                   <thead>
                     <tr>
+                      <th>Timestamp</th>
                       <th>Email</th>
                       <th>Display Name</th>
                       <th>Role</th>
-                      <th>Account Created</th>
-                      <th>Last Login</th>
-                      <th>Sessions (Period)</th>
+                      <th>Status</th>
+                      <th>IP Address</th>
+                      <th>Details</th>
                     </tr>
                   </thead>
                   <tbody>
                     {loginHistory.map(record => (
-                      <tr key={record.user_id} className={record.is_admin ? 'admin-user' : ''}>
+                      <tr key={record.log_id} className={`login-attempt ${record.login_type}`}>
+                        <td>{formatDateTime(record.timestamp)}</td>
                         <td>{record.email}</td>
                         <td>{record.display_name || '—'}</td>
                         <td>
@@ -1958,20 +1961,24 @@ function AdminPanel({ onBack }) {
                             {record.is_admin ? 'Admin' : 'User'}
                           </span>
                         </td>
-                        <td>{formatDate(record.created_at)}</td>
                         <td>
-                          {record.last_sign_in_at ? (
-                            <span className="last-activity">
-                              {formatDateTime(record.last_sign_in_at)}
+                          <span className={`status-badge ${record.login_type}`}>
+                            {record.login_type === 'success' && '✓ Success'}
+                            {record.login_type === 'failed' && '✗ Failed'}
+                            {record.login_type === 'signup' && '★ Signup'}
+                          </span>
+                        </td>
+                        <td className="ip-address">{record.ip_address || '—'}</td>
+                        <td className="error-details">
+                          {record.error_message ? (
+                            <span className="error-text" title={record.error_message}>
+                              {record.error_message.length > 50
+                                ? record.error_message.substring(0, 50) + '...'
+                                : record.error_message}
                             </span>
                           ) : (
-                            <span className="no-activity">Never logged in</span>
+                            '—'
                           )}
-                        </td>
-                        <td>
-                          <span className={`session-count ${record.total_sessions > 0 ? 'active' : ''}`}>
-                            {record.total_sessions}
-                          </span>
                         </td>
                       </tr>
                     ))}
@@ -1980,9 +1987,10 @@ function AdminPanel({ onBack }) {
               </div>
 
               <div className="history-stats">
-                <p><strong>Total Users:</strong> {loginHistory.length}</p>
-                <p><strong>Active Users (with sessions):</strong> {loginHistory.filter(r => r.total_sessions > 0).length}</p>
-                <p><strong>Inactive Users:</strong> {loginHistory.filter(r => r.total_sessions === 0).length}</p>
+                <p><strong>Total Attempts:</strong> {loginHistory.length}</p>
+                <p><strong>Successful Logins:</strong> {loginHistory.filter(r => r.login_type === 'success').length}</p>
+                <p><strong>Failed Attempts:</strong> {loginHistory.filter(r => r.login_type === 'failed').length}</p>
+                <p><strong>Signups:</strong> {loginHistory.filter(r => r.login_type === 'signup').length}</p>
               </div>
             </>
           ) : (
