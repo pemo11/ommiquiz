@@ -588,8 +588,8 @@ async def get_learning_report(
                     "id": row['id'],
                     "flashcard_id": row['flashcard_id'],
                     "flashcard_title": row['flashcard_title'],
-                    "started_at": row['started_at'].isoformat() + "Z",
-                    "completed_at": row['completed_at'].isoformat() + "Z",
+                    "started_at": row['started_at'].isoformat(),
+                    "completed_at": row['completed_at'].isoformat(),
                     "cards_reviewed": row['cards_reviewed'],
                     "box1_count": row['box1_count'],
                     "box2_count": row['box2_count'],
@@ -701,8 +701,8 @@ async def get_quiz_history_pdf(
                     "id": row['id'],
                     "flashcard_id": row['flashcard_id'],
                     "flashcard_title": row['flashcard_title'],
-                    "started_at": row['started_at'].isoformat() + "Z" if row['started_at'] else None,
-                    "completed_at": row['completed_at'].isoformat() + "Z" if row['completed_at'] else None,
+                    "started_at": row['started_at'].isoformat() if row['started_at'] else None,
+                    "completed_at": row['completed_at'].isoformat() if row['completed_at'] else None,
                     "cards_reviewed": row['cards_reviewed'],
                     "box1_count": row['box1_count'],
                     "box2_count": row['box2_count'],
@@ -811,9 +811,9 @@ async def list_users(
                     "email": row['email'],
                     "display_name": row['display_name'],
                     "is_admin": row['is_admin'],
-                    "created_at": row['created_at'].isoformat() + "Z" if row['created_at'] else None,
-                    "last_sign_in_at": row['last_sign_in_at'].isoformat() + "Z" if row['last_sign_in_at'] else None,
-                    "updated_at": row['updated_at'].isoformat() + "Z" if row['updated_at'] else None
+                    "created_at": row['created_at'].isoformat() if row['created_at'] else None,
+                    "last_sign_in_at": row['last_sign_in_at'].isoformat() if row['last_sign_in_at'] else None,
+                    "updated_at": row['updated_at'].isoformat() if row['updated_at'] else None
                 }
                 for row in users
             ]
@@ -1066,9 +1066,9 @@ async def get_login_history(
                     "email": row['email'],
                     "display_name": row['display_name'],
                     "is_admin": row['is_admin'],
-                    "created_at": row['created_at'].isoformat() + "Z" if row['created_at'] else None,
-                    "last_sign_in_at": row['last_sign_in_at'].isoformat() + "Z" if row['last_sign_in_at'] else None,
-                    "last_activity": row['last_quiz_activity'].isoformat() + "Z" if row['last_quiz_activity'] else None,
+                    "created_at": row['created_at'].isoformat() if row['created_at'] else None,
+                    "last_sign_in_at": row['last_sign_in_at'].isoformat() if row['last_sign_in_at'] else None,
+                    "last_activity": row['last_quiz_activity'].isoformat() if row['last_quiz_activity'] else None,
                     "total_sessions": row['total_sessions'] or 0
                 })
 
@@ -1402,8 +1402,8 @@ async def get_current_user_profile(
                 "email": profile['email'],
                 "display_name": profile['display_name'],
                 "is_admin": profile['is_admin'],
-                "created_at": profile['created_at'].isoformat() + "Z" if profile['created_at'] else None,
-                "updated_at": profile['updated_at'].isoformat() + "Z" if profile['updated_at'] else None
+                "created_at": profile['created_at'].isoformat() if profile['created_at'] else None,
+                "updated_at": profile['updated_at'].isoformat() if profile['updated_at'] else None
             }
 
     except Exception as e:
