@@ -560,8 +560,8 @@ function App() {
                 </button>
               )}
 
-              {/* Report button for all authenticated users */}
-              {isLoggedIn && (
+              {/* Report button for non-admin users */}
+              {isLoggedIn && !userProfile?.is_admin && (
                 <button
                   onClick={() => setShowReport(true)}
                   className={showReport ? "report-btn active" : "report-btn"}
