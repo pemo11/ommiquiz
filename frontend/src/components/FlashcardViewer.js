@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import ReactMarkdown from 'react-markdown';
 import './FlashcardViewer.css';
 import { useTranslation } from '../context/TranslationContext';
 
@@ -648,7 +649,7 @@ function FlashcardViewer({ flashcard, onBack }) {
 
     return (
       <div className="question-content">
-        <p>{currentCard?.question}</p>
+        <ReactMarkdown>{currentCard?.question || ''}</ReactMarkdown>
         {imageSrc && (
           <img
             src={imageSrc}
@@ -1726,7 +1727,7 @@ function FlashcardViewer({ flashcard, onBack }) {
             </div>
             <div className="flashcard-face flashcard-back">
               <div className="card-content">
-                <p>{currentCard.answer}</p>
+                <ReactMarkdown>{currentCard.answer || ''}</ReactMarkdown>
               </div>
               {!currentCardAnswered && (
                 <div className="box-assignment-buttons">
@@ -1813,7 +1814,9 @@ function FlashcardViewer({ flashcard, onBack }) {
                           onChange={() => handleAnswerSelect(idx)}
                           disabled={currentCardAnswered}
                         />
-                        <span className="answer-text">{answer}</span>
+                        <span className="answer-text">
+                          <ReactMarkdown>{answer || ''}</ReactMarkdown>
+                        </span>
                       </label>
                     );
                   })}
