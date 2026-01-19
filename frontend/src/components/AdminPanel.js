@@ -304,12 +304,6 @@ function AdminPanel({ onBack }) {
       }
 
       const data = await response.json();
-      console.log('Fetched users data:', data.users);
-      if (data.users && data.users.length > 0) {
-        console.log('First user sample:', data.users[0]);
-        console.log('created_at value:', data.users[0].created_at);
-        console.log('created_at type:', typeof data.users[0].created_at);
-      }
       setUsers(data.users);
     } catch (err) {
       console.error('Error fetching users:', err);
@@ -432,12 +426,6 @@ function AdminPanel({ onBack }) {
       }
 
       const data = await response.json();
-      console.log('Fetched login history data:', data.history);
-      if (data.history && data.history.length > 0) {
-        console.log('First record sample:', data.history[0]);
-        console.log('created_at value:', data.history[0].created_at);
-        console.log('last_sign_in_at value:', data.history[0].last_sign_in_at);
-      }
       setLoginHistory(data.history);
     } catch (err) {
       console.error('Error fetching login history:', err);
