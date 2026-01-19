@@ -450,7 +450,7 @@ function AdminPanel({ onBack }) {
         record.email || '',
         record.display_name || '',
         record.is_admin ? 'Admin' : 'User',
-        record.login_type === 'success' ? 'Success' : record.login_type === 'failed' ? 'Failed' : 'Signup',
+        record.login_type === 'success' ? 'Login' : record.login_type === 'failed' ? 'Failed' : 'Signup',
         record.ip_address || '',
         record.error_message || ''
       ];
@@ -1896,6 +1896,9 @@ function AdminPanel({ onBack }) {
               Back to List
             </button>
             <h3>Login History & User Activity</h3>
+            <p style={{ fontSize: '0.9rem', color: '#6c757d', marginTop: '0.5rem' }}>
+              Shows signup and most recent login per user
+            </p>
             <div className="history-controls">
               <select
                 value={loginHistoryDays}
@@ -1963,7 +1966,7 @@ function AdminPanel({ onBack }) {
                         </td>
                         <td>
                           <span className={`status-badge ${record.login_type}`}>
-                            {record.login_type === 'success' && '✓ Success'}
+                            {record.login_type === 'success' && '✓ Login'}
                             {record.login_type === 'failed' && '✗ Failed'}
                             {record.login_type === 'signup' && '★ Signup'}
                           </span>
@@ -1987,9 +1990,8 @@ function AdminPanel({ onBack }) {
               </div>
 
               <div className="history-stats">
-                <p><strong>Total Attempts:</strong> {loginHistory.length}</p>
-                <p><strong>Successful Logins:</strong> {loginHistory.filter(r => r.login_type === 'success').length}</p>
-                <p><strong>Failed Attempts:</strong> {loginHistory.filter(r => r.login_type === 'failed').length}</p>
+                <p><strong>Total Events:</strong> {loginHistory.length}</p>
+                <p><strong>Logins:</strong> {loginHistory.filter(r => r.login_type === 'success').length}</p>
                 <p><strong>Signups:</strong> {loginHistory.filter(r => r.login_type === 'signup').length}</p>
               </div>
             </>

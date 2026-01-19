@@ -1022,7 +1022,7 @@ async def get_login_history(
     days: int = Query(30, description="Number of days to include in report (default 30)"),
     limit: int = Query(100, description="Maximum number of entries to return (default 100)")
 ):
-    """Get all login attempts including successful and failed attempts (Admin only)."""
+    """Get user login history (Admin only). Shows signup and last login times from auth.users."""
     from datetime import timedelta
     from .database import get_db_pool
 
@@ -1034,23 +1034,23 @@ async def get_login_history(
         async with pool.acquire() as conn:
             cutoff_date = datetime.now() - timedelta(days=days)
 
-            # Query auth.audit_log_entries for all login attempts
+            # Query user login history from auth.users
+            # Note: Supabase auth.audit_log_entries may not be enabled by default
+            # Using auth.users which tracks last_sign_in_at reliably
             query = """
                 SELECT
-                    ale.id as log_id,
-                    ale.created_at as attempt_time,
-                    ale.ip_address,
-                    ale.payload->>'action' as action,
-                    ale.payload->>'error_message' as error_message,
-                    (ale.payload->>'actor_id')::uuid as user_id,
+                    up.id as user_id,
                     up.email,
                     up.display_name,
-                    up.is_admin
-                FROM auth.audit_log_entries ale
-                LEFT JOIN public.user_profiles up ON (ale.payload->>'actor_id')::uuid = up.id
-                WHERE ale.created_at >= $1
-                    AND ale.payload->>'action' IN ('user_signedin', 'login', 'user_signup')
-                ORDER BY ale.created_at DESC
+                    up.is_admin,
+                    au.created_at,
+                    au.last_sign_in_at,
+                    au.confirmed_at,
+                    au.email_confirmed_at
+                FROM public.user_profiles up
+                LEFT JOIN auth.users au ON up.id = au.id
+                WHERE au.last_sign_in_at >= $1 OR au.created_at >= $1
+                ORDER BY COALESCE(au.last_sign_in_at, au.created_at) DESC
                 LIMIT $2
             """
 
@@ -1058,31 +1058,40 @@ async def get_login_history(
 
             history = []
             for row in rows:
-                # Determine success status based on action and error_message
-                action = row['action']
-                success = action in ('user_signedin', 'login') and not row['error_message']
+                # Create entry for account creation if within period
+                if row['created_at'] and row['created_at'] >= cutoff_date:
+                    history.append({
+                        "log_id": f"{row['user_id']}_signup",
+                        "timestamp": row['created_at'].isoformat() if row['created_at'] else None,
+                        "user_id": str(row['user_id']),
+                        "email": row['email'],
+                        "display_name": row['display_name'],
+                        "is_admin": row['is_admin'] if row['is_admin'] is not None else False,
+                        "ip_address": None,
+                        "action": "signup",
+                        "success": True,
+                        "login_type": "signup",
+                        "error_message": None
+                    })
 
-                # Determine login type
-                if action == 'user_signup':
-                    login_type = 'signup'
-                elif success:
-                    login_type = 'success'
-                else:
-                    login_type = 'failed'
+                # Create entry for last login if within period
+                if row['last_sign_in_at'] and row['last_sign_in_at'] >= cutoff_date:
+                    history.append({
+                        "log_id": f"{row['user_id']}_login_{row['last_sign_in_at'].timestamp()}",
+                        "timestamp": row['last_sign_in_at'].isoformat() if row['last_sign_in_at'] else None,
+                        "user_id": str(row['user_id']),
+                        "email": row['email'],
+                        "display_name": row['display_name'],
+                        "is_admin": row['is_admin'] if row['is_admin'] is not None else False,
+                        "ip_address": None,
+                        "action": "login",
+                        "success": True,
+                        "login_type": "success",
+                        "error_message": None
+                    })
 
-                history.append({
-                    "log_id": str(row['log_id']),
-                    "timestamp": row['attempt_time'].isoformat() if row['attempt_time'] else None,
-                    "user_id": str(row['user_id']) if row['user_id'] else None,
-                    "email": row['email'] or 'Unknown',
-                    "display_name": row['display_name'],
-                    "is_admin": row['is_admin'] if row['is_admin'] is not None else False,
-                    "ip_address": row['ip_address'],
-                    "action": action,
-                    "success": success,
-                    "login_type": login_type,
-                    "error_message": row['error_message']
-                })
+            # Sort by timestamp descending
+            history.sort(key=lambda x: x['timestamp'] if x['timestamp'] else '', reverse=True)
 
             logger.info(
                 "Login history retrieved",
