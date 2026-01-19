@@ -2502,6 +2502,13 @@ flashcards:
                     )}
                   </div>
                 ))}
+
+                {/* Add Card button at the end */}
+                <div className="add-card-footer">
+                  <button onClick={addNewCard} className="add-card-button">
+                    + Add Card
+                  </button>
+                </div>
               </div>
             </div>
           )}
