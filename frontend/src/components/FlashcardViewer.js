@@ -1198,9 +1198,17 @@ function FlashcardViewer({ flashcard, onBack }) {
 
   // New function to continue with cards from a specific box
   const handleContinueWithBox = (boxNumber) => {
-    const boxCards = Object.entries(currentSessionBoxes)
-      .filter(([_, box]) => box === boxNumber)
-      .map(([cardId]) => cards.find(c => c.id === cardId))
+    // Filter cards based on box assignment from cardResults (not currentSessionBoxes)
+    // cardResults is indexed by card index in cardOrder
+    const boxCards = cardOrder
+      .map(cardIdx => {
+        const result = cardResults[cardIdx];
+        // Check if this card was assigned to the requested box
+        if (result && result.box === boxNumber) {
+          return cards[cardIdx];
+        }
+        return null;
+      })
       .filter(Boolean);
 
     if (boxCards.length === 0) {
