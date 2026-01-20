@@ -6,7 +6,7 @@ import yaml
 import re
 import json
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, Any, Optional, List, Tuple
 
@@ -1032,7 +1032,7 @@ async def get_login_history(
 
     try:
         async with pool.acquire() as conn:
-            cutoff_date = datetime.now() - timedelta(days=days)
+            cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
 
             # Query custom login_history table
             query = """
