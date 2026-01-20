@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File, APIRouter, Form, Depends, Query
+from fastapi import FastAPI, HTTPException, UploadFile, File, APIRouter, Form, Depends, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
 from pydantic import BaseModel
@@ -1022,7 +1022,7 @@ async def get_login_history(
     days: int = Query(30, description="Number of days to include in report (default 30)"),
     limit: int = Query(100, description="Maximum number of entries to return (default 100)")
 ):
-    """Get user login history (Admin only). Shows signup and last login times from auth.users."""
+    """Get user login history from custom login_history table (Admin only)."""
     from datetime import timedelta
     from .database import get_db_pool
 
@@ -1034,23 +1034,23 @@ async def get_login_history(
         async with pool.acquire() as conn:
             cutoff_date = datetime.now() - timedelta(days=days)
 
-            # Query user login history from auth.users
-            # Note: Supabase auth.audit_log_entries may not be enabled by default
-            # Using auth.users which tracks last_sign_in_at reliably
+            # Query custom login_history table
             query = """
                 SELECT
-                    up.id as user_id,
-                    up.email,
+                    lh.id as log_id,
+                    lh.user_id,
+                    lh.email,
+                    lh.login_time,
+                    lh.success,
+                    lh.ip_address,
+                    lh.user_agent,
+                    lh.error_message,
                     up.display_name,
-                    up.is_admin,
-                    au.created_at,
-                    au.last_sign_in_at,
-                    au.confirmed_at,
-                    au.email_confirmed_at
-                FROM public.user_profiles up
-                LEFT JOIN auth.users au ON up.id = au.id
-                WHERE au.last_sign_in_at >= $1 OR au.created_at >= $1
-                ORDER BY COALESCE(au.last_sign_in_at, au.created_at) DESC
+                    up.is_admin
+                FROM public.login_history lh
+                LEFT JOIN public.user_profiles up ON lh.user_id = up.id
+                WHERE lh.login_time >= $1
+                ORDER BY lh.login_time DESC
                 LIMIT $2
             """
 
@@ -1058,40 +1058,25 @@ async def get_login_history(
 
             history = []
             for row in rows:
-                # Create entry for account creation if within period
-                if row['created_at'] and row['created_at'] >= cutoff_date:
-                    history.append({
-                        "log_id": f"{row['user_id']}_signup",
-                        "timestamp": row['created_at'].isoformat() if row['created_at'] else None,
-                        "user_id": str(row['user_id']),
-                        "email": row['email'],
-                        "display_name": row['display_name'],
-                        "is_admin": row['is_admin'] if row['is_admin'] is not None else False,
-                        "ip_address": None,
-                        "action": "signup",
-                        "success": True,
-                        "login_type": "signup",
-                        "error_message": None
-                    })
+                # Determine login type based on success status
+                if row['success']:
+                    login_type = "success"
+                else:
+                    login_type = "failed"
 
-                # Create entry for last login if within period
-                if row['last_sign_in_at'] and row['last_sign_in_at'] >= cutoff_date:
-                    history.append({
-                        "log_id": f"{row['user_id']}_login_{row['last_sign_in_at'].timestamp()}",
-                        "timestamp": row['last_sign_in_at'].isoformat() if row['last_sign_in_at'] else None,
-                        "user_id": str(row['user_id']),
-                        "email": row['email'],
-                        "display_name": row['display_name'],
-                        "is_admin": row['is_admin'] if row['is_admin'] is not None else False,
-                        "ip_address": None,
-                        "action": "login",
-                        "success": True,
-                        "login_type": "success",
-                        "error_message": None
-                    })
-
-            # Sort by timestamp descending
-            history.sort(key=lambda x: x['timestamp'] if x['timestamp'] else '', reverse=True)
+                history.append({
+                    "log_id": str(row['log_id']),
+                    "timestamp": row['login_time'].isoformat() if row['login_time'] else None,
+                    "user_id": str(row['user_id']) if row['user_id'] else None,
+                    "email": row['email'],
+                    "display_name": row['display_name'],
+                    "is_admin": row['is_admin'] if row['is_admin'] is not None else False,
+                    "ip_address": row['ip_address'],
+                    "action": "login",
+                    "success": row['success'],
+                    "login_type": login_type,
+                    "error_message": row['error_message']
+                })
 
             logger.info(
                 "Login history retrieved",
@@ -1437,6 +1422,70 @@ async def get_current_user_profile(
             status_code=500,
             detail=f"Failed to fetch user profile: {str(e)}"
         )
+
+
+class LoginLogRequest(BaseModel):
+    email: str
+    success: bool
+    error_message: Optional[str] = None
+
+
+@api_router.post("/auth/log-login")
+async def log_login_attempt(
+    request: Request,
+    payload: LoginLogRequest,
+    user: Optional[AuthenticatedUser] = Depends(get_optional_current_user)
+):
+    """
+    Log a login attempt to the login_history table.
+    Called by frontend after authentication attempt (success or failure).
+    """
+    from .database import get_db_pool
+
+    # Get client IP address
+    ip_address = request.client.host if request.client else None
+    user_agent = request.headers.get("user-agent")
+
+    # Get user_id if authenticated
+    user_id = user.user_id if user and payload.success else None
+
+    logger.info(
+        "Logging login attempt",
+        email=payload.email,
+        success=payload.success,
+        user_id=user_id,
+        ip_address=ip_address
+    )
+
+    pool = await get_db_pool()
+
+    try:
+        async with pool.acquire() as conn:
+            await conn.execute(
+                """
+                INSERT INTO public.login_history
+                (user_id, email, login_time, success, ip_address, user_agent, error_message)
+                VALUES ($1, $2, NOW(), $3, $4, $5, $6)
+                """,
+                user_id, payload.email, payload.success, ip_address, user_agent, payload.error_message
+            )
+
+        return {
+            "success": True,
+            "message": "Login attempt logged successfully"
+        }
+
+    except Exception as e:
+        logger.error(
+            "Error logging login attempt",
+            email=payload.email,
+            error=str(e)
+        )
+        # Don't fail the login if logging fails
+        return {
+            "success": False,
+            "message": f"Failed to log login attempt: {str(e)}"
+        }
 
 
 @api_router.get("/health")
