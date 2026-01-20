@@ -72,6 +72,8 @@ function AdminPanel({ onBack }) {
   const [ratingStats, setRatingStats] = useState(null);
   const [ratingStatsLoading, setRatingStatsLoading] = useState(false);
   const [ratingStatsError, setRatingStatsError] = useState(null);
+  const [editingDisplayName, setEditingDisplayName] = useState(null); // userId of the display name being edited
+  const [editedDisplayNameValue, setEditedDisplayNameValue] = useState(''); // temporary value while editing
 
   const formatCatalogTimestamp = (value) => {
     if (!value) return '—';
@@ -109,6 +111,19 @@ function AdminPanel({ onBack }) {
     } catch (error) {
       console.error('Error formatting datetime:', dateString, error);
       return '—';
+    }
+  };
+
+  const isRecentlyUpdated = (modifiedTime) => {
+    if (!modifiedTime) return false;
+    try {
+      const modifiedDate = new Date(modifiedTime);
+      const now = new Date();
+      const daysDiff = (now - modifiedDate) / (1000 * 60 * 60 * 24);
+      return daysDiff <= 7;
+    } catch (error) {
+      console.error('Error checking if recently updated:', modifiedTime, error);
+      return false;
     }
   };
 
@@ -347,6 +362,56 @@ function AdminPanel({ onBack }) {
       await fetchUsers();
     } catch (err) {
       console.error('Error updating admin status:', err);
+      setError(err.message);
+    }
+  };
+
+  const handleStartEditDisplayName = (userId, currentDisplayName) => {
+    setEditingDisplayName(userId);
+    setEditedDisplayNameValue(currentDisplayName || '');
+  };
+
+  const handleCancelEditDisplayName = () => {
+    setEditingDisplayName(null);
+    setEditedDisplayNameValue('');
+  };
+
+  const handleSaveDisplayName = async (userId) => {
+    if (!editedDisplayNameValue.trim()) {
+      setError('Display name cannot be empty');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch(`${API_URL}/admin/users/${userId}/display-name?display_name=${encodeURIComponent(editedDisplayNameValue.trim())}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || `Failed to update display name: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setMessage(data.message);
+
+      // Reset editing state
+      setEditingDisplayName(null);
+      setEditedDisplayNameValue('');
+
+      // Refresh user list
+      await fetchUsers();
+    } catch (err) {
+      console.error('Error updating display name:', err);
       setError(err.message);
     }
   };
@@ -1846,7 +1911,71 @@ function AdminPanel({ onBack }) {
                     {users.map(user => (
                       <tr key={user.id} className={user.is_admin ? 'admin-user' : ''}>
                         <td>{user.email}</td>
-                        <td>{user.display_name || '—'}</td>
+                        <td>
+                          {editingDisplayName === user.id ? (
+                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                              <input
+                                type="text"
+                                value={editedDisplayNameValue}
+                                onChange={(e) => setEditedDisplayNameValue(e.target.value)}
+                                style={{
+                                  padding: '0.25rem 0.5rem',
+                                  border: '1px solid #ccc',
+                                  borderRadius: '4px',
+                                  fontSize: '0.9rem'
+                                }}
+                                autoFocus
+                              />
+                              <button
+                                onClick={() => handleSaveDisplayName(user.id)}
+                                style={{
+                                  padding: '0.25rem 0.5rem',
+                                  backgroundColor: '#28a745',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '4px',
+                                  cursor: 'pointer',
+                                  fontSize: '0.85rem'
+                                }}
+                              >
+                                Save
+                              </button>
+                              <button
+                                onClick={handleCancelEditDisplayName}
+                                style={{
+                                  padding: '0.25rem 0.5rem',
+                                  backgroundColor: '#6c757d',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '4px',
+                                  cursor: 'pointer',
+                                  fontSize: '0.85rem'
+                                }}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                              <span>{user.display_name || '—'}</span>
+                              <button
+                                onClick={() => handleStartEditDisplayName(user.id, user.display_name)}
+                                style={{
+                                  padding: '0.25rem 0.5rem',
+                                  backgroundColor: '#007bff',
+                                  color: 'white',
+                                  border: 'none',
+                                  borderRadius: '4px',
+                                  cursor: 'pointer',
+                                  fontSize: '0.85rem'
+                                }}
+                                title="Edit display name"
+                              >
+                                Edit
+                              </button>
+                            </div>
+                          )}
+                        </td>
                         <td>
                           <span className={`admin-badge ${user.is_admin ? 'admin' : 'regular'}`}>
                             {user.is_admin ? 'Admin' : 'Regular'}
@@ -2126,26 +2255,33 @@ function AdminPanel({ onBack }) {
             <>
               <h4>Edit Existing Flashcards</h4>
               <div className="admin-flashcard-list">
-                {flashcards.map((flashcard) => (
-                  <div
-                    key={flashcard.id}
-                    className="admin-flashcard-item"
-                    onClick={() => fetchFlashcard(flashcard.id)}
-                  >
-                    <span className="flashcard-icon">📝</span>
-                    <div className="flashcard-details">
-                      <span className="flashcard-title">
-                        {flashcard.title || flashcard.id}
-                      </span>
-                      {flashcard.description && (
-                        <span className="flashcard-description">{flashcard.description}</span>
-                      )}
-                      <span className="flashcard-meta">
-                        ID: {flashcard.id} | Author: {flashcard.author || 'Unknown'}
-                      </span>
+                {flashcards.map((flashcard) => {
+                  const recentlyUpdated = isRecentlyUpdated(flashcard.modified_time);
+                  return (
+                    <div
+                      key={flashcard.id}
+                      className={`admin-flashcard-item ${recentlyUpdated ? 'recently-updated' : ''}`}
+                      onClick={() => fetchFlashcard(flashcard.id)}
+                    >
+                      <span className="flashcard-icon">📝</span>
+                      <div className="flashcard-details">
+                        <span className="flashcard-title">
+                          {flashcard.title || flashcard.id}
+                          {recentlyUpdated && <span className="new-badge">NEW</span>}
+                        </span>
+                        {flashcard.description && (
+                          <span className="flashcard-description">{flashcard.description}</span>
+                        )}
+                        <span className="flashcard-meta">
+                          ID: {flashcard.id} | Author: {flashcard.author || 'Unknown'}
+                          {flashcard.modified_time && (
+                            <> | Last Updated: {formatDate(flashcard.modified_time)}</>
+                          )}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </>
           )}

@@ -148,7 +148,8 @@ def _extract_flashcard_metadata(document: FlashcardDocument) -> Dict[str, Any]:
         "author": "",
         "topics": [],
         "module": "",
-        "cardcount": 0
+        "cardcount": 0,
+        "modified_time": document.modified_time.isoformat() if document.modified_time else None
     }
 
     try:
@@ -916,6 +917,73 @@ async def update_admin_status(
         raise HTTPException(
             status_code=500,
             detail=f"Failed to update admin status: {str(e)}"
+        )
+
+
+@api_router.put("/admin/users/{user_id}/display-name")
+async def update_user_display_name(
+    user_id: str,
+    display_name: str = Query(..., description="New display name", min_length=1, max_length=100),
+    admin: AuthenticatedUser = Depends(get_current_admin)
+):
+    """Update a user's display name (Admin only)."""
+    logger.info(
+        "Admin updating user display name",
+        admin_user=admin.email,
+        target_user_id=user_id
+    )
+
+    try:
+        async with get_db_connection() as conn:
+            # Check if user exists
+            user = await conn.fetchrow(
+                "SELECT id, email, display_name FROM user_profiles WHERE id = $1",
+                user_id
+            )
+
+            if not user:
+                raise HTTPException(
+                    status_code=404,
+                    detail="User not found"
+                )
+
+            # Update display name
+            await conn.execute(
+                """
+                UPDATE user_profiles
+                SET display_name = $1, updated_at = NOW()
+                WHERE id = $2
+                """,
+                display_name, user_id
+            )
+
+            logger.info(
+                f"Display name updated",
+                admin_user=admin.email,
+                target_user_email=user['email'],
+                target_user_id=user_id,
+                new_display_name=display_name
+            )
+
+            return {
+                "success": True,
+                "message": f"Display name updated for {user['email']}",
+                "user_id": user_id,
+                "display_name": display_name
+            }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(
+            "Error updating display name",
+            admin_user=admin.email,
+            target_user_id=user_id,
+            error=str(e)
+        )
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to update display name: {str(e)}"
         )
 
 

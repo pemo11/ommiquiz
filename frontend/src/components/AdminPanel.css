@@ -224,6 +224,31 @@
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
+.admin-flashcard-item.recently-updated {
+  border-color: #28a745;
+  background-color: #f0fff4;
+}
+
+.admin-flashcard-item.recently-updated:hover {
+  background-color: #28a745;
+}
+
+.new-badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.15rem 0.5rem;
+  background-color: #28a745;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: bold;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+
+.admin-flashcard-item:hover .new-badge {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
 .flashcard-icon {
   font-size: 1.5rem;
   margin-top: 0.25rem;

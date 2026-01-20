@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import tempfile
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
@@ -21,6 +22,7 @@ class FlashcardDocument:
     id: str
     filename: str
     content: str
+    modified_time: Optional[datetime] = None
 
 
 class BaseFlashcardStorage:
@@ -88,15 +90,17 @@ class LocalFlashcardStorage(BaseFlashcardStorage):
                 
                 try:
                     content = file_path.read_text(encoding="utf-8")
-                    logger.info("✅ Successfully read file content", 
-                              filename=file_path.name, 
+                    modified_time = datetime.fromtimestamp(file_path.stat().st_mtime)
+                    logger.info("✅ Successfully read file content",
+                              filename=file_path.name,
                               content_length=len(content),
                               content_preview=content[:200] + "..." if len(content) > 200 else content)
-                    
+
                     document = FlashcardDocument(
                         id=file_path.stem,
                         filename=file_path.name,
                         content=content,
+                        modified_time=modified_time,
                     )
                     
                     if document.id == "DBTE_QueryOptimierung":
@@ -124,10 +128,12 @@ class LocalFlashcardStorage(BaseFlashcardStorage):
         if not file_path:
             return None
         try:
+            modified_time = datetime.fromtimestamp(file_path.stat().st_mtime)
             return FlashcardDocument(
                 id=flashcard_id,
                 filename=file_path.name,
                 content=file_path.read_text(encoding="utf-8"),
+                modified_time=modified_time,
             )
         except Exception as exc:  # noqa: BLE001
             logger.error(
@@ -258,11 +264,14 @@ class S3FlashcardStorage(BaseFlashcardStorage):
                     content = self._get_object_content(key)
                     if content is None:
                         continue
+                    # Get LastModified from S3 object metadata
+                    modified_time = obj.get("LastModified")
                     documents.append(
                         FlashcardDocument(
                             id=Path(filename).stem,
                             filename=filename,
                             content=content,
+                            modified_time=modified_time,
                         )
                     )
         except (ClientError, BotoCoreError) as exc:
@@ -276,8 +285,15 @@ class S3FlashcardStorage(BaseFlashcardStorage):
         content = self._get_object_content(key)
         if content is None:
             return None
+        # Get LastModified from S3 object metadata
+        modified_time = None
+        try:
+            response = self.client.head_object(Bucket=self.bucket, Key=key)
+            modified_time = response.get("LastModified")
+        except (ClientError, BotoCoreError) as exc:
+            logger.warning("Failed to get S3 object metadata", key=key, error=str(exc))
         return FlashcardDocument(
-            id=flashcard_id, filename=Path(key).name, content=content
+            id=flashcard_id, filename=Path(key).name, content=content, modified_time=modified_time
         )
 
     def save_flashcard(self, filename: str, content: str, overwrite: bool = False) -> FlashcardDocument:
