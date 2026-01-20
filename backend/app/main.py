@@ -24,7 +24,7 @@ setup_logging()
 # Get application logger
 logger = get_logger("ommiquiz.main")
 
-app = FastAPI(title="Ommiquiz API", version="1.0.28")
+app = FastAPI(title="Ommiquiz API", version="1.0.30")
 
 # Add logging middleware first
 app.add_middleware(LoggingMiddleware)
