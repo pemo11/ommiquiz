@@ -57,6 +57,8 @@ static_sites:
     output_dir: build
     environment_slug: node-js
     envs:
+      - key: REACT_APP_SITE_URL
+        value: "https://ommiquiz.de"
       - key: REACT_APP_API_URL
         value: "${backend.PUBLIC_URL}/api"
       - key: NODE_ENV
