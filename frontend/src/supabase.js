@@ -84,13 +84,17 @@ async function logLoginAttempt(email, success, errorMessage = null, accessToken 
  *
  * @param {string} email - User's email address
  * @param {string} password - User's password
+ * @param {string} username - User's username
  * @returns {Promise<{user, session, error}>}
  */
 export async function signUp(email, password, username) {
+  const siteUrl = process.env.REACT_APP_SITE_URL || window.location.origin;
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
+      emailRedirectTo: siteUrl,
       data: {
         username: username,
         display_name: username
