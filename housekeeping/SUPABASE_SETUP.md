@@ -217,6 +217,39 @@ Frontend will run on `http://localhost:3000`
 - [ ] Can logout successfully
 - [ ] Can save quiz progress (requires authentication)
 
+## Email Configuration (Important!)
+
+### Default SMTP Limitations
+
+Supabase's default SMTP has strict rate limits:
+- **Free tier**: Only 4 emails per hour
+- Emails often go to spam
+- Not suitable for production
+
+### Configure Custom SMTP (Recommended)
+
+For production use, configure a custom SMTP provider:
+
+**See: [RESEND_SMTP_SETUP.md](./RESEND_SMTP_SETUP.md)** for complete setup guide
+
+Quick overview:
+1. Create free account at [Resend.com](https://resend.com) (3,000 emails/month free)
+2. Get API key
+3. Configure in Supabase Dashboard → Settings → Auth → SMTP Settings
+4. Add redirect URLs to whitelist: `http://localhost:3000` and `https://ommiquiz.de`
+
+### Whitelist Redirect URLs
+
+**Important**: After adding `emailRedirectTo` in signup, you must whitelist URLs:
+
+1. Go to Supabase Dashboard → **Authentication** → **URL Configuration**
+2. Add to **Redirect URLs**:
+   - `http://localhost:3000` (development)
+   - `https://ommiquiz.de` (production)
+3. Save changes
+
+Without whitelisting, confirmation emails won't be sent!
+
 ## Troubleshooting
 
 ### "Missing Supabase configuration"
