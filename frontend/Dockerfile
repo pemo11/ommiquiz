@@ -11,6 +11,9 @@ RUN npm install
 # Copy environment file for production build
 COPY .env.production ./
 
+# Copy build scripts
+COPY scripts/ ./scripts/
+
 # Copy source code
 COPY public/ ./public/
 COPY src/ ./src/

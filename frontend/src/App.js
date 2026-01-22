@@ -24,7 +24,7 @@ const getApiUrl = () => {
   if (process.env.NODE_ENV === 'production' && process.env.OMMIQUIZ_APP_API_URL) {
     return process.env.OMMIQUIZ_APP_API_URL;
   }
-  
+
   // In development, use environment variable if set, otherwise construct local URL
   if (process.env.OMMIQUIZ_APP_API_URL) {
     return process.env.OMMIQUIZ_APP_API_URL;
