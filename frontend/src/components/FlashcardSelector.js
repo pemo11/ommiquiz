@@ -2,7 +2,15 @@ import React, { useState, useMemo } from 'react';
 import './FlashcardSelector.css';
 import { useTranslation } from '../context/TranslationContext';
 
-function FlashcardSelector({ flashcards, onSelect }) {
+function FlashcardSelector({
+  flashcards,
+  onSelect,
+  favorites = new Set(),
+  onToggleFavorite = () => {},
+  showFavoritesOnly = false,
+  onToggleShowFavorites = () => {},
+  isLoggedIn = false
+}) {
   const [selectedModule, setSelectedModule] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const { t } = useTranslation();
@@ -23,6 +31,11 @@ function FlashcardSelector({ flashcards, onSelect }) {
     const normalizedQuery = searchQuery.trim().toLowerCase();
 
     return flashcards.filter(flashcard => {
+      // Filter by favorites if enabled
+      if (showFavoritesOnly && !favorites.has(flashcard.id)) {
+        return false;
+      }
+
       if (selectedModule !== 'all' && flashcard.module !== selectedModule) {
         return false;
       }
@@ -56,7 +69,7 @@ function FlashcardSelector({ flashcards, onSelect }) {
 
       return haystack.includes(normalizedQuery);
     });
-  }, [flashcards, searchQuery, selectedModule]);
+  }, [flashcards, searchQuery, selectedModule, showFavoritesOnly, favorites]);
 
   if (flashcards.length === 0) {
     return (
@@ -111,6 +124,20 @@ function FlashcardSelector({ flashcards, onSelect }) {
         </div>
       )}
 
+      {/* Favorites Filter - Only show if logged in and has favorites */}
+      {isLoggedIn && favorites.size > 0 && (
+        <div className="favorites-filter-section">
+          <button
+            className={`favorites-toggle-button ${showFavoritesOnly ? 'active' : ''}`}
+            onClick={() => onToggleShowFavorites(!showFavoritesOnly)}
+          >
+            <span className="star-icon">{showFavoritesOnly ? '★' : '☆'}</span>
+            {showFavoritesOnly ? 'Show All' : 'Show Favorites Only'}
+            <span className="favorites-count">({favorites.size})</span>
+          </button>
+        </div>
+      )}
+
       <div className="flashcard-list">
         {filteredFlashcards.map((flashcard, index) => (
           <button
@@ -122,6 +149,22 @@ function FlashcardSelector({ flashcards, onSelect }) {
             <div className="flashcard-number">
               {index + 1}
             </div>
+
+            {/* Star icon for favorites */}
+            {isLoggedIn && (
+              <button
+                className="favorite-star"
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent flashcard selection
+                  onToggleFavorite(flashcard.id);
+                }}
+                title={favorites.has(flashcard.id) ? "Remove from favorites" : "Add to favorites"}
+                aria-label={favorites.has(flashcard.id) ? "Remove from favorites" : "Add to favorites"}
+              >
+                {favorites.has(flashcard.id) ? '★' : '☆'}
+              </button>
+            )}
+
             <div className="flashcard-content">
               <span className="flashcard-icon">📚</span>
               <div className="flashcard-info">

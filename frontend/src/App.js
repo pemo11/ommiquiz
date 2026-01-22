@@ -71,6 +71,8 @@ function App() {
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [favorites, setFavorites] = useState(new Set());
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
   // Fetch user profile with admin status
   const fetchUserProfile = async (accessToken) => {
@@ -96,6 +98,24 @@ function App() {
     }
   };
 
+  // Fetch user favorites
+  const fetchFavorites = async (accessToken) => {
+    try {
+      const response = await fetch(`${API_URL}/users/me/favorites`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!response.ok) return new Set();
+      const data = await response.json();
+      return new Set(data.favorites.map(f => f.flashcard_id));
+    } catch (error) {
+      console.error('Error fetching favorites:', error);
+      return new Set();
+    }
+  };
+
   // Check for existing session on mount
   useEffect(() => {
     checkSession();
@@ -113,10 +133,15 @@ function App() {
         // Fetch user profile to get admin status
         const profile = await fetchUserProfile(session.access_token);
         setUserProfile(profile);
+
+        // Fetch user favorites
+        const userFavorites = await fetchFavorites(session.access_token);
+        setFavorites(userFavorites);
       } else {
         setUser(null);
         setIsLoggedIn(false);
         setUserProfile(null);
+        setFavorites(new Set());
         localStorage.removeItem('authToken');
       }
       setAuthLoading(false);
@@ -140,11 +165,55 @@ function App() {
         // Fetch user profile to get admin status
         const profile = await fetchUserProfile(session.access_token);
         setUserProfile(profile);
+
+        // Fetch user favorites
+        const userFavorites = await fetchFavorites(session.access_token);
+        setFavorites(userFavorites);
       }
     } catch (error) {
       console.error('Error checking session:', error);
     } finally {
       setAuthLoading(false);
+    }
+  };
+
+  // Toggle favorite for a flashcard
+  const toggleFavorite = async (flashcardId) => {
+    if (!isLoggedIn || !user) return;
+
+    const isFavorite = favorites.has(flashcardId);
+
+    // Optimistic update
+    const newFavorites = new Set(favorites);
+    isFavorite ? newFavorites.delete(flashcardId) : newFavorites.add(flashcardId);
+    setFavorites(newFavorites);
+
+    try {
+      const session = await getSession();
+      if (!session) throw new Error('No active session');
+
+      const url = isFavorite
+        ? `${API_URL}/users/me/favorites/${flashcardId}`
+        : `${API_URL}/users/me/favorites`;
+
+      const options = {
+        method: isFavorite ? 'DELETE' : 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json'
+        }
+      };
+
+      if (!isFavorite) {
+        options.body = JSON.stringify({ flashcard_id: flashcardId });
+      }
+
+      const response = await fetch(url, options);
+      if (!response.ok) throw new Error('Failed to toggle favorite');
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      setFavorites(favorites); // Rollback on error
+      alert(`Failed to ${isFavorite ? 'remove' : 'add'} favorite. Please try again.`);
     }
   };
 
@@ -601,6 +670,11 @@ function App() {
               <FlashcardSelector
                 flashcards={flashcards}
                 onSelect={handleSelectFlashcard}
+                favorites={favorites}
+                onToggleFavorite={toggleFavorite}
+                showFavoritesOnly={showFavoritesOnly}
+                onToggleShowFavorites={setShowFavoritesOnly}
+                isLoggedIn={isLoggedIn}
               />
             )}
 

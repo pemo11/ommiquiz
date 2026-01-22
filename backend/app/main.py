@@ -1556,6 +1556,120 @@ async def log_login_attempt(
         }
 
 
+# ============================================================================
+# Favorites Endpoints
+# ============================================================================
+
+@api_router.get("/users/me/favorites")
+async def get_user_favorites(
+    user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Get list of user's favorite flashcard sets."""
+    from .database import get_db_pool
+
+    logger.info("Fetching user favorites", user_id=user.user_id)
+
+    try:
+        pool = await get_db_pool()
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(
+                "SELECT flashcard_id, created_at FROM flashcard_favorites WHERE user_id = $1 ORDER BY created_at DESC",
+                user.user_id
+            )
+
+        favorites = [{"flashcard_id": r["flashcard_id"], "created_at": r["created_at"].isoformat()} for r in rows]
+
+        logger.info("Fetched user favorites", user_id=user.user_id, count=len(favorites))
+
+        return {
+            "favorites": favorites,
+            "count": len(favorites)
+        }
+    except Exception as e:
+        logger.error("Error fetching favorites", user_id=user.user_id, error=str(e))
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch favorites: {str(e)}"
+        )
+
+
+class AddFavoriteRequest(BaseModel):
+    flashcard_id: str
+
+
+@api_router.post("/users/me/favorites")
+async def add_favorite(
+    request: AddFavoriteRequest,
+    user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Add flashcard set to favorites."""
+    from .database import get_db_pool
+
+    logger.info("Adding favorite", user_id=user.user_id, flashcard_id=request.flashcard_id)
+
+    try:
+        pool = await get_db_pool()
+        async with pool.acquire() as conn:
+            result = await conn.fetchrow(
+                """INSERT INTO flashcard_favorites (user_id, flashcard_id)
+                   VALUES ($1, $2)
+                   ON CONFLICT (user_id, flashcard_id) DO NOTHING
+                   RETURNING id, flashcard_id, created_at""",
+                user.user_id, request.flashcard_id
+            )
+
+            if result:
+                logger.info("Favorite added", user_id=user.user_id, flashcard_id=request.flashcard_id)
+                message = "Favorite added"
+            else:
+                logger.info("Favorite already exists", user_id=user.user_id, flashcard_id=request.flashcard_id)
+                message = "Already favorited"
+
+            return {
+                "success": True,
+                "message": message,
+                "flashcard_id": request.flashcard_id
+            }
+    except Exception as e:
+        logger.error("Error adding favorite", user_id=user.user_id, flashcard_id=request.flashcard_id, error=str(e))
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to add favorite: {str(e)}"
+        )
+
+
+@api_router.delete("/users/me/favorites/{flashcard_id}")
+async def remove_favorite(
+    flashcard_id: str,
+    user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Remove flashcard set from favorites."""
+    from .database import get_db_pool
+
+    logger.info("Removing favorite", user_id=user.user_id, flashcard_id=flashcard_id)
+
+    try:
+        pool = await get_db_pool()
+        async with pool.acquire() as conn:
+            await conn.execute(
+                "DELETE FROM flashcard_favorites WHERE user_id = $1 AND flashcard_id = $2",
+                user.user_id, flashcard_id
+            )
+
+        logger.info("Favorite removed", user_id=user.user_id, flashcard_id=flashcard_id)
+
+        return {
+            "success": True,
+            "message": "Favorite removed"
+        }
+    except Exception as e:
+        logger.error("Error removing favorite", user_id=user.user_id, flashcard_id=flashcard_id, error=str(e))
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to remove favorite: {str(e)}"
+        )
+
+
 @api_router.get("/health")
 async def health_check():
     """Health check endpoint"""

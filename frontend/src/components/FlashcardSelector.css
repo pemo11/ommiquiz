@@ -291,3 +291,104 @@
     align-self: center;
   }
 }
+
+/* ============================================================================
+   Favorites Feature Styles
+   ============================================================================ */
+
+/* Favorites Filter Toggle */
+.favorites-filter-section {
+  margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: center;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f0f4ff;
+}
+
+.favorites-toggle-button {
+  background-color: #f8f9fa;
+  border: 2px solid #e9ecef;
+  color: #495057;
+  padding: 0.75rem 1.5rem;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.favorites-toggle-button:hover {
+  background-color: #ffd700;
+  border-color: #ffd700;
+  color: #333;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
+.favorites-toggle-button.active {
+  background-color: #ffd700;
+  border-color: #ffa500;
+  color: #333;
+}
+
+.favorites-toggle-button .star-icon {
+  font-size: 1.3rem;
+  color: #ffa500;
+}
+
+.favorites-count {
+  background-color: rgba(255, 255, 255, 0.8);
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #667eea;
+}
+
+/* Star Icon on Flashcard Items */
+.flashcard-item {
+  position: relative;
+}
+
+.favorite-star {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  font-size: 1.8rem;
+  color: #ffd700;
+  cursor: pointer;
+  padding: 0.25rem;
+  line-height: 1;
+  transition: all 0.2s ease;
+  z-index: 10;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.favorite-star:hover {
+  transform: scale(1.2);
+  filter: drop-shadow(0 4px 8px rgba(255, 215, 0, 0.5));
+}
+
+/* Unfavorited star styling */
+.favorite-star:not(:has(★)) {
+  color: #ddd;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .favorite-star {
+    font-size: 1.5rem;
+    top: 8px;
+    right: 8px;
+  }
+
+  .favorites-toggle-button {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
+  }
+}
