@@ -5,11 +5,11 @@ import { useTranslation } from '../context/TranslationContext';
 
 // API URL configuration
 const getApiUrl = () => {
-  if (process.env.NODE_ENV === 'production' && process.env.REACT_APP_API_URL) {
-    return process.env.REACT_APP_API_URL;
+  if (process.env.NODE_ENV === 'production' && process.env.OMMIQUIZ_APP_API_URL) {
+    return process.env.OMMIQUIZ_APP_API_URL;
   }
-  if (process.env.REACT_APP_API_URL) {
-    return process.env.REACT_APP_API_URL;
+  if (process.env.OMMIQUIZ_APP_API_URL) {
+    return process.env.OMMIQUIZ_APP_API_URL;
   }
   const hostname = window.location.hostname;
   const baseUrl = hostname === 'localhost' ? 'localhost' : hostname;

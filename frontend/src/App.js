@@ -13,7 +13,7 @@ import { signIn, signUp, signOut, getSession, onAuthStateChange } from './supaba
 console.log('🔥 === FRONTEND VERSION DEBUG ===');
 console.log('📦 FRONTEND_VERSION from import:', FRONTEND_VERSION);
 console.log('🌍 process.env.NODE_ENV:', process.env.NODE_ENV);
-console.log('🔧 process.env.REACT_APP_VERSION:', process.env.REACT_APP_VERSION);
+console.log('🔧 process.env.OMMIQUIZ_APP_VERSION:', process.env.OMMIQUIZ_APP_VERSION);
 
 console.log('✨ Frontend app starting with version:', FRONTEND_VERSION);
 console.log('🔥 === END VERSION DEBUG ===');
@@ -21,13 +21,13 @@ console.log('🔥 === END VERSION DEBUG ===');
 // Use the environment variable first, with proper fallback for development
 const getApiUrl = () => {
   // In production, always use the environment variable
-  if (process.env.NODE_ENV === 'production' && process.env.REACT_APP_API_URL) {
-    return process.env.REACT_APP_API_URL;
+  if (process.env.NODE_ENV === 'production' && process.env.OMMIQUIZ_APP_API_URL) {
+    return process.env.OMMIQUIZ_APP_API_URL;
   }
   
   // In development, use environment variable if set, otherwise construct local URL
-  if (process.env.REACT_APP_API_URL) {
-    return process.env.REACT_APP_API_URL;
+  if (process.env.OMMIQUIZ_APP_API_URL) {
+    return process.env.OMMIQUIZ_APP_API_URL;
   }
   
   // Development fallback - use current hostname for local development
@@ -43,7 +43,7 @@ const API_URL = getApiUrl();
 
 // Add debug logging to help identify connection issues
 console.log('Environment:', process.env.NODE_ENV);
-console.log('REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
+console.log('OMMIQUIZ_APP_API_URL:', process.env.OMMIQUIZ_APP_API_URL);
 console.log('Constructed API_URL:', API_URL);
 
 function App() {

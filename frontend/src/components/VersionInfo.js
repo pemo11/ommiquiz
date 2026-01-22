@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './VersionInfo.css';
 import { FRONTEND_VERSION } from '../version';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+const API_URL = process.env.OMMIQUIZ_APP_API_URL || 'http://localhost:8080/api';
 
 function VersionInfo() {
   const [backendVersion, setBackendVersion] = useState(null);

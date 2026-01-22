@@ -25,7 +25,7 @@ docker build --no-cache -t ommiquiz-frontend:latest .
 ```
 
 The build will:
-- Use `.env.production` which sets `REACT_APP_API_URL=/api`
+- Use `.env.production` which sets `OMMIQUIZ_APP_API_URL=/api`
 - Copy the updated `nginx.conf` with API proxy configuration
 - Create optimized production build
 
@@ -102,7 +102,7 @@ Expected results after fix:
 Proxies `/api/*` to `https://nanoquiz-backend-ypez6.ondigitalocean.app`
 
 ### frontend/.env.production
-Sets `REACT_APP_API_URL=/api` so React uses the local proxy
+Sets `OMMIQUIZ_APP_API_URL=/api` so React uses the local proxy
 
 ### docker-compose.prod.yml
 Orchestrates both frontend and backend containers
@@ -123,7 +123,7 @@ Orchestrates both frontend and backend containers
 
 **Cause**: Direct requests to backend without proxy
 
-**Fix**: Ensure `REACT_APP_API_URL=/api` and nginx proxy is working
+**Fix**: Ensure `OMMIQUIZ_APP_API_URL=/api` and nginx proxy is working
 
 ### Backend Not Responding
 
@@ -154,9 +154,9 @@ curl -I https://ommiquiz.de | grep -i etag
 ## Environment Variables
 
 ### Frontend (.env.production)
-- `REACT_APP_API_URL`: API endpoint (set to `/api` for proxy)
-- `REACT_APP_SUPABASE_URL`: Supabase project URL
-- `REACT_APP_SUPABASE_ANON_KEY`: Supabase anonymous key
+- `OMMIQUIZ_APP_API_URL`: API endpoint (set to `/api` for proxy)
+- `OMMIQUIZ_APP_SUPABASE_URL`: Supabase project URL
+- `OMMIQUIZ_APP_SUPABASE_ANON_KEY`: Supabase anonymous key
 
 ### Backend
 - `DATABASE_URL`: PostgreSQL connection string

@@ -131,11 +131,11 @@ You should see:
 
 ```env
 # Backend API URL
-REACT_APP_API_URL=http://localhost:8080/api
+OMMIQUIZ_APP_API_URL=http://localhost:8080/api
 
 # Supabase Configuration
-REACT_APP_SUPABASE_URL=https://xxxxxxxxxxxxx.supabase.co
-REACT_APP_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+OMMIQUIZ_APP_SUPABASE_URL=https://xxxxxxxxxxxxx.supabase.co
+OMMIQUIZ_APP_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
 
 **Note:** Only use `SUPABASE_URL` and `SUPABASE_ANON_KEY` in frontend (never use service_role_key!)
@@ -224,10 +224,10 @@ Frontend will run on `http://localhost:3000`
 **Problem:** Frontend shows console errors about missing config
 
 **Solution:** Ensure `frontend/.env` has both:
-- `REACT_APP_SUPABASE_URL`
-- `REACT_APP_SUPABASE_ANON_KEY`
+- `OMMIQUIZ_APP_SUPABASE_URL`
+- `OMMIQUIZ_APP_SUPABASE_ANON_KEY`
 
-Note: Environment variables must start with `REACT_APP_` for Create React App
+Note: Environment variables must start with `OMMIQUIZ_APP_` for Create React App
 
 ### "DATABASE_URL not set"
 
@@ -277,9 +277,9 @@ DATABASE_URL=postgresql://...connection-pooling-url...
 
 **Frontend (.env.production):**
 ```env
-REACT_APP_API_URL=https://your-backend-domain.com/api
-REACT_APP_SUPABASE_URL=https://your-project.supabase.co
-REACT_APP_SUPABASE_ANON_KEY=your-anon-key
+OMMIQUIZ_APP_API_URL=https://your-backend-domain.com/api
+OMMIQUIZ_APP_SUPABASE_URL=https://your-project.supabase.co
+OMMIQUIZ_APP_SUPABASE_ANON_KEY=your-anon-key
 ```
 
 ### Security Checklist

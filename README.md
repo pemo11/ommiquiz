@@ -99,11 +99,11 @@ cards:
 
 ### Production API URL (Wichtig für getrennte Deployments)
 
-Die React-App verwendet in der Produktion **nicht** automatisch den Backend-Host, wenn Frontend und Backend auf verschiedenen Domains oder Droplets laufen. Setzen Sie deshalb vor dem Build immer die Umgebungsvariable `REACT_APP_API_URL` auf die öffentliche Backend-URL (inkl. `/api`-Präfix), z. B.:
+Die React-App verwendet in der Produktion **nicht** automatisch den Backend-Host, wenn Frontend und Backend auf verschiedenen Domains oder Droplets laufen. Setzen Sie deshalb vor dem Build immer die Umgebungsvariable `OMMIQUIZ_APP_API_URL` auf die öffentliche Backend-URL (inkl. `/api`-Präfix), z. B.:
 
 ```bash
 # Beispiel: Backend läuft unter https://ommiquiz-backend.example.com
-export REACT_APP_API_URL="https://ommiquiz-backend.example.com/api"
+export OMMIQUIZ_APP_API_URL="https://ommiquiz-backend.example.com/api"
 npm run build
 ```
 

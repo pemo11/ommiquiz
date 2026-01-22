@@ -10,7 +10,7 @@ static_sites:
     output_dir: build
     environment_slug: node-js
     envs:
-      - key: REACT_APP_API_URL
+      - key: OMMIQUIZ_APP_API_URL
         value: "https://nanoquiz-backend-ypez6.ondigitalocean.app/api"
       - key: NODE_ENV
         value: "production"
