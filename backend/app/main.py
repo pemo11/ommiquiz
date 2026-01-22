@@ -1046,7 +1046,7 @@ async def delete_user(
 
                 # Delete learning progress
                 await conn.execute(
-                    "DELETE FROM learning_progress WHERE user_id = $1",
+                    "DELETE FROM flashcard_progress WHERE user_id = $1",
                     user_id
                 )
 
