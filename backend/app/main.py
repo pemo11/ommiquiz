@@ -60,6 +60,18 @@ class LoginResponse(BaseModel):
     refresh_token: Optional[str] = None
     id_token: Optional[str] = None
 
+
+class SignupRequest(BaseModel):
+    email: str
+    password: str
+    username: str
+
+
+class SessionResponse(BaseModel):
+    user: Optional[Dict[str, Any]] = None
+    session: Optional[Dict[str, Any]] = None
+
+
 # Support both Docker and local development paths
 if Path("/app/flashcards").exists():
     FLASHCARDS_DIR = Path("/app/flashcards")
@@ -130,10 +142,163 @@ async def api_root():
 
 
 # Authentication endpoint removed - use Supabase client directly for authentication
-# @api_router.post("/auth/login")
-# async def auth_login(payload: LoginRequest):
-#     """Authenticate a user with Supabase (handled by frontend)"""
-#     pass
+# ===== Authentication Endpoints =====
+# These endpoints proxy authentication requests to Supabase Auth API
+# This keeps the frontend independent of Supabase
+
+@api_router.post("/auth/signup")
+async def auth_signup(payload: SignupRequest):
+    """Sign up a new user via Supabase Auth API"""
+    import httpx
+
+    supabase_url = os.getenv("SUPABASE_URL")
+    supabase_anon_key = os.getenv("SUPABASE_ANON_KEY")
+    site_url = os.getenv("SITE_URL", "https://ommiquiz.de")
+
+    if not supabase_url or not supabase_anon_key:
+        raise HTTPException(status_code=500, detail="Supabase configuration missing")
+
+    logger.info("Processing signup request", email=payload.email)
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{supabase_url}/auth/v1/signup",
+                json={
+                    "email": payload.email,
+                    "password": payload.password,
+                    "options": {
+                        "email_redirect_to": site_url,
+                        "data": {
+                            "username": payload.username,
+                            "display_name": payload.username
+                        }
+                    }
+                },
+                headers={
+                    "apikey": supabase_anon_key,
+                    "Content-Type": "application/json"
+                }
+            )
+
+            if response.status_code != 200:
+                error_data = response.json()
+                logger.error("Signup failed", status=response.status_code, error=error_data)
+                raise HTTPException(
+                    status_code=response.status_code,
+                    detail=error_data.get("msg", "Signup failed")
+                )
+
+            data = response.json()
+            logger.info("Signup successful", email=payload.email)
+
+            return {
+                "user": data.get("user"),
+                "session": data.get("session"),
+                "message": "Signup successful. Please check your email for confirmation."
+            }
+    except httpx.HTTPError as e:
+        logger.error("HTTP error during signup", error=str(e))
+        raise HTTPException(status_code=500, detail="Network error during signup")
+
+
+@api_router.post("/auth/login")
+async def auth_login(payload: LoginRequest):
+    """Authenticate a user via Supabase Auth API"""
+    import httpx
+
+    supabase_url = os.getenv("SUPABASE_URL")
+    supabase_anon_key = os.getenv("SUPABASE_ANON_KEY")
+
+    if not supabase_url or not supabase_anon_key:
+        raise HTTPException(status_code=500, detail="Supabase configuration missing")
+
+    logger.info("Processing login request", email=payload.email)
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"{supabase_url}/auth/v1/token?grant_type=password",
+                json={
+                    "email": payload.email,
+                    "password": payload.password
+                },
+                headers={
+                    "apikey": supabase_anon_key,
+                    "Content-Type": "application/json"
+                }
+            )
+
+            if response.status_code != 200:
+                error_data = response.json()
+                logger.warning("Login failed", email=payload.email, status=response.status_code)
+                raise HTTPException(
+                    status_code=401,
+                    detail=error_data.get("error_description", "Invalid email or password")
+                )
+
+            data = response.json()
+            logger.info("Login successful", email=payload.email)
+
+            return {
+                "user": data.get("user"),
+                "session": data.get("session"),
+                "access_token": data.get("access_token"),
+                "refresh_token": data.get("refresh_token"),
+                "expires_in": data.get("expires_in")
+            }
+    except httpx.HTTPError as e:
+        logger.error("HTTP error during login", error=str(e))
+        raise HTTPException(status_code=500, detail="Network error during login")
+
+
+@api_router.post("/auth/logout")
+async def auth_logout(user: AuthenticatedUser = Depends(get_current_user)):
+    """Sign out the current user"""
+    import httpx
+
+    supabase_url = os.getenv("SUPABASE_URL")
+    access_token = user.access_token
+
+    if not supabase_url:
+        raise HTTPException(status_code=500, detail="Supabase configuration missing")
+
+    logger.info("Processing logout request", user_id=user.user_id)
+
+    try:
+        async with httpx.AsyncClient() as client:
+            await client.post(
+                f"{supabase_url}/auth/v1/logout",
+                headers={
+                    "Authorization": f"Bearer {access_token}",
+                    "Content-Type": "application/json"
+                }
+            )
+
+        logger.info("Logout successful", user_id=user.user_id)
+        return {"message": "Logged out successfully"}
+    except httpx.HTTPError as e:
+        logger.error("HTTP error during logout", error=str(e))
+        # Don't fail logout on network errors
+        return {"message": "Logged out locally"}
+
+
+@api_router.get("/auth/session")
+async def get_auth_session(user: AuthenticatedUser = Depends(get_current_user)):
+    """Get current session information"""
+    logger.info("Getting session", user_id=user.user_id)
+
+    return {
+        "user": {
+            "id": user.user_id,
+            "email": user.email,
+            "sub": user.sub
+        },
+        "session": {
+            "access_token": user.access_token,
+            "user_id": user.user_id
+        }
+    }
 
 
 def _extract_flashcard_metadata(document: FlashcardDocument) -> Dict[str, Any]:

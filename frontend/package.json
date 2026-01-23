@@ -3,7 +3,6 @@
   "version": "1.0.30",
   "private": true,
   "dependencies": {
-    "@supabase/supabase-js": "^2.39.0",
     "js-yaml": "^4.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
