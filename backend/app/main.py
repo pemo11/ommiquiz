@@ -254,11 +254,89 @@ def generate_flashcard_catalog() -> Tuple[Dict[str, Any], Path]:
 
 
 @api_router.get("/flashcards")
-async def list_flashcards():
-    """List all available flashcard files with metadata"""
-    logger.info("Listing flashcards", flashcards_dir=str(FLASHCARDS_DIR))
+async def list_flashcards(
+    user: Optional[AuthenticatedUser] = Depends(get_optional_current_user)
+):
+    """List all available flashcard files with metadata (global catalog + user flashcards)"""
+    logger.info("Listing flashcards", flashcards_dir=str(FLASHCARDS_DIR), user_id=user.user_id if user else None)
 
+    # Get global catalog flashcards
     flashcard_files = collect_flashcard_metadata()
+
+    # Merge user flashcards
+    if user:
+        try:
+            from .database import get_db_pool
+
+            pool = await get_db_pool()
+            async with pool.acquire() as conn:
+                # Get global user flashcards (visible to everyone)
+                global_user_flashcards = await conn.fetch(
+                    """SELECT flashcard_id, title, description, author, language,
+                              module, topics, keywords, card_count, created_at, updated_at
+                       FROM user_flashcards
+                       WHERE visibility = 'global'"""
+                )
+
+                # Get current user's private flashcards
+                private_user_flashcards = await conn.fetch(
+                    """SELECT flashcard_id, title, description, author, language,
+                              module, topics, keywords, card_count, created_at, updated_at
+                       FROM user_flashcards
+                       WHERE owner_id = $1 AND visibility = 'private'""",
+                    user.user_id
+                )
+
+                # Convert to metadata format
+                for row in list(global_user_flashcards) + list(private_user_flashcards):
+                    flashcard_files.append({
+                        "id": row["flashcard_id"],
+                        "title": row["title"],
+                        "description": row["description"],
+                        "author": row["author"],
+                        "language": row["language"],
+                        "module": row["module"],
+                        "topics": row["topics"] or [],
+                        "keywords": row["keywords"] or [],
+                        "cardCount": row["card_count"],
+                        "source": "user",  # Marker for user-generated
+                        "visibility": "global" if row in global_user_flashcards else "private"
+                    })
+
+        except Exception as e:
+            logger.error("Failed to fetch user flashcards", error=str(e))
+            # Continue with global catalog only if user flashcards fail
+    else:
+        # For unauthenticated users, include global user flashcards
+        try:
+            from .database import get_db_pool
+
+            pool = await get_db_pool()
+            async with pool.acquire() as conn:
+                global_user_flashcards = await conn.fetch(
+                    """SELECT flashcard_id, title, description, author, language,
+                              module, topics, keywords, card_count, created_at, updated_at
+                       FROM user_flashcards
+                       WHERE visibility = 'global'"""
+                )
+
+                for row in global_user_flashcards:
+                    flashcard_files.append({
+                        "id": row["flashcard_id"],
+                        "title": row["title"],
+                        "description": row["description"],
+                        "author": row["author"],
+                        "language": row["language"],
+                        "module": row["module"],
+                        "topics": row["topics"] or [],
+                        "keywords": row["keywords"] or [],
+                        "cardCount": row["card_count"],
+                        "source": "user",
+                        "visibility": "global"
+                    })
+
+        except Exception as e:
+            logger.error("Failed to fetch global user flashcards", error=str(e))
 
     logger.info("Flashcards listed successfully", count=len(flashcard_files))
     return {"flashcards": flashcard_files}
@@ -292,31 +370,78 @@ async def get_flashcard(
     user: Optional[AuthenticatedUser] = Depends(get_optional_current_user)
 ) -> Dict[str, Any]:
     """Get a specific flashcard file by ID"""
-    logger.info("Getting flashcard", flashcard_id=flashcard_id)
+    logger.info("Getting flashcard", flashcard_id=flashcard_id, user_id=user.user_id if user else None)
 
-    # First try the old way (for backwards compatibility)
-    document = get_flashcard_document(flashcard_id)
+    document = None
 
-    # If not found by ID-based filename, scan all documents to find actual filename
-    if document is None:
-        logger.info("Flashcard not found by ID-based filename, scanning all documents",
-                   flashcard_id=flashcard_id)
-        filename = find_flashcard_filename_by_id(flashcard_id)
-        if filename:
-            # Read the file directly by its actual filename
-            all_documents = storage.list_flashcards()
-            for doc in all_documents:
-                if doc.filename == filename:
-                    document = doc
-                    logger.info("Found flashcard by scanning",
-                               flashcard_id=flashcard_id,
-                               actual_filename=filename)
-                    break
+    # Check if this is a user flashcard first
+    from .storage import is_user_flashcard
+    if is_user_flashcard(flashcard_id):
+        logger.info("Detected user flashcard", flashcard_id=flashcard_id)
+        try:
+            from .database import get_db_pool
 
-    if document is None:
-        logger.error("Flashcard not found", flashcard_id=flashcard_id)
-        raise HTTPException(status_code=404, detail=f"Flashcard '{flashcard_id}' not found")
+            pool = await get_db_pool()
+            async with pool.acquire() as conn:
+                flashcard_row = await conn.fetchrow(
+                    """SELECT owner_id, visibility FROM user_flashcards
+                       WHERE flashcard_id = $1""",
+                    flashcard_id
+                )
 
+                if flashcard_row:
+                    # Check permissions
+                    if flashcard_row["visibility"] == "global":
+                        # Anyone can access global flashcards
+                        pass
+                    elif flashcard_row["visibility"] == "private":
+                        # Only owner can access private flashcards
+                        if not user or user.user_id != flashcard_row["owner_id"]:
+                            raise HTTPException(
+                                status_code=403,
+                                detail="Not authorized to access this private flashcard"
+                            )
+
+                    # Load from user storage
+                    document = storage.get_user_flashcard(flashcard_row["owner_id"], flashcard_id)
+                    if not document:
+                        logger.error("User flashcard not found in storage", flashcard_id=flashcard_id)
+                        raise HTTPException(status_code=404, detail=f"Flashcard '{flashcard_id}' not found")
+                else:
+                    logger.warning("User flashcard not found in database", flashcard_id=flashcard_id)
+                    raise HTTPException(status_code=404, detail=f"Flashcard '{flashcard_id}' not found")
+
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error("Error retrieving user flashcard", flashcard_id=flashcard_id, error=str(e))
+            raise HTTPException(status_code=500, detail=f"Error retrieving flashcard: {str(e)}")
+    else:
+        # Global catalog flashcard
+        # First try the old way (for backwards compatibility)
+        document = get_flashcard_document(flashcard_id)
+
+        # If not found by ID-based filename, scan all documents to find actual filename
+        if document is None:
+            logger.info("Flashcard not found by ID-based filename, scanning all documents",
+                       flashcard_id=flashcard_id)
+            filename = find_flashcard_filename_by_id(flashcard_id)
+            if filename:
+                # Read the file directly by its actual filename
+                all_documents = storage.list_flashcards()
+                for doc in all_documents:
+                    if doc.filename == filename:
+                        document = doc
+                        logger.info("Found flashcard by scanning",
+                                   flashcard_id=flashcard_id,
+                                   actual_filename=filename)
+                        break
+
+        if document is None:
+            logger.error("Flashcard not found", flashcard_id=flashcard_id)
+            raise HTTPException(status_code=404, detail=f"Flashcard '{flashcard_id}' not found")
+
+    # Parse and return the flashcard data
     try:
         data = yaml.safe_load(document.content)
 
@@ -1597,6 +1722,23 @@ class AddFavoriteRequest(BaseModel):
     flashcard_id: str
 
 
+class CreateUserFlashcardRequest(BaseModel):
+    """Request model for creating a user flashcard."""
+    yaml_content: str
+    visibility: str = "private"  # 'global' or 'private'
+
+
+class UpdateUserFlashcardRequest(BaseModel):
+    """Request model for updating a user flashcard."""
+    yaml_content: str
+    visibility: Optional[str] = None
+
+
+class UpdateVisibilityRequest(BaseModel):
+    """Request model for updating flashcard visibility."""
+    visibility: str  # 'global' or 'private'
+
+
 @api_router.post("/users/me/favorites")
 async def add_favorite(
     request: AddFavoriteRequest,
@@ -1668,6 +1810,364 @@ async def remove_favorite(
             status_code=500,
             detail=f"Failed to remove favorite: {str(e)}"
         )
+
+
+# ===== User Flashcards Endpoints =====
+
+@api_router.post("/users/me/flashcards")
+async def create_user_flashcard(
+    request: CreateUserFlashcardRequest,
+    user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Create a new user flashcard."""
+    from .database import get_db_pool
+    from .storage import generate_user_flashcard_id
+
+    logger.info("Creating user flashcard", user_id=user.user_id, visibility=request.visibility)
+
+    # Validate visibility
+    if request.visibility not in ("global", "private"):
+        raise HTTPException(status_code=400, detail="Visibility must be 'global' or 'private'")
+
+    try:
+        # Parse YAML to extract metadata
+        flashcard_data = yaml.safe_load(request.yaml_content)
+        if not flashcard_data or not isinstance(flashcard_data, dict):
+            raise HTTPException(status_code=400, detail="Invalid YAML content")
+
+        # Extract metadata
+        title = flashcard_data.get("title", "Untitled")
+        description = flashcard_data.get("description")
+        author = flashcard_data.get("author", user.email or "Unknown")
+        language = flashcard_data.get("language", "de")
+        module = flashcard_data.get("module")
+        topics = flashcard_data.get("topics", [])
+        keywords = flashcard_data.get("keywords", [])
+        cards = flashcard_data.get("flashcards", [])
+        card_count = len(cards) if isinstance(cards, list) else 0
+
+        # Generate flashcard ID from title or use provided ID
+        if "id" in flashcard_data:
+            slug = flashcard_data["id"]
+        else:
+            # Create slug from title
+            slug = re.sub(r'[^a-z0-9_-]', '_', title.lower().replace(' ', '_'))
+            slug = re.sub(r'_+', '_', slug).strip('_')
+
+        flashcard_id = generate_user_flashcard_id(user.user_id, slug)
+        filename = f"{flashcard_id}.yaml"
+
+        # Check if flashcard already exists
+        pool = await get_db_pool()
+        async with pool.acquire() as conn:
+            existing = await conn.fetchrow(
+                "SELECT flashcard_id FROM user_flashcards WHERE flashcard_id = $1",
+                flashcard_id
+            )
+            if existing:
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"Flashcard with ID '{flashcard_id}' already exists"
+                )
+
+        # Save to storage
+        storage_type = os.getenv("FLASHCARDS_STORAGE", "local").lower()
+        try:
+            document = storage.save_user_flashcard(user.user_id, filename, request.yaml_content)
+            storage_path = storage.get_user_flashcard_path(user.user_id, flashcard_id)
+        except FileExistsError:
+            raise HTTPException(status_code=409, detail="Flashcard file already exists")
+        except Exception as e:
+            logger.error("Failed to save user flashcard to storage", error=str(e))
+            raise HTTPException(status_code=500, detail=f"Storage error: {str(e)}")
+
+        # Save metadata to database
+        async with pool.acquire() as conn:
+            result = await conn.fetchrow(
+                """INSERT INTO user_flashcards (
+                    flashcard_id, owner_id, visibility, title, description, author,
+                    language, module, topics, keywords, card_count,
+                    storage_type, storage_path, filename
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+                RETURNING id, flashcard_id, created_at""",
+                flashcard_id, user.user_id, request.visibility, title, description, author,
+                language, module, topics, keywords, card_count,
+                storage_type, storage_path, filename
+            )
+
+        logger.info("User flashcard created", flashcard_id=flashcard_id, user_id=user.user_id)
+
+        return {
+            "success": True,
+            "flashcard_id": flashcard_id,
+            "message": "Flashcard created successfully",
+            "created_at": result["created_at"].isoformat() if result["created_at"] else None
+        }
+
+    except HTTPException:
+        raise
+    except yaml.YAMLError as e:
+        logger.error("Invalid YAML content", error=str(e))
+        raise HTTPException(status_code=400, detail=f"Invalid YAML: {str(e)}")
+    except Exception as e:
+        logger.error("Failed to create user flashcard", error=str(e))
+        raise HTTPException(status_code=500, detail=f"Failed to create flashcard: {str(e)}")
+
+
+@api_router.get("/users/me/flashcards")
+async def list_user_flashcards(
+    user: AuthenticatedUser = Depends(get_current_user)
+):
+    """List all flashcards owned by the current user."""
+    from .database import get_db_pool
+
+    logger.info("Listing user flashcards", user_id=user.user_id)
+
+    try:
+        pool = await get_db_pool()
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(
+                """SELECT flashcard_id, title, description, visibility, card_count,
+                          language, module, topics, keywords, created_at, updated_at
+                   FROM user_flashcards
+                   WHERE owner_id = $1
+                   ORDER BY created_at DESC""",
+                user.user_id
+            )
+
+        flashcards = [
+            {
+                "flashcard_id": row["flashcard_id"],
+                "title": row["title"],
+                "description": row["description"],
+                "visibility": row["visibility"],
+                "card_count": row["card_count"],
+                "language": row["language"],
+                "module": row["module"],
+                "topics": row["topics"] or [],
+                "keywords": row["keywords"] or [],
+                "created_at": row["created_at"].isoformat() if row["created_at"] else None,
+                "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
+            }
+            for row in rows
+        ]
+
+        logger.info("User flashcards listed", user_id=user.user_id, count=len(flashcards))
+
+        return {
+            "success": True,
+            "flashcards": flashcards,
+            "total": len(flashcards)
+        }
+
+    except Exception as e:
+        logger.error("Failed to list user flashcards", error=str(e))
+        raise HTTPException(status_code=500, detail=f"Failed to list flashcards: {str(e)}")
+
+
+@api_router.put("/users/me/flashcards/{flashcard_id}")
+async def update_user_flashcard(
+    flashcard_id: str,
+    request: UpdateUserFlashcardRequest,
+    user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Update a user flashcard."""
+    from .database import get_db_pool
+    from .storage import is_user_flashcard
+
+    logger.info("Updating user flashcard", flashcard_id=flashcard_id, user_id=user.user_id)
+
+    # Verify it's a user flashcard
+    if not is_user_flashcard(flashcard_id):
+        raise HTTPException(status_code=400, detail="Not a user-generated flashcard")
+
+    try:
+        # Check ownership
+        pool = await get_db_pool()
+        async with pool.acquire() as conn:
+            flashcard_row = await conn.fetchrow(
+                "SELECT owner_id, filename FROM user_flashcards WHERE flashcard_id = $1",
+                flashcard_id
+            )
+
+            if not flashcard_row:
+                raise HTTPException(status_code=404, detail="Flashcard not found")
+
+            if flashcard_row["owner_id"] != user.user_id and not user.is_admin:
+                raise HTTPException(status_code=403, detail="Not authorized to update this flashcard")
+
+        # Parse YAML to extract updated metadata
+        flashcard_data = yaml.safe_load(request.yaml_content)
+        if not flashcard_data or not isinstance(flashcard_data, dict):
+            raise HTTPException(status_code=400, detail="Invalid YAML content")
+
+        # Extract metadata
+        title = flashcard_data.get("title", "Untitled")
+        description = flashcard_data.get("description")
+        author = flashcard_data.get("author")
+        language = flashcard_data.get("language", "de")
+        module = flashcard_data.get("module")
+        topics = flashcard_data.get("topics", [])
+        keywords = flashcard_data.get("keywords", [])
+        cards = flashcard_data.get("flashcards", [])
+        card_count = len(cards) if isinstance(cards, list) else 0
+
+        # Update storage
+        filename = flashcard_row["filename"]
+        storage.save_user_flashcard(flashcard_row["owner_id"], filename, request.yaml_content, overwrite=True)
+
+        # Update database metadata
+        update_fields = {
+            "title": title,
+            "description": description,
+            "author": author,
+            "language": language,
+            "module": module,
+            "topics": topics,
+            "keywords": keywords,
+            "card_count": card_count,
+        }
+
+        if request.visibility:
+            if request.visibility not in ("global", "private"):
+                raise HTTPException(status_code=400, detail="Visibility must be 'global' or 'private'")
+            update_fields["visibility"] = request.visibility
+
+        # Build UPDATE query
+        set_clause = ", ".join([f"{k} = ${i+2}" for i, k in enumerate(update_fields.keys())])
+        query = f"UPDATE user_flashcards SET {set_clause} WHERE flashcard_id = $1"
+        params = [flashcard_id] + list(update_fields.values())
+
+        async with pool.acquire() as conn:
+            await conn.execute(query, *params)
+
+        logger.info("User flashcard updated", flashcard_id=flashcard_id, user_id=user.user_id)
+
+        return {
+            "success": True,
+            "message": "Flashcard updated successfully"
+        }
+
+    except HTTPException:
+        raise
+    except yaml.YAMLError as e:
+        logger.error("Invalid YAML content", error=str(e))
+        raise HTTPException(status_code=400, detail=f"Invalid YAML: {str(e)}")
+    except Exception as e:
+        logger.error("Failed to update user flashcard", error=str(e))
+        raise HTTPException(status_code=500, detail=f"Failed to update flashcard: {str(e)}")
+
+
+@api_router.delete("/users/me/flashcards/{flashcard_id}")
+async def delete_user_flashcard(
+    flashcard_id: str,
+    user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Delete a user flashcard."""
+    from .database import get_db_pool
+    from .storage import is_user_flashcard
+
+    logger.info("Deleting user flashcard", flashcard_id=flashcard_id, user_id=user.user_id)
+
+    # Verify it's a user flashcard
+    if not is_user_flashcard(flashcard_id):
+        raise HTTPException(status_code=400, detail="Not a user-generated flashcard")
+
+    try:
+        # Check ownership
+        pool = await get_db_pool()
+        async with pool.acquire() as conn:
+            flashcard_row = await conn.fetchrow(
+                "SELECT owner_id FROM user_flashcards WHERE flashcard_id = $1",
+                flashcard_id
+            )
+
+            if not flashcard_row:
+                raise HTTPException(status_code=404, detail="Flashcard not found")
+
+            if flashcard_row["owner_id"] != user.user_id and not user.is_admin:
+                raise HTTPException(status_code=403, detail="Not authorized to delete this flashcard")
+
+        # Delete from storage
+        deleted_files = storage.delete_user_flashcard(flashcard_row["owner_id"], flashcard_id)
+
+        # Delete from database
+        async with pool.acquire() as conn:
+            await conn.execute(
+                "DELETE FROM user_flashcards WHERE flashcard_id = $1",
+                flashcard_id
+            )
+
+        logger.info("User flashcard deleted", flashcard_id=flashcard_id, user_id=user.user_id, deleted_files=deleted_files)
+
+        return {
+            "success": True,
+            "message": "Flashcard deleted successfully",
+            "deleted_files": deleted_files
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to delete user flashcard", error=str(e))
+        raise HTTPException(status_code=500, detail=f"Failed to delete flashcard: {str(e)}")
+
+
+@api_router.patch("/users/me/flashcards/{flashcard_id}/visibility")
+async def update_flashcard_visibility(
+    flashcard_id: str,
+    request: UpdateVisibilityRequest,
+    user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Toggle flashcard visibility between global and private."""
+    from .database import get_db_pool
+    from .storage import is_user_flashcard
+
+    logger.info("Updating flashcard visibility", flashcard_id=flashcard_id, visibility=request.visibility, user_id=user.user_id)
+
+    # Verify it's a user flashcard
+    if not is_user_flashcard(flashcard_id):
+        raise HTTPException(status_code=400, detail="Not a user-generated flashcard")
+
+    # Validate visibility
+    if request.visibility not in ("global", "private"):
+        raise HTTPException(status_code=400, detail="Visibility must be 'global' or 'private'")
+
+    try:
+        # Check ownership
+        pool = await get_db_pool()
+        async with pool.acquire() as conn:
+            flashcard_row = await conn.fetchrow(
+                "SELECT owner_id FROM user_flashcards WHERE flashcard_id = $1",
+                flashcard_id
+            )
+
+            if not flashcard_row:
+                raise HTTPException(status_code=404, detail="Flashcard not found")
+
+            if flashcard_row["owner_id"] != user.user_id and not user.is_admin:
+                raise HTTPException(status_code=403, detail="Not authorized to update this flashcard")
+
+        # Update visibility
+        async with pool.acquire() as conn:
+            await conn.execute(
+                "UPDATE user_flashcards SET visibility = $1 WHERE flashcard_id = $2",
+                request.visibility, flashcard_id
+            )
+
+        logger.info("Flashcard visibility updated", flashcard_id=flashcard_id, visibility=request.visibility)
+
+        return {
+            "success": True,
+            "message": f"Flashcard visibility updated to {request.visibility}",
+            "visibility": request.visibility
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to update flashcard visibility", error=str(e))
+        raise HTTPException(status_code=500, detail=f"Failed to update visibility: {str(e)}")
 
 
 @api_router.get("/health")

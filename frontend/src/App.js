@@ -5,6 +5,7 @@ import FlashcardSelector from './components/FlashcardSelector';
 import AdminPanel from './components/AdminPanel';
 import QuizReport from './components/QuizReport';
 import AboutModal from './components/AboutModal';
+import MyFlashcards from './components/MyFlashcards';
 import { FRONTEND_VERSION } from './version';
 import LanguageSelector from './components/LanguageSelector';
 import { signIn, signUp, signOut, getSession, onAuthStateChange } from './supabase';
@@ -54,6 +55,7 @@ function App() {
   const [showAdmin, setShowAdmin] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const [showMyFlashcards, setShowMyFlashcards] = useState(false);
   const [showLoginForm, setShowLoginForm] = useState(false);
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
@@ -231,13 +233,21 @@ function App() {
       console.log('📡 Fetching from URL:', url);
       console.log('⏰ Timestamp:', new Date().toISOString());
       
+      // Include auth token if available to get user flashcards
+      const headers = {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      };
+
+      const authToken = localStorage.getItem('authToken');
+      if (authToken) {
+        headers['Authorization'] = `Bearer ${authToken}`;
+      }
+
       const response = await fetch(url, {
         cache: 'no-cache',
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache',
-          'Expires': '0'
-        }
+        headers: headers
       });
       
       // Log response details for debugging
@@ -421,6 +431,11 @@ function App() {
 
   const handleReportBack = () => {
     setShowReport(false);
+  };
+
+  const handleMyFlashcardsBack = () => {
+    setShowMyFlashcards(false);
+    fetchFlashcardList(); // Refresh the list in case changes were made
   };
 
   const handleAboutOpen = () => {
@@ -619,6 +634,16 @@ function App() {
                 </button>
               )}
 
+              {/* My Flashcards button for authenticated users */}
+              {isLoggedIn && (
+                <button
+                  onClick={() => setShowMyFlashcards(!showMyFlashcards)}
+                  className={showMyFlashcards ? "my-flashcards-btn active" : "my-flashcards-btn"}
+                >
+                  {showMyFlashcards ? 'Exit My Flashcards' : 'My Flashcards'}
+                </button>
+              )}
+
               {/* Admin button only for authenticated admins */}
               {isLoggedIn && userProfile?.is_admin && (
                 <button
@@ -660,6 +685,12 @@ function App() {
           <AdminPanel onBack={handleAdminBack} />
         ) : showReport ? (
           <QuizReport onBack={handleReportBack} />
+        ) : showMyFlashcards ? (
+          <MyFlashcards
+            apiUrl={API_URL}
+            accessToken={localStorage.getItem('authToken')}
+            onBack={handleMyFlashcardsBack}
+          />
         ) : (
           <>
             {loading && !selectedFlashcard && (
