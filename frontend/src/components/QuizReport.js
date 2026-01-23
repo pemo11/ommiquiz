@@ -3,12 +3,12 @@ import './QuizReport.css';
 
 // Use the environment variable first, with proper fallback for development
 const getApiUrl = () => {
-  if (process.env.NODE_ENV === 'production' && process.env.REACT_APP_API_URL) {
-    return process.env.REACT_APP_API_URL;
+  if (process.env.NODE_ENV === 'production' && process.env.OMMIQUIZ_APP_API_URL) {
+    return process.env.OMMIQUIZ_APP_API_URL;
   }
 
-  if (process.env.REACT_APP_API_URL) {
-    return process.env.REACT_APP_API_URL;
+  if (process.env.OMMIQUIZ_APP_API_URL) {
+    return process.env.OMMIQUIZ_APP_API_URL;
   }
   
   const hostname = window.location.hostname;

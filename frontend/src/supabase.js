@@ -9,16 +9,16 @@ import { createClient } from '@supabase/supabase-js'
 
 // Supabase configuration from environment variables
 // Note: In production builds, OMMIQUIZ_APP_* vars are mapped to REACT_APP_* by build script
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL
-const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY
+const supabaseUrl = process.env.OMMIQUIZ_APP_SUPABASE_URL
+const supabaseAnonKey = process.env.OMMIQUIZ_APP_SUPABASE_ANON_KEY
 
 // API URL for backend endpoints
 const getApiUrl = () => {
-  if (process.env.NODE_ENV === 'production' && process.env.REACT_APP_API_URL) {
-    return process.env.REACT_APP_API_URL;
+  if (process.env.NODE_ENV === 'production' && process.env.OMMIQUIZ_APP_API_URL) {
+    return process.env.OMMIQUIZ_APP_API_URL;
   }
-  if (process.env.REACT_APP_API_URL) {
-    return process.env.REACT_APP_API_URL;
+  if (process.env.OMMIQUIZ_APP_API_URL) {
+    return process.env.OMMIQUIZ_APP_API_URL;
   }
   const hostname = window.location.hostname;
   const baseUrl = hostname === 'localhost' ? 'localhost' : hostname;
@@ -89,7 +89,7 @@ async function logLoginAttempt(email, success, errorMessage = null, accessToken 
  * @returns {Promise<{user, session, error}>}
  */
 export async function signUp(email, password, username) {
-  const siteUrl = process.env.REACT_APP_SITE_URL || window.location.origin;
+  const siteUrl = process.env.OMMIQUIZ_APP_SITE_URL || window.location.origin;
 
   const { data, error } = await supabase.auth.signUp({
     email,
