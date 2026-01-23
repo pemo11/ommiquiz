@@ -8,7 +8,7 @@ import AboutModal from './components/AboutModal';
 import MyFlashcards from './components/MyFlashcards';
 import { FRONTEND_VERSION } from './version';
 import LanguageSelector from './components/LanguageSelector';
-import { signIn, signUp, signOut, getSession, onAuthStateChange } from './supabase';
+import { signIn, signUp, signOut, getSession, onAuthStateChange } from './auth';
 
 // Add debug logging for version number
 console.log('🔥 === FRONTEND VERSION DEBUG ===');
