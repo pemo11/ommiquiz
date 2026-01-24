@@ -767,8 +767,8 @@ function App() {
                 </button>
               )}
 
-              {/* My Flashcards button for authenticated users */}
-              {isLoggedIn && (
+              {/* My Flashcards button for authenticated non-admin users only */}
+              {isLoggedIn && !userProfile?.is_admin && (
                 <button
                   onClick={() => setShowMyFlashcards(!showMyFlashcards)}
                   className={showMyFlashcards ? "my-flashcards-btn active" : "my-flashcards-btn"}
