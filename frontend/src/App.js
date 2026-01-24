@@ -181,9 +181,13 @@ function App() {
 
   // Toggle favorite for a flashcard
   const toggleFavorite = async (flashcardId) => {
-    if (!isLoggedIn || !user) return;
+    if (!isLoggedIn || !user) {
+      console.log('Toggle favorite failed: User not logged in');
+      return;
+    }
 
     const isFavorite = favorites.has(flashcardId);
+    console.log(`Toggling favorite for ${flashcardId}, currently ${isFavorite ? 'favorited' : 'not favorited'}`);
 
     // Optimistic update
     const newFavorites = new Set(favorites);
@@ -193,7 +197,10 @@ function App() {
     try {
       // Use the stored token from localStorage instead of calling getSession
       const authToken = localStorage.getItem('authToken');
-      if (!authToken) throw new Error('No authentication token available');
+      if (!authToken) {
+        console.error('No authentication token available');
+        throw new Error('No authentication token available');
+      }
 
       const url = isFavorite
         ? `${API_URL}/users/me/favorites/${flashcardId}`
@@ -211,16 +218,53 @@ function App() {
         options.body = JSON.stringify({ flashcard_id: flashcardId });
       }
 
+      console.log(`Making ${options.method} request to ${url}`, {
+        headers: options.headers,
+        body: options.body
+      });
+
       const response = await fetch(url, options);
+      
+      console.log('Response received:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Favorites API error:', response.status, errorText);
+        console.error('Favorites API error:', {
+          status: response.status,
+          statusText: response.statusText,
+          responseText: errorText
+        });
         throw new Error(`Server responded with ${response.status}: ${errorText}`);
       }
+
+      const responseData = await response.json();
+      console.log('Success response:', responseData);
+
+      // Show success message
+      console.log(`Successfully ${isFavorite ? 'removed' : 'added'} favorite: ${flashcardId}`);
+      
     } catch (error) {
       console.error('Error toggling favorite:', error);
       setFavorites(favorites); // Rollback on error
-      alert(`Failed to ${isFavorite ? 'remove' : 'add'} favorite. Please try again.`);
+      
+      // More detailed error message
+      let errorMessage = `Failed to ${isFavorite ? 'remove' : 'add'} favorite.`;
+      if (error.message.includes('401')) {
+        errorMessage += ' Please try logging out and logging back in.';
+      } else if (error.message.includes('403')) {
+        errorMessage += ' You do not have permission to perform this action.';
+      } else if (error.message.includes('500')) {
+        errorMessage += ' Server error. Please try again later.';
+      } else {
+        errorMessage += ` Error: ${error.message}`;
+      }
+      
+      alert(errorMessage);
     }
   };
 
