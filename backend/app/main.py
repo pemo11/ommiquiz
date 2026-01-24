@@ -1475,7 +1475,7 @@ async def get_user_activity_stats(
 
     pool = await get_db_pool()
 
-    try:
+    try {
         async with pool.acquire() as conn:
             start_date = datetime.now() - timedelta(days=days - 1)
 
@@ -2392,7 +2392,7 @@ async def health_check():
     logger.debug("Health check requested")
     return {
         "status": "healthy",
-        "version": os.getenv("APP_VERSION", "1.0.30")
+        "version": os.getenv("APP_VERSION", "1.0.32")
     }
 
 
