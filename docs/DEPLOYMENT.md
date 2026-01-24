@@ -161,7 +161,7 @@ curl -I https://ommiquiz.de | grep -i etag
 ### Backend
 - `DATABASE_URL`: PostgreSQL connection string
 - `SUPABASE_URL`: Supabase project URL
-- `SUPABASE_JWT_SECRET`: JWT verification secret
+- `SUPABASE_PUB_KEY`: JWT verification public key
 - `SUPABASE_SERVICE_KEY`: Service role key for admin operations
 - S3 configuration (if using S3 for flashcards)
 

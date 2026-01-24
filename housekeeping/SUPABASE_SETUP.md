@@ -52,7 +52,7 @@ This guide walks you through setting up Supabase authentication and PostgreSQL d
 SUPABASE_URL=https://xxxxxxxxxxxxx.supabase.co
 SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-SUPABASE_JWT_SECRET=your-jwt-secret-here
+SUPABASE_PUB_KEY=your-jwt-secret-here
 
 # Database URL (from Connection Pooling)
 DATABASE_URL=postgresql://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres
@@ -304,7 +304,7 @@ Note: Environment variables must start with `OMMIQUIZ_APP_` for Create React App
 ```env
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-SUPABASE_JWT_SECRET=your-jwt-secret
+SUPABASE_PUB_KEY=your-jwt-secret
 DATABASE_URL=postgresql://...connection-pooling-url...
 ```
 

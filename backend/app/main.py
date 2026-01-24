@@ -155,7 +155,7 @@ async def auth_signup(payload: SignupRequest):
     import httpx
 
     supabase_url = os.getenv("SUPABASE_URL")
-    supabase_key = os.getenv("SUPABASE_JWT_SECRET")  # Use JWT secret for backend auth
+    supabase_key = os.getenv("SUPABASE_PUB_KEY")  # Use public key for backend auth
     site_url = os.getenv("SITE_URL", "https://ommiquiz.de")
 
     if not supabase_url or not supabase_key:
@@ -212,7 +212,7 @@ async def auth_login(payload: LoginRequest):
     import httpx
 
     supabase_url = os.getenv("SUPABASE_URL")
-    supabase_key = os.getenv("SUPABASE_JWT_SECRET")  # Use JWT secret for backend auth
+    supabase_key = os.getenv("SUPABASE_PUB_KEY")  # Use public key for backend auth
 
     if not supabase_url or not supabase_key:
         raise HTTPException(status_code=500, detail="Supabase configuration missing")

@@ -191,8 +191,9 @@ function App() {
     setFavorites(newFavorites);
 
     try {
-      const session = await getSession();
-      if (!session) throw new Error('No active session');
+      // Use the stored token from localStorage instead of calling getSession
+      const authToken = localStorage.getItem('authToken');
+      if (!authToken) throw new Error('No authentication token available');
 
       const url = isFavorite
         ? `${API_URL}/users/me/favorites/${flashcardId}`
@@ -201,7 +202,7 @@ function App() {
       const options = {
         method: isFavorite ? 'DELETE' : 'POST',
         headers: {
-          'Authorization': `Bearer ${session.access_token}`,
+          'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json'
         }
       };
@@ -211,7 +212,11 @@ function App() {
       }
 
       const response = await fetch(url, options);
-      if (!response.ok) throw new Error('Failed to toggle favorite');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Favorites API error:', response.status, errorText);
+        throw new Error(`Server responded with ${response.status}: ${errorText}`);
+      }
     } catch (error) {
       console.error('Error toggling favorite:', error);
       setFavorites(favorites); // Rollback on error
