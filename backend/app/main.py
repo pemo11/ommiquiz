@@ -68,8 +68,17 @@ class SignupRequest(BaseModel):
 
 
 # Support both Docker and local development paths
-if Path("/app/flashcards").exists():
+# For S3 storage, the FLASHCARDS_DIR is not used but required for compatibility
+storage_backend = os.getenv("FLASHCARDS_STORAGE", "local").lower()
+
+if storage_backend == "s3":
+    # For S3 storage, use a placeholder directory (not actually used)
+    FLASHCARDS_DIR = Path("/tmp/flashcards_placeholder")
+elif Path("/app/flashcards").exists():
     FLASHCARDS_DIR = Path("/app/flashcards")
+elif Path(__file__).parent.parent / "flashcards_core":
+    # Use flashcards_core directly (where your local flashcards are stored)
+    FLASHCARDS_DIR = Path(__file__).parent.parent / "flashcards_core"
 else:
     FLASHCARDS_DIR = Path(__file__).parent.parent / "flashcards"
 

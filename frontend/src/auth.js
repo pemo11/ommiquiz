@@ -1,46 +1,39 @@
 /**
- * Authentication module using backend API only
- * No Supabase client or credentials needed in frontend
+ * Authentication module using modern Supabase client-side authentication
  */
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+import { createClient } from '@supabase/supabase-js'
+
+// Get Supabase configuration from environment
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || 'https://zihxfkwzlxgpppzddfyb.supabase.co'
+const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || 'sb_publishable_06GTeAb6I9QWgNTOCH0LKw_H_4lzXnP'
+
+// Create Supabase client
+const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 /**
  * Sign in with email and password
  */
 export async function signIn(email, password) {
   try {
-    const response = await fetch(`${API_URL}/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password }),
-    });
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
 
-    if (!response.ok) {
-      const error = await response.json();
-      return { user: null, session: null, error };
-    }
-
-    const data = await response.json();
-
-    // Store token in localStorage
-    if (data.access_token) {
-      localStorage.setItem('authToken', data.access_token);
+    if (error) {
+      console.error('Sign in error:', error)
+      return { user: null, session: null, error }
     }
 
     return {
       user: data.user,
-      session: {
-        access_token: data.access_token,
-        user: data.user,
-      },
+      session: data.session,
       error: null,
-    };
+    }
   } catch (error) {
-    console.error('Sign in error:', error);
-    return { user: null, session: null, error };
+    console.error('Sign in error:', error)
+    return { user: null, session: null, error }
   }
 }
 
@@ -49,37 +42,30 @@ export async function signIn(email, password) {
  */
 export async function signUp(email, password, username) {
   try {
-    const response = await fetch(`${API_URL}/auth/signup`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ email, password, username }),
-    });
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          username: username,
+          display_name: username
+        }
+      }
+    })
 
-    if (!response.ok) {
-      const error = await response.json();
-      return { user: null, session: null, error };
-    }
-
-    const data = await response.json();
-
-    // Store token in localStorage
-    if (data.access_token) {
-      localStorage.setItem('authToken', data.access_token);
+    if (error) {
+      console.error('Sign up error:', error)
+      return { user: null, session: null, error }
     }
 
     return {
       user: data.user,
-      session: {
-        access_token: data.access_token,
-        user: data.user,
-      },
+      session: data.session,
       error: null,
-    };
+    }
   } catch (error) {
-    console.error('Sign up error:', error);
-    return { user: null, session: null, error };
+    console.error('Sign up error:', error)
+    return { user: null, session: null, error }
   }
 }
 
@@ -88,26 +74,17 @@ export async function signUp(email, password, username) {
  */
 export async function signOut() {
   try {
-    const token = localStorage.getItem('authToken');
-
-    if (token) {
-      await fetch(`${API_URL}/auth/logout`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
+    const { error } = await supabase.auth.signOut()
+    
+    if (error) {
+      console.error('Sign out error:', error)
+      return { error }
     }
 
-    // Clear local storage
-    localStorage.removeItem('authToken');
-
-    return { error: null };
+    return { error: null }
   } catch (error) {
-    console.error('Sign out error:', error);
-    // Still clear token even if API call fails
-    localStorage.removeItem('authToken');
-    return { error };
+    console.error('Sign out error:', error)
+    return { error }
   }
 }
 
@@ -116,57 +93,33 @@ export async function signOut() {
  */
 export async function getSession() {
   try {
-    const token = localStorage.getItem('authToken');
-
-    if (!token) {
-      return { session: null, user: null };
+    const { data, error } = await supabase.auth.getSession()
+    
+    if (error) {
+      console.error('Get session error:', error)
+      return { session: null, user: null }
     }
-
-    const response = await fetch(`${API_URL}/auth/session`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      // Token is invalid, clear it
-      localStorage.removeItem('authToken');
-      return { session: null, user: null };
-    }
-
-    const data = await response.json();
 
     return {
-      session: {
-        access_token: token,
-        user: data.user,
-      },
-      user: data.user,
-    };
+      session: data.session,
+      user: data.session?.user || null,
+    }
   } catch (error) {
-    console.error('Get session error:', error);
-    return { session: null, user: null };
+    console.error('Get session error:', error)
+    return { session: null, user: null }
   }
 }
 
 /**
- * Listen to auth state changes (simplified implementation)
- * In the original Supabase client, this would be a real-time listener
- * Here we just check session on mount
+ * Listen to auth state changes
  */
 export function onAuthStateChange(callback) {
-  // Check session immediately
-  getSession().then(({ session, user }) => {
-    callback('INITIAL_SESSION', session);
-  });
+  const { data } = supabase.auth.onAuthStateChange((event, session) => {
+    callback(event, session)
+  })
 
-  // Return unsubscribe function (no-op in this implementation)
-  return {
-    data: {
-      subscription: {
-        unsubscribe: () => {},
-      },
-    },
-  };
+  return data
 }
+
+// Export the supabase client for other uses
+export { supabase }
