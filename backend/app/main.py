@@ -1917,33 +1917,79 @@ async def add_favorite(
     """Add flashcard set to favorites."""
     from .database import get_db_pool
 
-    logger.info("Adding favorite", user_id=user.user_id, flashcard_id=request.flashcard_id)
+    logger.info("=== ADD FAVORITE DEBUG START ===")
+    logger.info("Request received", 
+                user_id=user.user_id, 
+                user_email=user.email,
+                flashcard_id=request.flashcard_id,
+                request_data=request.dict(),
+                timestamp=datetime.utcnow().isoformat())
 
     try:
+        logger.info("Attempting to get database connection pool")
         pool = await get_db_pool()
+        logger.info("Database pool acquired successfully")
+        
         async with pool.acquire() as conn:
+            logger.info("Database connection acquired from pool")
+            
+            # Check if favorite already exists
+            existing = await conn.fetchrow(
+                "SELECT id FROM flashcard_favorites WHERE user_id = $1 AND flashcard_id = $2",
+                user.user_id, request.flashcard_id
+            )
+            logger.info("Checked for existing favorite", 
+                       exists=bool(existing),
+                       existing_id=existing['id'] if existing else None)
+            
+            if existing:
+                logger.info("Favorite already exists, returning success anyway")
+                return {
+                    "success": True,
+                    "message": "Already favorited",
+                    "flashcard_id": request.flashcard_id
+                }
+            
+            # Insert new favorite
+            logger.info("Inserting new favorite record")
             result = await conn.fetchrow(
                 """INSERT INTO flashcard_favorites (user_id, flashcard_id)
                    VALUES ($1, $2)
-                   ON CONFLICT (user_id, flashcard_id) DO NOTHING
                    RETURNING id, flashcard_id, created_at""",
                 user.user_id, request.flashcard_id
             )
+            
+            logger.info("Favorite inserted successfully", 
+                       favorite_id=result['id'],
+                       flashcard_id=result['flashcard_id'],
+                       created_at=result['created_at'].isoformat())
 
-            if result:
-                logger.info("Favorite added", user_id=user.user_id, flashcard_id=request.flashcard_id)
-                message = "Favorite added"
-            else:
-                logger.info("Favorite already exists", user_id=user.user_id, flashcard_id=request.flashcard_id)
-                message = "Already favorited"
-
+            logger.info("=== ADD FAVORITE DEBUG END (SUCCESS) ===")
             return {
                 "success": True,
-                "message": message,
-                "flashcard_id": request.flashcard_id
+                "message": "Favorite added",
+                "flashcard_id": request.flashcard_id,
+                "favorite_id": result['id']
             }
+            
     except Exception as e:
-        logger.error("Error adding favorite", user_id=user.user_id, flashcard_id=request.flashcard_id, error=str(e))
+        logger.error("=== ADD FAVORITE DEBUG END (ERROR) ===")
+        logger.error("Error adding favorite", 
+                    user_id=user.user_id, 
+                    flashcard_id=request.flashcard_id, 
+                    error_type=type(e).__name__,
+                    error_message=str(e),
+                    error_details=repr(e))
+        
+        # Log additional database connection info if available
+        try:
+            pool = await get_db_pool()
+            logger.error("Database pool status", 
+                        pool_size=pool.get_size() if hasattr(pool, 'get_size') else 'unknown',
+                        pool_available=pool.get_available() if hasattr(pool, 'get_available') else 'unknown')
+        except Exception as pool_error:
+            logger.error("Could not get database pool status", error=str(pool_error))
+        
         raise HTTPException(
             status_code=500,
             detail=f"Failed to add favorite: {str(e)}"

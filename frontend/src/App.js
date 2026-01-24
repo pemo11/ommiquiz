@@ -22,15 +22,15 @@ console.log('🔥 === END VERSION DEBUG ===');
 // Use the environment variable first, with proper fallback for development
 const getApiUrl = () => {
   // In production, always use the environment variable
-  if (process.env.NODE_ENV === 'production' && process.env.OMMIQUIZ_APP_API_URL) {
-    return process.env.OMMIQUIZ_APP_API_URL;
+  if (process.env.NODE_ENV === 'production' && process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
   }
 
   // In development, use environment variable if set, otherwise construct local URL
-  if (process.env.OMMIQUIZ_APP_API_URL) {
-    return process.env.OMMIQUIZ_APP_API_URL;
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
   }
-  
+
   // Development fallback - use current hostname for local development
   const hostname = window.location.hostname;
   const baseUrl = hostname === 'localhost' ? 'localhost' : hostname;
@@ -44,7 +44,7 @@ const API_URL = getApiUrl();
 
 // Add debug logging to help identify connection issues
 console.log('Environment:', process.env.NODE_ENV);
-console.log('OMMIQUIZ_APP_API_URL:', process.env.OMMIQUIZ_APP_API_URL);
+console.log('REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
 console.log('Constructed API_URL:', API_URL);
 
 function App() {
@@ -181,24 +181,38 @@ function App() {
 
   // Toggle favorite for a flashcard
   const toggleFavorite = async (flashcardId) => {
+    console.log('=== TOGGLE FAVORITE DEBUG START ===');
+    console.log('Input parameters:', { flashcardId, isLoggedIn, user: user ? { id: user.id, email: user.email } : null });
+    
     if (!isLoggedIn || !user) {
-      console.log('Toggle favorite failed: User not logged in');
+      console.log('❌ Toggle favorite failed: User not logged in');
+      console.log('Authentication state:', { isLoggedIn, user, hasToken: !!localStorage.getItem('authToken') });
       return;
     }
 
     const isFavorite = favorites.has(flashcardId);
-    console.log(`Toggling favorite for ${flashcardId}, currently ${isFavorite ? 'favorited' : 'not favorited'}`);
+    console.log(`🎯 Toggling favorite for "${flashcardId}", currently ${isFavorite ? 'favorited' : 'not favorited'}`);
+    console.log('Current favorites set:', Array.from(favorites));
 
     // Optimistic update
     const newFavorites = new Set(favorites);
     isFavorite ? newFavorites.delete(flashcardId) : newFavorites.add(flashcardId);
     setFavorites(newFavorites);
+    console.log('✅ Optimistic update applied. New favorites:', Array.from(newFavorites));
 
     try {
       // Use the stored token from localStorage instead of calling getSession
       const authToken = localStorage.getItem('authToken');
+      console.log('🔑 Authentication token check:', {
+        hasToken: !!authToken,
+        tokenLength: authToken ? authToken.length : 0,
+        tokenStart: authToken ? authToken.substring(0, 20) + '...' : 'N/A',
+        tokenType: authToken ? (authToken.startsWith('eyJ') ? 'JWT' : 'Other') : 'N/A'
+      });
+
       if (!authToken) {
-        console.error('No authentication token available');
+        console.error('❌ No authentication token available in localStorage');
+        console.log('localStorage contents:', Object.keys(localStorage));
         throw new Error('No authentication token available');
       }
 
@@ -218,39 +232,105 @@ function App() {
         options.body = JSON.stringify({ flashcard_id: flashcardId });
       }
 
-      console.log(`Making ${options.method} request to ${url}`, {
-        headers: options.headers,
-        body: options.body
+      console.log(`📡 Making ${options.method} request:`, {
+        url,
+        method: options.method,
+        headers: {
+          ...options.headers,
+          'Authorization': `Bearer ${authToken.substring(0, 20)}...` // Mask token for logging
+        },
+        bodyData: options.body ? JSON.parse(options.body) : null,
+        timestamp: new Date().toISOString()
       });
 
-      const response = await fetch(url, options);
+      // Add timeout to the fetch request
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+      const response = await fetch(url, {
+        ...options,
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
       
-      console.log('Response received:', {
+      console.log('📥 Response received:', {
         status: response.status,
         statusText: response.statusText,
         ok: response.ok,
-        headers: Object.fromEntries(response.headers.entries())
+        type: response.type,
+        url: response.url,
+        headers: Object.fromEntries(response.headers.entries()),
+        timestamp: new Date().toISOString()
       });
 
+      // Read response body
+      const responseText = await response.text();
+      console.log('📄 Response body (raw text):', responseText);
+
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Favorites API error:', {
+        console.error('❌ API request failed:', {
           status: response.status,
           statusText: response.statusText,
-          responseText: errorText
+          responseBody: responseText,
+          requestUrl: url,
+          requestMethod: options.method,
+          flashcardId
         });
-        throw new Error(`Server responded with ${response.status}: ${errorText}`);
+
+        // Try to parse error as JSON
+        let errorData;
+        try {
+          errorData = JSON.parse(responseText);
+          console.log('📋 Parsed error data:', errorData);
+        } catch (e) {
+          console.log('⚠️ Could not parse error response as JSON:', e.message);
+          errorData = { message: responseText };
+        }
+
+        throw new Error(`API Error ${response.status}: ${errorData.detail || errorData.message || responseText}`);
       }
 
-      const responseData = await response.json();
-      console.log('Success response:', responseData);
+      // Parse successful response
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+        console.log('✅ Parsed success response:', responseData);
+      } catch (e) {
+        console.log('⚠️ Could not parse success response as JSON:', e.message);
+        responseData = { raw: responseText };
+      }
 
-      // Show success message
-      console.log(`Successfully ${isFavorite ? 'removed' : 'added'} favorite: ${flashcardId}`);
+      // Verify the operation was successful
+      if (responseData.success !== undefined && !responseData.success) {
+        console.error('❌ API returned success=false:', responseData);
+        throw new Error(responseData.message || 'API returned success=false');
+      }
+
+      console.log(`🎉 Successfully ${isFavorite ? 'removed' : 'added'} favorite: ${flashcardId}`);
+      console.log('=== TOGGLE FAVORITE DEBUG END (SUCCESS) ===');
       
     } catch (error) {
-      console.error('Error toggling favorite:', error);
+      console.log('=== TOGGLE FAVORITE DEBUG END (ERROR) ===');
+      console.error('💥 Error in toggleFavorite:', {
+        error: error,
+        errorMessage: error.message,
+        errorStack: error.stack,
+        errorName: error.name,
+        flashcardId,
+        isFavorite,
+        timestamp: new Date().toISOString()
+      });
+
+      // Check for specific error types
+      if (error.name === 'AbortError') {
+        console.error('⏱️ Request timed out after 30 seconds');
+      } else if (error.message.includes('Failed to fetch')) {
+        console.error('🌐 Network error - could not reach API');
+      }
+
       setFavorites(favorites); // Rollback on error
+      console.log('🔄 Rolled back to previous favorites state:', Array.from(favorites));
       
       // More detailed error message
       let errorMessage = `Failed to ${isFavorite ? 'remove' : 'add'} favorite.`;
@@ -260,6 +340,10 @@ function App() {
         errorMessage += ' You do not have permission to perform this action.';
       } else if (error.message.includes('500')) {
         errorMessage += ' Server error. Please try again later.';
+      } else if (error.name === 'AbortError') {
+        errorMessage += ' Request timed out. Please check your connection.';
+      } else if (error.message.includes('Failed to fetch')) {
+        errorMessage += ' Network error. Please check your connection and try again.';
       } else {
         errorMessage += ` Error: ${error.message}`;
       }
