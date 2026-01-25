@@ -99,8 +99,11 @@ function MyFlashcards({ apiUrl, accessToken, onBack }) {
       }
     } catch (err) {
       console.error('Error fetching favorite details:', err);
-      // Create basic entries for favorites even if details fail
-      favoritesList.forEach(favorite => {
+    }
+
+    // Ensure all favorites have at least basic entries, even if details fail
+    favoritesList.forEach(favorite => {
+      if (!detailsMap.has(favorite.flashcard_id)) {
         detailsMap.set(favorite.flashcard_id, {
           id: favorite.flashcard_id,
           title: favorite.flashcard_id,
@@ -108,8 +111,8 @@ function MyFlashcards({ apiUrl, accessToken, onBack }) {
           favorited_at: favorite.created_at,
           isFavorite: true
         });
-      });
-    }
+      }
+    });
 
     setFavoriteDetails(detailsMap);
   };
@@ -451,8 +454,14 @@ function MyFlashcards({ apiUrl, accessToken, onBack }) {
               ) : (
                 <div className="flashcards-grid">
                   {favorites.map(favorite => {
-                    const details = favoriteDetails.get(favorite.flashcard_id);
-                    return details ? renderFavoriteFlashcard(favorite.flashcard_id, details) : null;
+                    const details = favoriteDetails.get(favorite.flashcard_id) || {
+                      id: favorite.flashcard_id,
+                      title: favorite.flashcard_id,
+                      description: 'Loading details...',
+                      favorited_at: favorite.created_at,
+                      isFavorite: true
+                    };
+                    return renderFavoriteFlashcard(favorite.flashcard_id, details);
                   })}
                 </div>
               )}
