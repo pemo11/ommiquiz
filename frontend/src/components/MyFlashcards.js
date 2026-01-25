@@ -172,8 +172,8 @@ function MyFlashcards({ apiUrl, accessToken, onBack }) {
   // Handle edit flashcard
   const handleEdit = async (flashcard) => {
     try {
-      // Fetch full flashcard content
-      const response = await fetch(`${apiUrl}/flashcards/${flashcard.flashcard_id}`, {
+      // Fetch full flashcard content using the user-specific endpoint
+      const response = await fetch(`${apiUrl}/users/me/flashcards/${flashcard.flashcard_id}`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json'
