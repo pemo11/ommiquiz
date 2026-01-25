@@ -91,7 +91,7 @@ logger.info("Application starting", flashcards_dir=str(FLASHCARDS_DIR))
 # Compile regex pattern once for performance
 VALID_ID_PATTERN = re.compile(r'^[a-zA-Z0-9_-]+$')
 
-def get_flashcard_document(flashcard_id: str) -> Optional[FlashcardDocument]:
+def get_flashcard_document(flashcard_id: str) -> Optional<FlashcardDocument]:
     """Retrieve a flashcard document from the configured storage backend."""
 
     if not VALID_ID_PATTERN.match(flashcard_id):
@@ -1475,7 +1475,7 @@ async def get_user_activity_stats(
 
     pool = await get_db_pool()
 
-    try {
+    try:
         async with pool.acquire() as conn:
             start_date = datetime.now() - timedelta(days=days - 1)
 
