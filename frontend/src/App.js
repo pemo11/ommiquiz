@@ -194,6 +194,9 @@ function App() {
     console.log(`🎯 Toggling favorite for "${flashcardId}", currently ${isFavorite ? 'favorited' : 'not favorited'}`);
     console.log('Current favorites set:', Array.from(favorites));
 
+    // Store the previous state for potential rollback
+    const previousFavorites = new Set(favorites);
+
     // Optimistic update
     const newFavorites = new Set(favorites);
     isFavorite ? newFavorites.delete(flashcardId) : newFavorites.add(flashcardId);
@@ -308,6 +311,7 @@ function App() {
       }
 
       console.log(`🎉 Successfully ${isFavorite ? 'removed' : 'added'} favorite: ${flashcardId}`);
+      console.log('Final favorites state:', Array.from(newFavorites));
       console.log('=== TOGGLE FAVORITE DEBUG END (SUCCESS) ===');
       
     } catch (error) {
@@ -329,8 +333,9 @@ function App() {
         console.error('🌐 Network error - could not reach API');
       }
 
-      setFavorites(favorites); // Rollback on error
-      console.log('🔄 Rolled back to previous favorites state:', Array.from(favorites));
+      // Fixed rollback: use the previousFavorites we stored earlier
+      setFavorites(previousFavorites);
+      console.log('🔄 Rolled back to previous favorites state:', Array.from(previousFavorites));
       
       // More detailed error message
       let errorMessage = `Failed to ${isFavorite ? 'remove' : 'add'} favorite.`;

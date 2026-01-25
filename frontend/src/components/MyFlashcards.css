@@ -234,6 +234,98 @@
   background-color: #5a6268;
 }
 
+/* Tab Navigation */
+.tabs-container {
+  display: flex;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.tab-button {
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 500;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+  color: #6c757d;
+}
+
+.tab-button:hover {
+  color: #495057;
+  background-color: #f8f9fa;
+}
+
+.tab-button.active {
+  color: #007bff;
+  border-bottom-color: #007bff;
+  background-color: #f8f9fa;
+}
+
+/* Flashcard badges container */
+.flashcard-badges {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-end;
+}
+
+.card-type-badge {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: bold;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
+.created-badge {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.favorite-badge {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+/* Favorite card styling */
+.favorite-card {
+  border-left: 4px solid #ffc107;
+}
+
+.favorite-card:hover {
+  border-left-color: #ffb300;
+}
+
+/* Remove favorite button */
+.remove-favorite-button {
+  background-color: #ffc107;
+  color: #212529;
+  font-weight: 500;
+}
+
+.remove-favorite-button:hover {
+  background-color: #ffb300;
+  color: #000;
+}
+
+/* Author info styling */
+.author-info {
+  background-color: #f8f9fa;
+  color: #6c757d;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-style: italic;
+}
+
+/* Section styling */
+.flashcards-section {
+  margin-top: 20px;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .flashcards-grid {
