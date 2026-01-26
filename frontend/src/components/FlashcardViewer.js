@@ -6,9 +6,9 @@ import { useTranslation } from '../context/TranslationContext';
 // API URL configuration
 const getApiUrl = () => {
   // Check for environment variable first (used in production and Docker)
-  if (process.env.OMMI_QUIZ_APP_API_URL) {
-    console.log('FlashcardViewer - Using environment API URL:', process.env.OMMI_QUIZ_APP_API_URL);
-    return process.env.OMMI_QUIZ_APP_API_URL;
+  if (process.env.REACT_APP_OMMIQUIZ_URL) {
+    console.log('FlashcardViewer - Using environment API URL:', process.env.REACT_APP_OMMIQUIZ_URL);
+    return process.env.REACT_APP_OMMIQUIZ_URL;
   }
 
   // Development fallback - check if running locally
