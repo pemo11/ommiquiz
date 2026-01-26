@@ -154,7 +154,7 @@ function AdminPanel({ onBack }) {
     try {
       setRatingStatsLoading(true);
       setRatingStatsError(null);
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('authToken');
       const response = await fetch(`${API_URL}/admin/flashcard-ratings-stats`, {
         headers: {
           'Authorization': `Bearer ${token}`
