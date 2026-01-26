@@ -133,7 +133,7 @@ function FlashcardSelector({
           >
             <span className="star-icon">{showFavoritesOnly ? '★' : '☆'}</span>
             {showFavoritesOnly ? 'Show All' : 'Show Favorites Only'}
-            <span className="favorites-count">({favorites.size})</span>
+            <span className="favorites-count">({showFavoritesOnly ? flashcards.length : favorites.size})</span>
           </button>
         </div>
       )}
