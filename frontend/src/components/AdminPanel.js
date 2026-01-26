@@ -158,19 +158,51 @@ function AdminPanel({ onBack }) {
       setRatingStatsLoading(true);
       setRatingStatsError(null);
       const token = localStorage.getItem('authToken');
+      
+      console.log('Debug - Loading rating stats with token:', token ? `${token.substring(0, 20)}...` : 'null');
+      
+      if (!token) {
+        throw new Error('No authentication token found. Please try logging out and logging back in.');
+      }
+      
       const response = await fetch(`${API_URL}/admin/flashcard-ratings-stats`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
+      
+      console.log('Debug - Rating stats response:', {
+        status: response.status,
+        statusText: response.statusText,
+        contentType: response.headers.get('content-type')
+      });
+      
       if (!response.ok) {
-        const errorText = await response.text();
+        const contentType = response.headers.get('content-type');
+        let errorText;
+        
+        if (contentType && contentType.includes('application/json')) {
+          const errorData = await response.json();
+          errorText = errorData.detail || errorData.message || 'Unknown error';
+        } else {
+          errorText = await response.text();
+          console.warn('Non-JSON response received:', errorText.substring(0, 200));
+        }
+        
+        if (response.status === 401) {
+          // Clear invalid token and suggest re-login
+          localStorage.removeItem('authToken');
+          throw new Error('Authentication expired. Please log out and log back in.');
+        }
+        
         throw new Error(`Failed to load rating stats: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
       const data = await response.json();
       setRatingStats(data);
     } catch (err) {
+      console.error('Error loading rating stats:', err);
       setRatingStatsError(err.message);
     } finally {
       setRatingStatsLoading(false);
@@ -1936,7 +1968,7 @@ function AdminPanel({ onBack }) {
 
               {/* Flashcard Usage Statistics Section */}
               <div className="usage-stats-section">
-                <h4>Most Used Flashcard Sets</h4>
+                <h4>Flashcard Sets Usage</h4>
                 {usageStatsError && (
                   <div className="error-message">
                     <p>Error loading usage stats: {usageStatsError}</p>
