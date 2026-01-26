@@ -52,10 +52,8 @@ services:
     container_name: ommiquiz-frontend
     ports:
       - "3000:80"
-    environment:
-      - REACT_APP_API_URL=https://nanoquiz-backend-ypez6.ondigitalocean.app/api
-      - REACT_APP_SUPABASE_URL=https://zihxfkwzlxgpppzddfyb.supabase.co
-      - REACT_APP_SUPABASE_ANON_KEY=sb_publishable_06GTeAb6I9QWgNTOCH0LKw_H_4lzXnP
+    env_file:
+      - ./frontend/.env  # Load environment variables from frontend/.env
     depends_on:
       - backend
     networks:
