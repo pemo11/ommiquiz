@@ -1526,7 +1526,7 @@ function FlashcardViewer({ flashcard, onBack }) {
     return (
       <div className="viewer-container">
         <div className="start-screen">
-          <button onClick={onBack} className="back-button">← {t('common.back')}</button>
+          <button onClick={onBack} className="back-button">{t('common.back')}</button>
 
           <div className="start-screen-header">
             <h2>{flashcard.title}</h2>
