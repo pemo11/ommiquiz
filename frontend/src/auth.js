@@ -9,7 +9,7 @@ const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || 'https://zihxfkwzlxgpp
 const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || 'sb_publishable_06GTeAb6I9QWgNTOCH0LKw_H_4lzXnP'
 
 // Get API URL for login logging
-const API_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080/api'
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api'
 
 // Create Supabase client
 const supabase = createClient(supabaseUrl, supabaseAnonKey)
