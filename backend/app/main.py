@@ -114,6 +114,9 @@ def find_flashcard_filename_by_id(flashcard_id: str) -> Optional[str]:
 
     # Get all documents from storage
     all_documents = storage.list_flashcards()
+    logger.info("Scanning documents for flashcard ID",
+               flashcard_id=flashcard_id,
+               total_documents=len(all_documents))
 
     for document in all_documents:
         # Skip the catalog file
@@ -134,7 +137,9 @@ def find_flashcard_filename_by_id(flashcard_id: str) -> Optional[str]:
                           error=str(e))
             continue
 
-    logger.info("No flashcard found with ID", flashcard_id=flashcard_id)
+    logger.warning("No flashcard found with ID after scanning all documents",
+                  flashcard_id=flashcard_id,
+                  documents_scanned=len(all_documents))
     return None
 
 
@@ -2775,6 +2780,13 @@ async def update_flashcard(
                    filename=filename,
                    cards_count=len(data.get("flashcards", [])))
 
+        # Regenerate the catalog to keep it in sync with the storage backend
+        try:
+            generate_flashcard_catalog()
+            logger.info("Catalog regenerated after flashcard update")
+        except Exception as e:
+            logger.warning("Failed to regenerate catalog after update", error=str(e))
+
         return {
             "success": True,
             "message": f"Flashcard '{flashcard_id}' {action} successfully",
@@ -2911,10 +2923,17 @@ async def upload_flashcard(
 
         logger.info("Flashcard upload completed",
                    flashcard_id=data.get("id"),
-                   filename=filename, 
+                   filename=filename,
                    action=action,
                    cards_count=len(data.get("flashcards", [])))
-        
+
+        # Regenerate the catalog to keep it in sync with the storage backend
+        try:
+            generate_flashcard_catalog()
+            logger.info("Catalog regenerated after flashcard upload")
+        except Exception as e:
+            logger.warning("Failed to regenerate catalog after upload", error=str(e))
+
         return {
             "success": True,
             "message": f"Flashcard '{data.get('id', filename)}' {action} successfully",
