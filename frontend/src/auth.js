@@ -6,13 +6,13 @@ import { createClient } from '@supabase/supabase-js'
 
 // Get Supabase configuration from environment
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || 'https://zihxfkwzlxgpppzddfyb.supabase.co'
-const supabaseAnonKey = process.env.REACT_APP_SUPABASE_ANON_KEY || 'sb_publishable_06GTeAb6I9QWgNTOCH0LKw_H_4lzXnP'
+const supabaseKey = process.env.REACT_APP_SUPABASE_KEY || 'df370f34-2c1d-471e-a126-71d6720ebcfd'
 
 // Get API URL for login logging
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api'
 
 // Create Supabase client
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
+const supabase = createClient(supabaseUrl, supabaseKey)
 
 /**
  * Log a login attempt to the backend
