@@ -5,11 +5,22 @@
 import { createClient } from '@supabase/supabase-js'
 
 // Get Supabase configuration from environment
-const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || 'https://zihxfkwzlxgpppzddfyb.supabase.co'
-const supabaseKey = process.env.REACT_APP_SUPABASE_KEY || 'df370f34-2c1d-471e-a126-71d6720ebcfd'
+const supabaseUrl = process.env.REACT_APP_SUPABASE_URL
+const supabaseKey = process.env.REACT_APP_SUPABASE_KEY
 
 // Get API URL for login logging
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api'
+const API_URL = process.env.REACT_APP_API_URL
+
+// Validate required environment variables
+if (!supabaseUrl) {
+  throw new Error('Missing required environment variable: REACT_APP_SUPABASE_URL. Please check your .env file.')
+}
+if (!supabaseKey) {
+  throw new Error('Missing required environment variable: REACT_APP_SUPABASE_KEY. Please check your .env file.')
+}
+if (!API_URL) {
+  throw new Error('Missing required environment variable: REACT_APP_API_URL. Please check your .env file.')
+}
 
 // Create Supabase client
 const supabase = createClient(supabaseUrl, supabaseKey)

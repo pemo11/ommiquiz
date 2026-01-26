@@ -78,6 +78,51 @@ cards:
 
 - Docker
 - Docker Compose
+- Supabase account (for authentication)
+
+### Environment Configuration
+
+⚠️ **SECURITY WARNING**: Never commit `.env` files to version control! The `.env` file contains sensitive credentials.
+
+#### 1. Set up Supabase
+
+1. Create a Supabase project at [supabase.com](https://supabase.com)
+2. Go to **Project Settings > API** in the Supabase Dashboard
+3. Note down:
+   - **Project URL** (e.g., `https://xxxxxxxxxxxxx.supabase.co`)
+   - **anon public key** (formerly called "anon key") - This is the public/anon key under "Project API keys"
+
+#### 2. Configure Frontend Environment
+
+1. Copy the example environment file:
+   ```bash
+   cd frontend
+   cp .env.example .env
+   ```
+
+2. Edit `frontend/.env` and set:
+   ```bash
+   REACT_APP_SUPABASE_URL=https://your-project.supabase.co
+   REACT_APP_SUPABASE_KEY=your-supabase-anon-key
+   REACT_APP_API_URL=http://localhost:8080/api
+   ```
+
+#### 3. Configure Backend Environment
+
+1. Copy the example environment file:
+   ```bash
+   cd backend
+   cp .env.example .env
+   ```
+
+2. Edit `backend/.env` and set:
+   ```bash
+   SUPABASE_URL=https://your-project.supabase.co
+   SUPABASE_PUB_KEY=your-supabase-anon-key
+   DATABASE_URL=postgresql://postgres:your-password@db.your-project-id.supabase.co:5432/postgres
+   ```
+
+   **Important**: The `SUPABASE_PUB_KEY` in the backend must match `REACT_APP_SUPABASE_KEY` in the frontend. This is your Supabase anon/public key.
 
 ### Running with Docker Compose
 
@@ -87,12 +132,14 @@ cards:
    cd ommiquiz
    ```
 
-2. Start the application:
+2. Configure environment variables (see Environment Configuration section above)
+
+3. Start the application:
    ```bash
    docker-compose up --build
    ```
 
-3. Access the application:
+4. Access the application:
    - Frontend: http://localhost:3000
    - Backend API: http://localhost:8000
    - API Documentation: http://localhost:8000/docs
@@ -147,19 +194,7 @@ The frontend will run on http://localhost:3000 and proxy API requests to the bac
 - `GET /flashcards/catalog/data` - Read the generated catalog file and return the same information as JSON
 - `GET /flashcards/{flashcard_id}` - Get a specific flashcard set by ID
 - `GET /health` - Health check endpoint
-- `POST /api/auth/login` - Authenticate a user with Auth0 using email and password credentials
-
-### Auth0 Configuration
-
-To enable email/password login through Auth0, set the following environment variables for the backend:
-
-- `AUTH0_DOMAIN` – Your Auth0 domain (e.g., `example.us.auth0.com`).
-- `AUTH0_AUDIENCE` – API audience configured in Auth0.
-- `AUTH0_CLIENT_ID` – Auth0 Application Client ID for Resource Owner Password flows.
-- `AUTH0_CLIENT_SECRET` – Auth0 Application Client Secret.
-- `AUTH0_ALGORITHMS` – (Optional) Comma-separated algorithms for token verification, defaults to `RS256`.
-- `AUTH0_ISSUER` – (Optional) Custom issuer URL if different from the domain-based default.
-- `AUTH0_REALM` – (Optional) Auth0 database connection/realm name required for some tenants.
+- `POST /api/auth/login` - Authenticate a user with Supabase using email and password credentials
 
 ## Adding New Flashcards
 
