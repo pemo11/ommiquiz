@@ -4,15 +4,15 @@ import './AdminPanel.css';
 // Use the environment variable first, with proper fallback for development
 const getApiUrl = () => {
   // In production, always use the environment variable
-  if (process.env.NODE_ENV === 'production' && process.env.OMMIQUIZ_APP_API_URL) {
-    return process.env.OMMIQUIZ_APP_API_URL;
+  if (process.env.NODE_ENV === 'production' && process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
   }
 
   // In development, use environment variable if set, otherwise construct local URL
-  if (process.env.OMMIQUIZ_APP_API_URL) {
-    return process.env.OMMIQUIZ_APP_API_URL;
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
   }
-  
+
   // Development fallback - use current hostname for local development
   const hostname = window.location.hostname;
   const baseUrl = hostname === 'localhost' ? 'localhost' : hostname;
@@ -26,7 +26,7 @@ const API_URL = getApiUrl();
 
 // Add debug logging to help identify connection issues
 console.log('AdminPanel - Environment:', process.env.NODE_ENV);
-console.log('AdminPanel - OMMIQUIZ_APP_API_URL:', process.env.OMMIQUIZ_APP_API_URL);
+console.log('AdminPanel - REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
 console.log('AdminPanel - Constructed API_URL:', API_URL);
 
 function AdminPanel({ onBack }) {
@@ -72,6 +72,9 @@ function AdminPanel({ onBack }) {
   const [ratingStats, setRatingStats] = useState(null);
   const [ratingStatsLoading, setRatingStatsLoading] = useState(false);
   const [ratingStatsError, setRatingStatsError] = useState(null);
+  const [usageStats, setUsageStats] = useState(null);
+  const [usageStatsLoading, setUsageStatsLoading] = useState(false);
+  const [usageStatsError, setUsageStatsError] = useState(null);
   const [editingDisplayName, setEditingDisplayName] = useState(null); // userId of the display name being edited
   const [editedDisplayNameValue, setEditedDisplayNameValue] = useState(''); // temporary value while editing
 
@@ -174,6 +177,30 @@ function AdminPanel({ onBack }) {
     }
   };
 
+  const loadUsageStats = async () => {
+    try {
+      setUsageStatsLoading(true);
+      setUsageStatsError(null);
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`${API_URL}/admin/flashcard-usage-stats`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to load usage stats: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+
+      const data = await response.json();
+      setUsageStats(data);
+    } catch (err) {
+      setUsageStatsError(err.message);
+    } finally {
+      setUsageStatsLoading(false);
+    }
+  };
+
   const handleShowStatistics = () => {
     setShowStatistics(true);
     setSelectedFlashcard(null);
@@ -184,6 +211,9 @@ function AdminPanel({ onBack }) {
     }
     if (!ratingStats) {
       loadRatingStats();
+    }
+    if (!usageStats) {
+      loadUsageStats();
     }
   };
 
@@ -258,6 +288,40 @@ function AdminPanel({ onBack }) {
           stat.rating_3_count || 0,
           stat.rating_2_count || 0,
           stat.rating_1_count || 0
+        ];
+
+        const escapedRow = row.map(cell => {
+          const cellStr = String(cell);
+          if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+            return `"${cellStr.replace(/"/g, '""')}"`;
+          }
+          return cellStr;
+        });
+
+        csvRows.push(escapedRow.join(','));
+      });
+    }
+
+    // Add usage statistics section if available
+    if (usageStats && usageStats.statistics && usageStats.statistics.length > 0) {
+      csvRows.push('');
+      csvRows.push('');
+      csvRows.push('Flashcard Usage Statistics');
+      csvRows.push(`Total Flashcards with Usage: ${usageStats.total_flashcards_with_usage || 0}`);
+      csvRows.push(`Total Sessions: ${usageStats.statistics.reduce((sum, stat) => sum + stat.total_sessions, 0)}`);
+      csvRows.push(`Total Cards Reviewed: ${usageStats.statistics.reduce((sum, stat) => sum + stat.total_cards_reviewed, 0)}`);
+      csvRows.push('');
+      csvRows.push('Flashcard Set,Flashcard ID,Sessions,Unique Users,Cards Reviewed,Avg Duration (sec),Last Used');
+
+      usageStats.statistics.forEach(stat => {
+        const row = [
+          stat.flashcard_title || stat.flashcard_id || '',
+          stat.flashcard_id || '',
+          stat.total_sessions || 0,
+          stat.unique_users || 0,
+          stat.total_cards_reviewed || 0,
+          stat.avg_session_duration ? stat.avg_session_duration.toFixed(1) : 'N/A',
+          stat.last_used || 'N/A'
         ];
 
         const escapedRow = row.map(cell => {
@@ -1867,6 +1931,83 @@ function AdminPanel({ onBack }) {
                   </>
                 ) : (
                   <div className="no-data">No rating data available yet.</div>
+                )}
+              </div>
+
+              {/* Flashcard Usage Statistics Section */}
+              <div className="usage-stats-section">
+                <h4>Most Used Flashcard Sets</h4>
+                {usageStatsError && (
+                  <div className="error-message">
+                    <p>Error loading usage stats: {usageStatsError}</p>
+                  </div>
+                )}
+                {usageStatsLoading ? (
+                  <div className="loading">Loading usage statistics...</div>
+                ) : usageStats && usageStats.statistics && usageStats.statistics.length > 0 ? (
+                  <>
+                    <div className="statistics-summary">
+                      <div className="stat-card">
+                        <span className="stat-label">Total Flashcards Used</span>
+                        <span className="stat-value">{usageStats.total_flashcards_with_usage || 0}</span>
+                        <span className="stat-helper">Flashcard sets with quiz sessions</span>
+                      </div>
+                      <div className="stat-card">
+                        <span className="stat-label">Total Sessions</span>
+                        <span className="stat-value">
+                          {usageStats.statistics.reduce((sum, stat) => sum + stat.total_sessions, 0)}
+                        </span>
+                        <span className="stat-helper">Across all flashcard sets</span>
+                      </div>
+                      <div className="stat-card">
+                        <span className="stat-label">Cards Reviewed</span>
+                        <span className="stat-value">
+                          {usageStats.statistics.reduce((sum, stat) => sum + stat.total_cards_reviewed, 0).toLocaleString()}
+                        </span>
+                        <span className="stat-helper">Total card reviews</span>
+                      </div>
+                    </div>
+
+                    <div className="statistics-table-wrapper">
+                      <table className="statistics-table">
+                        <thead>
+                          <tr>
+                            <th>Flashcard Set</th>
+                            <th>Sessions</th>
+                            <th>Unique Users</th>
+                            <th>Cards Reviewed</th>
+                            <th>Avg Duration</th>
+                            <th>Last Used</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {usageStats.statistics.map((stat) => (
+                            <tr key={stat.flashcard_id}>
+                              <td>
+                                <div className="stat-title">{stat.flashcard_title || stat.flashcard_id}</div>
+                                <div className="stat-description">{stat.flashcard_id}</div>
+                              </td>
+                              <td>{stat.total_sessions}</td>
+                              <td>{stat.unique_users}</td>
+                              <td>{stat.total_cards_reviewed.toLocaleString()}</td>
+                              <td>
+                                {stat.avg_session_duration > 0
+                                  ? `${Math.floor(stat.avg_session_duration / 60)}:${String(Math.floor(stat.avg_session_duration % 60)).padStart(2, '0')}`
+                                  : '—'}
+                              </td>
+                              <td>
+                                {stat.last_used
+                                  ? new Date(stat.last_used).toLocaleDateString()
+                                  : '—'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                ) : (
+                  <div className="no-data">No usage data available yet.</div>
                 )}
               </div>
             </>

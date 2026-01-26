@@ -1714,6 +1714,71 @@ async def get_flashcard_ratings_stats(
         )
 
 
+@api_router.get("/admin/flashcard-usage-stats")
+async def get_flashcard_usage_stats(
+    admin: AuthenticatedUser = Depends(get_current_admin)
+):
+    """Get usage statistics for all flashcards based on quiz sessions (Admin only)."""
+    from .database import get_db_pool
+
+    logger.info("Admin fetching flashcard usage statistics", admin_user=admin.email)
+
+    pool = await get_db_pool()
+
+    try:
+        async with pool.acquire() as conn:
+            # Get aggregated usage stats per flashcard
+            rows = await conn.fetch(
+                """
+                SELECT
+                    flashcard_id,
+                    COUNT(DISTINCT id) as total_sessions,
+                    COUNT(DISTINCT user_id) as unique_users,
+                    SUM(cards_reviewed) as total_cards_reviewed,
+                    ROUND(AVG(duration_seconds)::numeric, 1) as avg_session_duration,
+                    MAX(completed_at) as last_used
+                FROM quiz_sessions
+                WHERE completed_at IS NOT NULL
+                GROUP BY flashcard_id
+                ORDER BY total_sessions DESC
+                """
+            )
+
+            # Also get total flashcard titles from storage
+            flashcard_titles = {}
+            try:
+                flashcards_list = storage.list_flashcards()
+                for fc in flashcards_list:
+                    flashcard_titles[fc['id']] = fc.get('title', fc['id'])
+            except Exception as e:
+                logger.warning("Could not load flashcard titles", error=str(e))
+
+            stats = [
+                {
+                    "flashcard_id": row["flashcard_id"],
+                    "flashcard_title": flashcard_titles.get(row["flashcard_id"], row["flashcard_id"]),
+                    "total_sessions": row["total_sessions"],
+                    "unique_users": row["unique_users"],
+                    "total_cards_reviewed": row["total_cards_reviewed"] or 0,
+                    "avg_session_duration": float(row["avg_session_duration"]) if row["avg_session_duration"] else 0,
+                    "last_used": row["last_used"].isoformat() if row["last_used"] else None
+                }
+                for row in rows
+            ]
+
+            return {
+                "total_flashcards_with_usage": len(stats),
+                "statistics": stats
+            }
+
+    except Exception as e:
+        logger.error("Error fetching flashcard usage stats", error=str(e), admin_user=admin.email)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch usage statistics: {str(e)}"
+        )
+
+
 @api_router.get("/users/me")
 async def get_current_user_profile(
     user: AuthenticatedUser = Depends(get_current_user)
