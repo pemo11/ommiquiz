@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Custom build script that maps OMMIQUIZ_APP_* environment variables to REACT_APP_*
- * This allows us to use a consistent naming convention while working with Create React App
+ * Custom build script that maps OMMIQUIZ_APP_* environment variables to OMMI_QUIZ_APP_*
+ * for React's environment variable system, then runs the standard React build.
  */
 
 const { spawn } = require('child_process');
@@ -26,11 +26,11 @@ envContent.split('\n').forEach(line => {
     const key = match[1];
     const value = match[2].replace(/^['"]|['"]$/g, ''); // Remove quotes
 
-    // Map OMMIQUIZ_APP_* to REACT_APP_*
-    const reactKey = key.replace('OMMIQUIZ_APP_', 'REACT_APP_');
-    envVars[reactKey] = value;
+    // Map OMMIQUIZ_APP_* to OMMI_QUIZ_APP_*
+    const ommiQuizKey = key.replace('OMMIQUIZ_APP_', 'OMMI_QUIZ_APP_');
+    envVars[ommiQuizKey] = value;
 
-    console.log(`✓ Mapped ${key} → ${reactKey}`);
+    console.log(`✓ Mapped ${key} → ${ommiQuizKey}`);
   }
 });
 
