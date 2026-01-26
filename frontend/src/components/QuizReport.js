@@ -3,19 +3,28 @@ import './QuizReport.css';
 
 // Use the environment variable first, with proper fallback for development
 const getApiUrl = () => {
-  if (process.env.NODE_ENV === 'production' && process.env.OMMIQUIZ_APP_API_URL) {
-    return process.env.OMMIQUIZ_APP_API_URL;
+  // Check for environment variable first (used in production and Docker)
+  if (process.env.OMMI_QUIZ_APP_API_URL) {
+    console.log('QuizReport - Using environment API URL:', process.env.OMMI_QUIZ_APP_API_URL);
+    return process.env.OMMI_QUIZ_APP_API_URL;
   }
 
-  if (process.env.OMMIQUIZ_APP_API_URL) {
-    return process.env.OMMIQUIZ_APP_API_URL;
-  }
-  
+  // Development fallback - check if running locally
   const hostname = window.location.hostname;
-  const baseUrl = hostname === 'localhost' ? 'localhost' : hostname;
-  const protocol = hostname === 'localhost' ? 'http' : window.location.protocol.replace(':', '');
-  const port = hostname === 'localhost' ? ':8080' : '';
-  return `${protocol}://${baseUrl}${port}/api`;
+  
+  // For local development
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    const apiUrl = 'http://localhost:8080/api';
+    console.log('QuizReport - Using local development API URL:', apiUrl);
+    return apiUrl;
+  }
+
+  // For other environments, construct from current location
+  const protocol = window.location.protocol;
+  const port = window.location.port ? `:${window.location.port}` : '';
+  const apiUrl = `${protocol}//${hostname}${port}/api`;
+  console.log('QuizReport - Using constructed API URL:', apiUrl);
+  return apiUrl;
 };
 
 const API_URL = getApiUrl();

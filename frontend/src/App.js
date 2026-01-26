@@ -21,23 +21,28 @@ console.log('🔥 === END VERSION DEBUG ===');
 
 // Use the environment variable first, with proper fallback for development
 const getApiUrl = () => {
-  // In production, always use the environment variable
-  if (process.env.NODE_ENV === 'production' && process.env.OMMI_QUIZ_APP_API_URL) {
-    return process.env.OMMI_QUIZ_APP_API_URL;
-  }
-
-  // In development, use environment variable if set, otherwise construct local URL
+  // Check for environment variable first (used in production and Docker)
   if (process.env.OMMI_QUIZ_APP_API_URL) {
+    console.log('Using environment API URL:', process.env.OMMI_QUIZ_APP_API_URL);
     return process.env.OMMI_QUIZ_APP_API_URL;
   }
 
-  // Development fallback - use current hostname for local development
+  // Development fallback - check if running locally
   const hostname = window.location.hostname;
-  const baseUrl = hostname === 'localhost' ? 'localhost' : hostname;
-  // Use HTTPS if the current page is served over HTTPS, HTTP for localhost
-  const protocol = hostname === 'localhost' ? 'http' : window.location.protocol.replace(':', '');
-  const port = hostname === 'localhost' ? ':8080' : '';
-  return `${protocol}://${baseUrl}${port}/api`;
+  
+  // For local development
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    const apiUrl = 'http://localhost:8080/api';
+    console.log('Using local development API URL:', apiUrl);
+    return apiUrl;
+  }
+
+  // For other environments, construct from current location
+  const protocol = window.location.protocol;
+  const port = window.location.port ? `:${window.location.port}` : '';
+  const apiUrl = `${protocol}//${hostname}${port}/api`;
+  console.log('Using constructed API URL:', apiUrl);
+  return apiUrl;
 };
 
 const API_URL = getApiUrl();
