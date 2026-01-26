@@ -4,9 +4,9 @@ import './QuizReport.css';
 // Use the environment variable first, with proper fallback for development
 const getApiUrl = () => {
   // Check for environment variable first (used in production and Docker)
-  if (process.env.REACT_APP_OMMIQUIZ_URL) {
-    console.log('QuizReport - Using environment API URL:', process.env.REACT_APP_OMMIQUIZ_URL);
-    return process.env.REACT_APP_OMMIQUIZ_URL;
+  if (process.env.REACT_APP_API_URL) {
+    console.log('QuizReport - Using environment API URL:', process.env.REACT_APP_API_URL);
+    return process.env.REACT_APP_API_URL;
   }
 
   // Development fallback - check if running locally

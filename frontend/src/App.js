@@ -22,9 +22,9 @@ console.log('🔥 === END VERSION DEBUG ===');
 // Use the environment variable first, with proper fallback for development
 const getApiUrl = () => {
   // Check for environment variable first (used in production and Docker)
-  if (process.env.REACT_APP_OMMIQUIZ_URL) {
-    console.log('Using environment API URL:', process.env.REACT_APP_OMMIQUIZ_URL);
-    return process.env.REACT_APP_OMMIQUIZ_URL;
+  if (process.env.REACT_APP_API_URL) {
+    console.log('Using environment API URL:', process.env.REACT_APP_API_URL);
+    return process.env.REACT_APP_API_URL;
   }
 
   // Development fallback - check if running locally
@@ -49,7 +49,7 @@ const API_URL = getApiUrl();
 
 // Add debug logging to help identify connection issues
 console.log('Environment:', process.env.NODE_ENV);
-console.log('REACT_APP_OMMIQUIZ_URL:', process.env.REACT_APP_OMMIQUIZ_URL);
+console.log('REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
 console.log('Constructed API_URL:', API_URL);
 
 function App() {
