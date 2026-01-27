@@ -1324,6 +1324,11 @@ function AdminPanel({ onBack }) {
 
       const token = localStorage.getItem('authToken');
       
+      console.log('Delete - Token exists:', !!token);
+      console.log('Delete - Token length:', token?.length);
+      console.log('Delete - API URL:', API_URL);
+      console.log('Delete - Flashcard ID:', selectedFlashcard.id);
+      
       if (!token) {
         throw new Error('Not authenticated. Please log in again.');
       }
@@ -1334,6 +1339,9 @@ function AdminPanel({ onBack }) {
           'Authorization': `Bearer ${token}`
         }
       });
+
+      console.log('Delete - Response status:', response.status);
+      console.log('Delete - Response ok:', response.ok);
 
       if (!response.ok) {
         let errorMessage = 'Failed to delete flashcard';
