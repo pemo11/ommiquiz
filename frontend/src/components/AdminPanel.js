@@ -1322,10 +1322,10 @@ function AdminPanel({ onBack }) {
       setDeleteError(null);
       setError(null);
 
-      const token = await supabase.auth.getSession().then(({ data }) => data.session?.access_token);
+      const token = localStorage.getItem('authToken');
       
       if (!token) {
-        throw new Error('Not authenticated');
+        throw new Error('Not authenticated. Please log in again.');
       }
 
       const response = await fetch(`${API_URL}/flashcards/${selectedFlashcard.id}`, {
