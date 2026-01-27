@@ -40,7 +40,7 @@ _http_bearer = HTTPBearer(auto_error=False)
 def _require_supabase_settings() -> dict[str, str]:
     """Get required Supabase configuration from environment."""
     supabase_url = os.getenv("SUPABASE_URL")
-    jwt_secret = os.getenv("REACT_APP_SUPABASE_KEY")
+    publishable_key = os.getenv("SUPABASE_PUBLISHABLE_KEY")
 
     if not supabase_url:
         logger.warning("Supabase URL is not configured")
@@ -51,7 +51,7 @@ def _require_supabase_settings() -> dict[str, str]:
 
     return {
         "supabase_url": supabase_url,
-        "jwt_secret": jwt_secret,  # Optional for ES256
+        "publishable_key": publishable_key,  # Optional for ES256
     }
 
 
@@ -145,16 +145,16 @@ async def _decode_supabase_token(token: str) -> dict:
         algorithm = unverified_header.get("alg", "HS256")
 
         if algorithm == "HS256":
-            # Use JWT secret for HS256
-            if not settings["jwt_secret"]:
+            # Use Publishable Key for HS256
+            if not settings["publishable_key"]:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    detail="JWT secret not configured"
+                    detail="Publishable key not configured"
                 )
 
             payload = jwt.decode(
                 token,
-                settings["jwt_secret"],
+                settings["publishable_key"],
                 algorithms=["HS256"],
                 audience="authenticated",
             )
