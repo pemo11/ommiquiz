@@ -160,10 +160,10 @@ async def auth_signup(payload: SignupRequest):
     import httpx
 
     supabase_url = os.getenv("SUPABASE_URL")
-    supabase_key = os.getenv("SUPABASE_PUB_KEY")  # Use public key for backend auth
+    supabase_publishable_key = os.getenv("SUPABASE_PUBLISHABLE_KEY")
     site_url = os.getenv("SITE_URL", "https://ommiquiz.de")
 
-    if not supabase_url or not supabase_key:
+    if not supabase_url or not supabase_publishable_key:
         raise HTTPException(status_code=500, detail="Supabase configuration missing")
 
     logger.info("Processing signup request", email=payload.email)
@@ -217,9 +217,9 @@ async def auth_login(payload: LoginRequest):
     import httpx
 
     supabase_url = os.getenv("SUPABASE_URL")
-    supabase_key = os.getenv("SUPABASE_PUB_KEY")  # Use public key for backend auth
+    supabase_publishable_key = os.getenv("SUPABASE_PUBLISHABLE_KEY")
 
-    if not supabase_url or not supabase_key:
+    if not supabase_url or not supabase_publishable_key:
         raise HTTPException(status_code=500, detail="Supabase configuration missing")
 
     logger.info("Processing login request", email=payload.email)
@@ -233,8 +233,8 @@ async def auth_login(payload: LoginRequest):
                     "password": payload.password
                 },
                 headers={
-                    "apikey": supabase_key,
-                    "Authorization": f"Bearer {supabase_key}",
+                    "apikey": supabase_publishable_key,
+                    "Authorization": f"Bearer {supabase_publishable_key}",
                     "Content-Type": "application/json"
                 }
             )

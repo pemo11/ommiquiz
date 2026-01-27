@@ -16,8 +16,6 @@ static_sites:
         value: "https://nanoquiz-backend-ypez6.ondigitalocean.app/api"
       - key: OMMIQUIZ_APP_SUPABASE_URL
         value: "https://zihxfkwzlxgpppzddfyb.supabase.co"
-      - key: OMMIQUIZ_APP_SUPABASE_ANON_KEY
-        value: "sb_publishable_06GTeAb6I9QWgNTOCH0LKw_H_4lzXnP"
       - key: NODE_ENV
         value: "production"
       - key: GENERATE_SOURCEMAP

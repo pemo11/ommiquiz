@@ -40,7 +40,7 @@ _http_bearer = HTTPBearer(auto_error=False)
 def _require_supabase_settings() -> dict[str, str]:
     """Get required Supabase configuration from environment."""
     supabase_url = os.getenv("SUPABASE_URL")
-    jwt_secret = os.getenv("SUPABASE_PUB_KEY")
+    jwt_secret = os.getenv("REACT_APP_SUPABASE_KEY")
 
     if not supabase_url:
         logger.warning("Supabase URL is not configured")
