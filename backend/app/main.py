@@ -184,8 +184,8 @@ async def auth_signup(payload: SignupRequest):
                     }
                 },
                 headers={
-                    "apikey": supabase_key,
-                    "Authorization": f"Bearer {supabase_key}",
+                    "apikey": supabase_publishable_key,
+                    "Authorization": f"Bearer {supabase_publishable_key}",
                     "Content-Type": "application/json"
                 }
             )
