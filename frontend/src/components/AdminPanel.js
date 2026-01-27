@@ -1268,8 +1268,17 @@ function AdminPanel({ onBack }) {
       setDeleteError(null);
       setError(null);
 
+      const token = await supabase.auth.getSession().then(({ data }) => data.session?.access_token);
+      
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
       const response = await fetch(`${API_URL}/flashcards/${selectedFlashcard.id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       if (!response.ok) {
