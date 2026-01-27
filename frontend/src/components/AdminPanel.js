@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import './AdminPanel.css';
 
 // Use the environment variable first, with proper fallback for development
@@ -43,6 +43,7 @@ function AdminPanel({ onBack }) {
   const [yamlParseError, setYamlParseError] = useState(null);
   const [topicsInput, setTopicsInput] = useState('');
   const [keywordsInput, setKeywordsInput] = useState('');
+  const [keywordFilter, setKeywordFilter] = useState('all');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [pendingSaveData, setPendingSaveData] = useState(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -133,6 +134,59 @@ function AdminPanel({ onBack }) {
   useEffect(() => {
     fetchFlashcardList();
   }, []);
+
+  const availableKeywords = useMemo(() => {
+    const keywordsSet = new Set();
+
+    flashcards.forEach((flashcard) => {
+      if (Array.isArray(flashcard.keywords)) {
+        flashcard.keywords.forEach((keyword) => {
+          const normalized = (keyword || '').trim();
+          if (normalized) {
+            keywordsSet.add(normalized);
+          }
+        });
+      }
+    });
+
+    return Array.from(keywordsSet).sort((a, b) => a.localeCompare(b));
+  }, [flashcards]);
+
+  const keywordCounts = useMemo(() => {
+    const counts = {};
+
+    flashcards.forEach((flashcard) => {
+      if (Array.isArray(flashcard.keywords)) {
+        flashcard.keywords.forEach((keyword) => {
+          const normalized = (keyword || '').trim();
+          if (!normalized) {
+            return;
+          }
+          counts[normalized] = (counts[normalized] || 0) + 1;
+        });
+      }
+    });
+
+    return counts;
+  }, [flashcards]);
+
+  useEffect(() => {
+    if (keywordFilter !== 'all' && !availableKeywords.includes(keywordFilter)) {
+      setKeywordFilter('all');
+    }
+  }, [availableKeywords, keywordFilter]);
+
+  const filteredFlashcards = useMemo(() => {
+    if (keywordFilter === 'all') {
+      return flashcards;
+    }
+
+    const needle = keywordFilter.toLowerCase();
+    return flashcards.filter((flashcard) =>
+      Array.isArray(flashcard.keywords) &&
+      flashcard.keywords.some((keyword) => (keyword || '').toLowerCase() === needle)
+    );
+  }, [flashcards, keywordFilter]);
 
   const loadCatalogData = async () => {
     try {
@@ -2436,35 +2490,61 @@ function AdminPanel({ onBack }) {
           ) : (
             <>
               <h4>Edit Existing Flashcards</h4>
-              <div className="admin-flashcard-list">
-                {flashcards.map((flashcard) => {
-                  const recentlyUpdated = isRecentlyUpdated(flashcard.modified_time);
-                  return (
-                    <div
-                      key={flashcard.id}
-                      className={`admin-flashcard-item ${recentlyUpdated ? 'recently-updated' : ''}`}
-                      onClick={() => fetchFlashcard(flashcard.id)}
-                    >
-                      <span className="flashcard-icon">📝</span>
-                      <div className="flashcard-details">
-                        <span className="flashcard-title">
-                          {flashcard.title || flashcard.id}
-                          {recentlyUpdated && <span className="new-badge">NEW</span>}
-                        </span>
-                        {flashcard.description && (
-                          <span className="flashcard-description">{flashcard.description}</span>
-                        )}
-                        <span className="flashcard-meta">
-                          ID: {flashcard.id} | Author: {flashcard.author || 'Unknown'}
-                          {flashcard.modified_time && (
-                            <> | Last Updated: {formatDate(flashcard.modified_time)}</>
-                          )}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="flashcard-filters">
+                <label htmlFor="keyword-filter">Keyword filter:</label>
+                <select
+                  id="keyword-filter"
+                  className="keyword-filter-select"
+                  value={keywordFilter}
+                  onChange={(e) => setKeywordFilter(e.target.value)}
+                  disabled={availableKeywords.length === 0}
+                >
+                  <option value="all">All keywords ({flashcards.length})</option>
+                  {availableKeywords.map((keyword) => (
+                    <option key={keyword} value={keyword}>
+                      {keyword} ({keywordCounts[keyword] || 0})
+                    </option>
+                  ))}
+                </select>
+                <span className="filter-summary">
+                  Showing {filteredFlashcards.length} of {flashcards.length}
+                </span>
               </div>
+              {filteredFlashcards.length === 0 ? (
+                <div className="no-flashcards-message">
+                  No flashcard sets match the selected keyword.
+                </div>
+              ) : (
+                <div className="admin-flashcard-list">
+                  {filteredFlashcards.map((flashcard) => {
+                    const recentlyUpdated = isRecentlyUpdated(flashcard.modified_time);
+                    return (
+                      <div
+                        key={flashcard.id}
+                        className={`admin-flashcard-item ${recentlyUpdated ? 'recently-updated' : ''}`}
+                        onClick={() => fetchFlashcard(flashcard.id)}
+                      >
+                        <span className="flashcard-icon">📝</span>
+                        <div className="flashcard-details">
+                          <span className="flashcard-title">
+                            {flashcard.title || flashcard.id}
+                            {recentlyUpdated && <span className="new-badge">NEW</span>}
+                          </span>
+                          {flashcard.description && (
+                            <span className="flashcard-description">{flashcard.description}</span>
+                          )}
+                          <span className="flashcard-meta">
+                            ID: {flashcard.id} | Author: {flashcard.author || 'Unknown'}
+                            {flashcard.modified_time && (
+                              <> | Last Updated: {formatDate(flashcard.modified_time)}</>
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </>
           )}
         </div>
