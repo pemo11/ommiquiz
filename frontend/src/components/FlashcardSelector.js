@@ -153,7 +153,7 @@ function FlashcardSelector({
             {/* Star icon for favorites */}
             {isLoggedIn && (
               <button
-                className="favorite-star"
+                className={`favorite-star ${favorites.has(flashcard.id) ? 'favorited' : ''}`}
                 onClick={(e) => {
                   e.stopPropagation(); // Prevent flashcard selection
                   onToggleFavorite(flashcard.id);
