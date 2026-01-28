@@ -16,7 +16,7 @@ def get_version():
         if version_file.exists():
             with open(version_file, 'r') as f:
                 data = json.load(f)
-                return data.get("version") or data.get("backend") or "1.0.0"
+                return data.get("backend") or "1.0.0"
     except Exception as e:
         print(f"Warning: Could not read version.json: {e}")
     

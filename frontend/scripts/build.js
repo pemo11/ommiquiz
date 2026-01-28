@@ -14,7 +14,7 @@ try {
   const versionPath = path.resolve(__dirname, '../../version.json');
   if (fs.existsSync(versionPath)) {
     const versionData = JSON.parse(fs.readFileSync(versionPath, 'utf8'));
-    version = versionData.version || versionData.frontend || '1.0.0';
+    version = versionData.frontend || '1.0.0';
   }
 } catch (error) {
   console.warn('⚠️  Could not read version.json, using default 1.0.0');
