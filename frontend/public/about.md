@@ -1,6 +1,6 @@
-# Über OMMI-Quiz
+# Über OMI-Quiz
 
-OMMI-Quiz soll die Lernkarten App sein, die ich für mein Studium immer gewünscht habe.
+OMI-Quiz soll die Lernkarten App sein, die ich für mein Studium immer gewünscht habe.
 
 Sie hat natürlich bei weitem nicht den Funktionsumfang von *Quizlet* und anderen Apps dieser Größenordnung und sie soll definitiv keine Konkurrenz zu den kommerziellen Plattformen sein.
 
@@ -10,7 +10,7 @@ Eine Registrierung ist nur für den Fall erforderlich, dass man Inhalte editiere
 
 ## Schnelllernen mit Karten als Prüfungsvorbereitung
 
-Das Lernen mit Karteikarten ist eine bewährte und wissenschaftlich fundierte Technik zur effizienten Prüfungsvorbereitung. **OmmiQuiz konzentriert sich genau auf diese Methode** - das sogenannte *Speed Learning*, bei dem Lernende durch systematisches und wiederholtes Durchgehen von Karteikarten Inhalte schnell und nachhaltig verinnerlichen können.
+Das Lernen mit Karteikarten ist eine bewährte und wissenschaftlich fundierte Technik zur effizienten Prüfungsvorbereitung. **OMIQuiz konzentriert sich auf diese Methode** - das sogenannte *Speed Learning*, bei dem Lernende durch systematisches und wiederholtes Durchgehen von Karteikarten Inhalte schnell und nachhaltig verinnerlichen können.
 
 Die Technik des Kartenlernens basiert auf dem Prinzip der *wiederholten Abrufpraxis* und der *Spaced Repetition*. Dies bedeutet, dass Lerninhalte in optimierten Zeitabständen wiederholt werden, um die Behaltensleistung zu maximieren und das Wissen langfristig im Gedächtnis zu verankern. Dies ist besonders wertvoll bei der Prüfungsvorbereitung, da es:
 
@@ -19,7 +19,7 @@ Die Technik des Kartenlernens basiert auf dem Prinzip der *wiederholten Abrufpra
 - **Nachhaltig ist**: Die Spaced Repetition Methode führt zu besserer Langzeitretention des Wissens
 - **Motivierend ist**: Der Fortschritt beim Durcharbeiten von Karten gibt ein Erfolgserlebnis
 
-OmmiQuiz ist speziell dafür ausgelegt, diese bewährte Lernmethode einfach, intuitiv und effektiv zu unterstützen - ohne unnötige Ablenkung oder komplizierte Features, sondern mit Fokus auf das, was beim Lernen wirklich zählt.
+*OMIQuiz* ist speziell dafür ausgelegt, diese bewährte Lernmethode einfach, intuitiv und effektiv zu unterstützen - ohne unnötige Ablenkung oder komplizierte Features, sondern mit Fokus auf das, was beim Lernen wirklich zählt.
 
 Allerdings gibt es im Moment noch **keine** Möglichkeit, einen Lernplan mit vorgegegebenen Intervallen anzulegen. 
 
@@ -35,7 +35,7 @@ Meine persönliche Erfahrung ist, dass sich das Lernen mit den Karten gut bewäh
 
 ## Open Source, Lizenz?
 
-Aktuell ist *OMMI-Quiz* ein reines Hobbyprojekt, das ich im Rahmen meines Studiums " in nächtelangen Codingsitzungen" und an unzähligen Wochenenden unter großen Entbehrungen (natürlich nicht;) umgesetzt habe. Sollte es tatsächlich einen Bedarf geben (eigentlich gibt es genügend Alternativen), wäre der nächste Schritt das Repo auf Public zu stellen. Vorher muss ich aber meinen Abschluss geschafft haben;)
+Aktuell ist *OMI-Quiz* ein reines Hobbyprojekt, das ich im Rahmen meines Studiums " in nächtelangen Codingsitzungen" und an unzähligen Wochenenden unter großen Entbehrungen (natürlich nicht;) umgesetzt habe. Sollte es tatsächlich einen Bedarf geben (eigentlich gibt es genügend Alternativen), wäre der nächste Schritt das Repo auf Public zu stellen. Vorher muss ich aber meinen Abschluss geschafft haben;)
 
 
 ## Über mich

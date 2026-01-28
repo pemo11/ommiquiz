@@ -11,7 +11,7 @@ static_sites:
     environment_slug: node-js
     envs:
       - key: OMMIQUIZ_APP_VERSION
-        value: "1.0.32"
+        value: "1.0.34"
       - key: OMMIQUIZ_APP_API_URL
         value: "https://nanoquiz-backend-ypez6.ondigitalocean.app/api"
       - key: OMMIQUIZ_APP_SUPABASE_URL

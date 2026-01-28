@@ -581,6 +581,12 @@ function App() {
     fetchFlashcardList(); // Refresh the list in case changes were made
   };
 
+  const handleSelectFavoriteFlashcard = (flashcardId) => {
+    // Close My Flashcards and select the favorite flashcard
+    setShowMyFlashcards(false);
+    handleSelectFlashcard(flashcardId);
+  };
+
   const handleAboutOpen = () => {
     setShowAbout(true);
   };
@@ -757,7 +763,7 @@ function App() {
         <div className="header-content">
           <div className="header-main">
             <div className="title-with-version">
-              <h1>Das große OMMI-Quiz</h1>
+              <h1>Das große OMI-Quiz</h1>
               <div className="version-info">v{FRONTEND_VERSION}</div>
             </div>
             <div className="header-actions">
@@ -833,6 +839,7 @@ function App() {
             apiUrl={API_URL}
             accessToken={localStorage.getItem('authToken')}
             onBack={handleMyFlashcardsBack}
+            onSelectFavorite={handleSelectFavoriteFlashcard}
           />
         ) : (
           <>
