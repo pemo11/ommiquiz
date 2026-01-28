@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './MyFlashcards.css';
 import FlashcardEditor from './FlashcardEditor';
 
-function MyFlashcards({ apiUrl, accessToken, onBack }) {
+function MyFlashcards({ apiUrl, accessToken, onBack, onSelectFavorite = () => {} }) {
   const [flashcards, setFlashcards] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [favoriteDetails, setFavoriteDetails] = useState(new Map());
@@ -367,6 +367,13 @@ function MyFlashcards({ apiUrl, accessToken, onBack }) {
       </div>
 
       <div className="flashcard-actions">
+        <button
+          className="action-button play-button"
+          onClick={() => onSelectFavorite(flashcardId)}
+          title="Start learning this flashcard set"
+        >
+          ▶️ Start
+        </button>
         <button
           className="action-button remove-favorite-button"
           onClick={() => handleRemoveFavorite(flashcardId)}

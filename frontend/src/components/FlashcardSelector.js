@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import './FlashcardSelector.css';
 import { useTranslation } from '../context/TranslationContext';
 
@@ -25,6 +25,19 @@ function FlashcardSelector({
     });
     return Array.from(modulesSet).sort();
   }, [flashcards]);
+
+  // Load saved module selection from localStorage on component mount
+  useEffect(() => {
+    const savedModule = localStorage.getItem('flashcardSelectedModule');
+    if (savedModule && (savedModule === 'all' || availableModules.includes(savedModule))) {
+      setSelectedModule(savedModule);
+    }
+  }, []);
+
+  // Save module selection to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('flashcardSelectedModule', selectedModule);
+  }, [selectedModule]);
 
   // Filtere Flashcards basierend auf dem ausgewählten Modul
   const filteredFlashcards = useMemo(() => {

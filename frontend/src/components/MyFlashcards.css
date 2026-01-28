@@ -285,6 +285,17 @@
 }
 
 /* Remove favorite button */
+.play-button {
+  background-color: #28a745;
+  color: white;
+  font-weight: 500;
+}
+
+.play-button:hover {
+  background-color: #218838;
+}
+
+/* Remove favorite button */
 .remove-favorite-button {
   background-color: #ffc107;
   color: #212529;
