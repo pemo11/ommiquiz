@@ -38,6 +38,8 @@
   color: #667eea;
   margin-bottom: 0.5rem;
   font-size: 2.5rem;
+  margin: 0;
+  white-space: nowrap;
 }
 
 /* Title with version layout */
@@ -46,6 +48,7 @@
   align-items: center;
   gap: 1rem;
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 .version-info {
