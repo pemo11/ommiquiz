@@ -45,21 +45,23 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  flex-wrap: wrap;
-  min-width: 0;
+  position: relative;
 }
 
 .version-info {
   color: #666;
-  font-size: 1rem;
+  font-size: 0.875rem;
   font-weight: 500;
   background-color: rgba(102, 126, 234, 0.1);
   padding: 0.25rem 0.75rem;
   border-radius: 15px;
   border: 1px solid rgba(102, 126, 234, 0.2);
   font-family: 'Courier New', monospace;
-  flex-shrink: 0;
   white-space: nowrap;
+  position: absolute;
+  left: 100%;
+  margin-left: 0.5rem;
+  cursor: help;
 }
 
 .header-version {

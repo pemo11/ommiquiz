@@ -764,7 +764,7 @@ function App() {
           <div className="header-main">
             <div className="title-with-version">
               <h1>Das große OMI-Quiz</h1>
-              <div className="version-info">v{FRONTEND_VERSION}</div>
+              <div className="version-info" title={`Version ${FRONTEND_VERSION}`}>v{FRONTEND_VERSION}</div>
             </div>
             <div className="header-actions">
               <button onClick={handleAboutOpen} className="about-btn">
