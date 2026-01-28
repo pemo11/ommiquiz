@@ -12,6 +12,7 @@ import asyncio
 import threading
 import queue
 import time
+from .version import APP_VERSION
 
 
 class BetterstackHandler(logging.Handler):
@@ -148,7 +149,7 @@ class LoggingConfig:
         
         # Application metadata
         self.app_name = os.getenv("APP_NAME", "ommiquiz-backend")
-        self.app_version = os.getenv("APP_VERSION")
+        self.app_version = APP_VERSION  # Use version from version.py
         self.environment = os.getenv("ENVIRONMENT", "development")
         
     def setup_logging(self):

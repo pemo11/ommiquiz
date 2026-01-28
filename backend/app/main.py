@@ -17,6 +17,7 @@ from .download_logger import initialize_download_log_store, log_flashcard_downlo
 from .storage import FlashcardDocument, get_flashcard_storage
 from .pdf_generator import generate_speed_quiz_pdf
 from . import progress_storage
+from .version import APP_VERSION
 
 # Initialize logging before creating the app
 setup_logging()
@@ -24,7 +25,7 @@ setup_logging()
 # Get application logger
 logger = get_logger("ommiquiz.main")
 
-app = FastAPI(title="Omiquiz API", version="1.0.34")
+app = FastAPI(title="Omiquiz API", version=APP_VERSION)
 
 # Add logging middleware first
 app.add_middleware(LoggingMiddleware)
@@ -2471,7 +2472,7 @@ async def get_version():
     """Get API version and system information"""
     logger.debug("Version endpoint requested")
     return {
-        "api_version": "1.0.34",
+        "api_version": APP_VERSION,
         "service_name": "Ommiquiz API",
         "status": "running"
     }
