@@ -17,6 +17,7 @@ from .download_logger import initialize_download_log_store, log_flashcard_downlo
 from .storage import FlashcardDocument, get_flashcard_storage
 from .pdf_generator import generate_speed_quiz_pdf
 from . import progress_storage
+from .version import APP_VERSION
 
 # Initialize logging before creating the app
 setup_logging()
@@ -24,7 +25,7 @@ setup_logging()
 # Get application logger
 logger = get_logger("ommiquiz.main")
 
-app = FastAPI(title="Ommiquiz API", version="1.0.32")
+app = FastAPI(title="Omiquiz API", version=APP_VERSION)
 
 # Add logging middleware first
 app.add_middleware(LoggingMiddleware)
@@ -160,10 +161,10 @@ async def auth_signup(payload: SignupRequest):
     import httpx
 
     supabase_url = os.getenv("SUPABASE_URL")
-    supabase_key = os.getenv("SUPABASE_PUB_KEY")  # Use public key for backend auth
+    supabase_publishable_key = os.getenv("SUPABASE_PUBLISHABLE_KEY")
     site_url = os.getenv("SITE_URL", "https://ommiquiz.de")
 
-    if not supabase_url or not supabase_key:
+    if not supabase_url or not supabase_publishable_key:
         raise HTTPException(status_code=500, detail="Supabase configuration missing")
 
     logger.info("Processing signup request", email=payload.email)
@@ -184,8 +185,8 @@ async def auth_signup(payload: SignupRequest):
                     }
                 },
                 headers={
-                    "apikey": supabase_key,
-                    "Authorization": f"Bearer {supabase_key}",
+                    "apikey": supabase_publishable_key,
+                    "Authorization": f"Bearer {supabase_publishable_key}",
                     "Content-Type": "application/json"
                 }
             )
@@ -217,9 +218,9 @@ async def auth_login(payload: LoginRequest):
     import httpx
 
     supabase_url = os.getenv("SUPABASE_URL")
-    supabase_key = os.getenv("SUPABASE_PUB_KEY")  # Use public key for backend auth
+    supabase_publishable_key = os.getenv("SUPABASE_PUBLISHABLE_KEY")
 
-    if not supabase_url or not supabase_key:
+    if not supabase_url or not supabase_publishable_key:
         raise HTTPException(status_code=500, detail="Supabase configuration missing")
 
     logger.info("Processing login request", email=payload.email)
@@ -233,8 +234,8 @@ async def auth_login(payload: LoginRequest):
                     "password": payload.password
                 },
                 headers={
-                    "apikey": supabase_key,
-                    "Authorization": f"Bearer {supabase_key}",
+                    "apikey": supabase_publishable_key,
+                    "Authorization": f"Bearer {supabase_publishable_key}",
                     "Content-Type": "application/json"
                 }
             )
@@ -2462,7 +2463,7 @@ async def health_check():
     logger.debug("Health check requested")
     return {
         "status": "healthy",
-        "version": os.getenv("APP_VERSION", "1.0.32")
+        "version": os.getenv("APP_VERSION")
     }
 
 
@@ -2471,7 +2472,7 @@ async def get_version():
     """Get API version and system information"""
     logger.debug("Version endpoint requested")
     return {
-        "api_version": "1.0.32",
+        "api_version": APP_VERSION,
         "service_name": "Ommiquiz API",
         "status": "running"
     }

@@ -6,8 +6,21 @@
 
 const { spawn } = require('child_process');
 const path = require('path');
+const fs = require('fs');
 
-console.log('🏗️  Building production bundle...\n');
+// Read version from root version.json
+let version = '1.0.0';
+try {
+  const versionPath = path.resolve(__dirname, '../../version.json');
+  if (fs.existsSync(versionPath)) {
+    const versionData = JSON.parse(fs.readFileSync(versionPath, 'utf8'));
+    version = versionData.frontend || '1.0.0';
+  }
+} catch (error) {
+  console.warn('⚠️  Could not read version.json, using default 1.0.0');
+}
+
+console.log('🏗️  Building production bundle... (version: ' + version + ')\n');
 
 // Get the path to react-scripts
 const reactScriptsPath = path.resolve(__dirname, '../node_modules/.bin/react-scripts');
@@ -16,7 +29,8 @@ const reactScriptsPath = path.resolve(__dirname, '../node_modules/.bin/react-scr
 const child = spawn(reactScriptsPath, ['build'], {
   env: {
     ...process.env,
-    CI: 'false' // Treat warnings as warnings, not errors
+    CI: 'false', // Treat warnings as warnings, not errors
+    OMMIQUIZ_APP_VERSION: version
   },
   stdio: 'inherit'
 });

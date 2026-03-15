@@ -4,7 +4,7 @@ import FlashcardEditor from './FlashcardEditor';
 import FolderManager from './FolderManager';
 import { assignFlashcardToFolder } from '../auth';
 
-function MyFlashcards({ apiUrl, accessToken, onBack }) {
+function MyFlashcards({ apiUrl, accessToken, onBack, onSelectFavorite = () => {} }) {
   const [flashcards, setFlashcards] = useState([]);
   const [favorites, setFavorites] = useState([]);
   const [favoriteDetails, setFavoriteDetails] = useState(new Map());
@@ -460,6 +460,13 @@ function MyFlashcards({ apiUrl, accessToken, onBack }) {
 
       <div className="flashcard-actions">
         <button
+          className="action-button play-button"
+          onClick={() => onSelectFavorite(flashcardId)}
+          title="Start learning this flashcard set"
+        >
+          ▶️ Start
+        </button>
+        <button
           className="action-button remove-favorite-button"
           onClick={() => handleRemoveFavorite(flashcardId)}
           title="Remove from favorites"
@@ -538,6 +545,10 @@ function MyFlashcards({ apiUrl, accessToken, onBack }) {
               Favorites ({favorites.length})
             </button>
           </div>
+        <button className="create-button" onClick={handleCreateNew}>
+          + Create New
+        </button>
+      </div>
 
           {loading && <div className="loading">Loading your flashcards...</div>}
           {error && <div className="error-message">Error: {error}</div>}
@@ -580,6 +591,22 @@ function MyFlashcards({ apiUrl, accessToken, onBack }) {
                   )}
                 </div>
               )}
+      {!loading && !error && (
+        <>
+          {/* Created Flashcards Section */}
+          <div className="flashcards-section">
+            <h3 className="section-title">Created</h3>
+            {flashcards.length === 0 ? (
+              <div className="empty-state">
+                <p>You haven't created any flashcards yet.</p>
+                <p>Click "Create New" to get started!</p>
+              </div>
+            ) : (
+              <div className="flashcards-grid">
+                {flashcards.map(renderCreatedFlashcard)}
+              </div>
+            )}
+          </div>
 
               {/* Favorites Tab */}
               {activeTab === 'favorites' && (
@@ -609,6 +636,31 @@ function MyFlashcards({ apiUrl, accessToken, onBack }) {
           )}
         </div>
       </div>
+          {/* Favorites Section */}
+          <div className="flashcards-section">
+            <h3 className="section-title">Favorites</h3>
+            {favorites.length === 0 ? (
+              <div className="empty-state">
+                <p>You haven't favorited any flashcards yet.</p>
+                <p>Browse the flashcard catalog and star your favorites!</p>
+              </div>
+            ) : (
+              <div className="flashcards-grid">
+                {favorites.map(favorite => {
+                  const details = favoriteDetails.get(favorite.flashcard_id) || {
+                    id: favorite.flashcard_id,
+                    title: favorite.flashcard_id,
+                    description: 'Loading details...',
+                    favorited_at: favorite.created_at,
+                    isFavorite: true
+                  };
+                  return renderFavoriteFlashcard(favorite.flashcard_id, details);
+                })}
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

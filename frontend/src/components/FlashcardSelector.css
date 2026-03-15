@@ -360,7 +360,7 @@
   background: transparent;
   border: none;
   font-size: 1.8rem;
-  color: #ffd700;
+  color: #ddd;
   cursor: pointer;
   padding: 0.25rem;
   line-height: 1;
@@ -371,12 +371,17 @@
 
 .favorite-star:hover {
   transform: scale(1.2);
-  filter: drop-shadow(0 4px 8px rgba(255, 215, 0, 0.5));
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
 }
 
-/* Unfavorited star styling */
-.favorite-star:not(:has(★)) {
-  color: #ddd;
+/* Favorited star styling - blue when selected */
+.favorite-star.favorited {
+  color: #4a90e2;
+  text-shadow: 0 2px 6px rgba(74, 144, 226, 0.4);
+}
+
+.favorite-star.favorited:hover {
+  filter: drop-shadow(0 4px 10px rgba(74, 144, 226, 0.6));
 }
 
 /* Mobile responsiveness */
