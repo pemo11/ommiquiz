@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './MyFlashcards.css';
 import FlashcardEditor from './FlashcardEditor';
+import FolderManager from './FolderManager';
+import { assignFlashcardToFolder } from '../auth';
 
 function MyFlashcards({ apiUrl, accessToken, onBack }) {
   const [flashcards, setFlashcards] = useState([]);
@@ -12,6 +14,11 @@ function MyFlashcards({ apiUrl, accessToken, onBack }) {
   const [editingFlashcard, setEditingFlashcard] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [activeTab, setActiveTab] = useState('created'); // 'created' or 'favorites'
+  
+  // Folder-related state
+  const [selectedFolderId, setSelectedFolderId] = useState(null);
+  const [showFolders, setShowFolders] = useState(true);
+  const [draggedFlashcard, setDraggedFlashcard] = useState(null);
 
   // Fetch user's created flashcards
   const fetchFlashcards = async () => {
@@ -247,9 +254,81 @@ function MyFlashcards({ apiUrl, accessToken, onBack }) {
     setEditingFlashcard(null);
   };
 
-  // Render flashcard card for created flashcards
+  // Filter flashcards by selected folder
+  const getFilteredFlashcards = () => {
+    if (!selectedFolderId) {
+      return flashcards; // Show all flashcards when no folder is selected
+    }
+    
+    return flashcards.filter(flashcard => 
+      flashcard.folder_id === selectedFolderId
+    );
+  };
+
+  // Handle folder selection
+  const handleFolderSelect = (folderId) => {
+    setSelectedFolderId(folderId);
+  };
+
+  // Handle drag start
+  const handleDragStart = (e, flashcard) => {
+    setDraggedFlashcard(flashcard);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', flashcard.flashcard_id);
+  };
+
+  // Handle drag over folder
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  // Handle drop on folder
+  const handleDropOnFolder = async (e, targetFolderId) => {
+    e.preventDefault();
+    
+    if (!draggedFlashcard) return;
+
+    try {
+      await assignFlashcardToFolder(draggedFlashcard.flashcard_id, targetFolderId);
+      
+      // Update local state
+      setFlashcards(prev => prev.map(fc => 
+        fc.flashcard_id === draggedFlashcard.flashcard_id 
+          ? { ...fc, folder_id: targetFolderId }
+          : fc
+      ));
+      
+      setDraggedFlashcard(null);
+    } catch (err) {
+      alert(`Error moving flashcard to folder: ${err.message}`);
+    }
+  };
+
+  // Handle remove from folder
+  const handleRemoveFromFolder = async (flashcardId) => {
+    try {
+      await assignFlashcardToFolder(flashcardId, null);
+      
+      // Update local state
+      setFlashcards(prev => prev.map(fc => 
+        fc.flashcard_id === flashcardId 
+          ? { ...fc, folder_id: null }
+          : fc
+      ));
+    } catch (err) {
+      alert(`Error removing flashcard from folder: ${err.message}`);
+    }
+  };
+
+  // Render flashcard card for created flashcards (with folder support)
   const renderCreatedFlashcard = (flashcard) => (
-    <div key={flashcard.flashcard_id} className="flashcard-card">
+    <div 
+      key={flashcard.flashcard_id} 
+      className="flashcard-card"
+      draggable
+      onDragStart={(e) => handleDragStart(e, flashcard)}
+    >
       <div className="flashcard-card-header">
         <h3>{flashcard.title}</h3>
         <div className="flashcard-badges">
@@ -257,6 +336,9 @@ function MyFlashcards({ apiUrl, accessToken, onBack }) {
             {flashcard.visibility === 'global' ? '🌐 Public' : '🔒 Private'}
           </div>
           <div className="card-type-badge created-badge">Created</div>
+          {flashcard.folder_id && (
+            <div className="folder-indicator" title="In folder">📁</div>
+          )}
         </div>
       </div>
 
@@ -303,6 +385,15 @@ function MyFlashcards({ apiUrl, accessToken, onBack }) {
         >
           {flashcard.visibility === 'global' ? '🔒 Make Private' : '🌐 Make Public'}
         </button>
+        {flashcard.folder_id && (
+          <button
+            className="action-button remove-folder-button"
+            onClick={() => handleRemoveFromFolder(flashcard.flashcard_id)}
+            title="Remove from folder"
+          >
+            📁 Remove from Folder
+          </button>
+        )}
         {deleteConfirmId === flashcard.flashcard_id ? (
           <div className="delete-confirm">
             <button
@@ -394,6 +485,8 @@ function MyFlashcards({ apiUrl, accessToken, onBack }) {
     );
   }
 
+  const filteredFlashcards = getFilteredFlashcards();
+
   return (
     <div className="my-flashcards-container">
       <div className="my-flashcards-header">
@@ -401,74 +494,121 @@ function MyFlashcards({ apiUrl, accessToken, onBack }) {
           ← Back
         </button>
         <h2>My Flashcards</h2>
-        <button className="create-button" onClick={handleCreateNew}>
-          + Create New
-        </button>
+        <div className="header-actions">
+          <button 
+            className="toggle-folders-button"
+            onClick={() => setShowFolders(!showFolders)}
+          >
+            {showFolders ? '📂 Hide Folders' : '📁 Show Folders'}
+          </button>
+          <button className="create-button" onClick={handleCreateNew}>
+            + Create New
+          </button>
+        </div>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="tabs-container">
-        <button
-          className={`tab-button ${activeTab === 'created' ? 'active' : ''}`}
-          onClick={() => setActiveTab('created')}
-        >
-          Created ({flashcards.length})
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'favorites' ? 'active' : ''}`}
-          onClick={() => setActiveTab('favorites')}
-        >
-          Favorites ({favorites.length})
-        </button>
+      <div className="my-flashcards-layout">
+        {/* Folder Sidebar */}
+        {showFolders && (
+          <div className="folder-sidebar">
+            <FolderManager 
+              onFolderSelect={handleFolderSelect}
+              selectedFolderId={selectedFolderId}
+              onDragOver={handleDragOver}
+              onDrop={handleDropOnFolder}
+            />
+          </div>
+        )}
+
+        {/* Main Content */}
+        <div className={`main-content ${showFolders ? 'with-sidebar' : 'full-width'}`}>
+          {/* Tab Navigation */}
+          <div className="tabs-container">
+            <button
+              className={`tab-button ${activeTab === 'created' ? 'active' : ''}`}
+              onClick={() => setActiveTab('created')}
+            >
+              Created ({selectedFolderId ? filteredFlashcards.length : flashcards.length})
+              {selectedFolderId && ` (in folder)`}
+            </button>
+            <button
+              className={`tab-button ${activeTab === 'favorites' ? 'active' : ''}`}
+              onClick={() => setActiveTab('favorites')}
+            >
+              Favorites ({favorites.length})
+            </button>
+          </div>
+
+          {loading && <div className="loading">Loading your flashcards...</div>}
+          {error && <div className="error-message">Error: {error}</div>}
+
+          {!loading && !error && (
+            <>
+              {/* Created Flashcards Tab */}
+              {activeTab === 'created' && (
+                <div className="flashcards-section">
+                  {selectedFolderId && (
+                    <div className="folder-info-bar">
+                      <span>Showing flashcards in selected folder</span>
+                      <button 
+                        className="clear-filter-button"
+                        onClick={() => setSelectedFolderId(null)}
+                      >
+                        Show All
+                      </button>
+                    </div>
+                  )}
+                  
+                  {filteredFlashcards.length === 0 ? (
+                    <div className="empty-state">
+                      {selectedFolderId ? (
+                        <>
+                          <p>No flashcards in this folder yet.</p>
+                          <p>Drag flashcards from other folders or create new ones!</p>
+                        </>
+                      ) : (
+                        <>
+                          <p>You haven't created any flashcards yet.</p>
+                          <p>Click "Create New" to get started!</p>
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flashcards-grid">
+                      {filteredFlashcards.map(renderCreatedFlashcard)}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Favorites Tab */}
+              {activeTab === 'favorites' && (
+                <div className="flashcards-section">
+                  {favorites.length === 0 ? (
+                    <div className="empty-state">
+                      <p>You haven't favorited any flashcards yet.</p>
+                      <p>Browse the flashcard catalog and star your favorites!</p>
+                    </div>
+                  ) : (
+                    <div className="flashcards-grid">
+                      {favorites.map(favorite => {
+                        const details = favoriteDetails.get(favorite.flashcard_id) || {
+                          id: favorite.flashcard_id,
+                          title: favorite.flashcard_id,
+                          description: 'Loading details...',
+                          favorited_at: favorite.created_at,
+                          isFavorite: true
+                        };
+                        return renderFavoriteFlashcard(favorite.flashcard_id, details);
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
-
-      {loading && <div className="loading">Loading your flashcards...</div>}
-      {error && <div className="error-message">Error: {error}</div>}
-
-      {!loading && !error && (
-        <>
-          {/* Created Flashcards Tab */}
-          {activeTab === 'created' && (
-            <div className="flashcards-section">
-              {flashcards.length === 0 ? (
-                <div className="empty-state">
-                  <p>You haven't created any flashcards yet.</p>
-                  <p>Click "Create New" to get started!</p>
-                </div>
-              ) : (
-                <div className="flashcards-grid">
-                  {flashcards.map(renderCreatedFlashcard)}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Favorites Tab */}
-          {activeTab === 'favorites' && (
-            <div className="flashcards-section">
-              {favorites.length === 0 ? (
-                <div className="empty-state">
-                  <p>You haven't favorited any flashcards yet.</p>
-                  <p>Browse the flashcard catalog and star your favorites!</p>
-                </div>
-              ) : (
-                <div className="flashcards-grid">
-                  {favorites.map(favorite => {
-                    const details = favoriteDetails.get(favorite.flashcard_id) || {
-                      id: favorite.flashcard_id,
-                      title: favorite.flashcard_id,
-                      description: 'Loading details...',
-                      favorited_at: favorite.created_at,
-                      isFavorite: true
-                    };
-                    return renderFavoriteFlashcard(favorite.flashcard_id, details);
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-        </>
-      )}
     </div>
   );
 }

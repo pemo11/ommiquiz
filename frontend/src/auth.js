@@ -168,3 +168,186 @@ export function onAuthStateChange(callback) {
 
 // Export the supabase client for other uses
 export { supabase }
+
+// ============================================================================
+// Helper functions for API communication
+// ============================================================================
+
+/**
+ * Get the current access token from session
+ */
+export const getAccessToken = async () => {
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error || !data.session) {
+      return null;
+    }
+    return data.session.access_token;
+  } catch (error) {
+    console.error('Error getting access token:', error);
+    return null;
+  }
+};
+
+// API Base URL
+const API_BASE = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+
+// ============================================================================
+// Folder Management API Functions
+// ============================================================================
+
+/**
+ * Get all folders for the current user
+ */
+export const getUserFolders = async () => {
+  const token = await getAccessToken();
+  if (!token) {
+    throw new Error('No access token available');
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}/users/me/folders`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data.folders || [];
+  } catch (error) {
+    console.error('Error fetching folders:', error);
+    throw error;
+  }
+};
+
+/**
+ * Create a new folder
+ */
+export const createFolder = async (folderData) => {
+  const token = await getAccessToken();
+  if (!token) {
+    throw new Error('No access token available');
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}/users/me/folders`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(folderData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error creating folder:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update an existing folder
+ */
+export const updateFolder = async (folderId, folderData) => {
+  const token = await getAccessToken();
+  if (!token) {
+    throw new Error('No access token available');
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}/users/me/folders/${folderId}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(folderData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating folder:', error);
+    throw error;
+  }
+};
+
+/**
+ * Delete a folder
+ */
+export const deleteFolder = async (folderId) => {
+  const token = await getAccessToken();
+  if (!token) {
+    throw new Error('No access token available');
+  }
+
+  try {
+    const response = await fetch(`${API_BASE}/users/me/folders/${folderId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error deleting folder:', error);
+    throw error;
+  }
+};
+
+/**
+ * Assign a flashcard to a folder
+ */
+export const assignFlashcardToFolder = async (flashcardId, folderId = null) => {
+  const token = await getAccessToken();
+  if (!token) {
+    throw new Error('No access token available');
+  }
+
+  try {
+    const url = folderId 
+      ? `${API_BASE}/users/me/flashcards/${flashcardId}/folder?folder_id=${folderId}`
+      : `${API_BASE}/users/me/flashcards/${flashcardId}/folder`;
+
+    const response = await fetch(url, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || `HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error assigning flashcard to folder:', error);
+    throw error;
+  }
+};

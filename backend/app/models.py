@@ -113,3 +113,49 @@ No ORM models - we use plain SQL queries with asyncpg.
 #   - Users can insert their own ratings
 #   - Users can update their own ratings
 #   - Users can delete their own ratings
+
+
+# =============================================================================
+# TABLE: folders
+# =============================================================================
+# Stores user-created folders for organizing flashcard sets
+#
+# Columns:
+#   - id (SERIAL, PRIMARY KEY): Auto-incrementing ID
+#   - folder_id (TEXT, NOT NULL UNIQUE): Unique folder identifier
+#   - owner_id (UUID, NOT NULL): References auth.users(id)
+#   - name (TEXT, NOT NULL): Folder display name
+#   - description (TEXT): Optional folder description
+#   - color (TEXT): Hex color code for folder visualization (default: '#667eea')
+#   - icon (TEXT): Emoji or icon identifier (default: '📁')
+#   - parent_folder_id (TEXT): References folders(folder_id) for nested folders
+#   - sort_order (INTEGER): For custom ordering (default: 0)
+#   - created_at (TIMESTAMPTZ): Record creation timestamp
+#   - updated_at (TIMESTAMPTZ): Record update timestamp
+#
+# Constraints:
+#   - UNIQUE: folder_id
+#   - FOREIGN KEY: parent_folder_id REFERENCES folders(folder_id)
+#
+# Indexes:
+#   - idx_folders_owner ON (owner_id)
+#   - idx_folders_parent ON (parent_folder_id)
+#   - idx_folders_owner_sort ON (owner_id, sort_order)
+#
+# Row Level Security: Enabled
+# Policies:
+#   - Users can view their own folders
+#   - Users can manage their own folders
+#   - Admins have full access to all folders
+
+
+# =============================================================================
+# TABLE: user_flashcards (UPDATED)
+# =============================================================================
+# Extended with folder organization support
+# 
+# Additional Column:
+#   - folder_id (TEXT): References folders(folder_id) ON DELETE SET NULL
+#
+# Additional Index:
+#   - idx_user_flashcards_folder ON (folder_id)

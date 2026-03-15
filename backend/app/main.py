@@ -3307,6 +3307,345 @@ async def download_log_file(filename: str):
         raise HTTPException(status_code=500, detail=f"Failed to download log file: {str(e)}")
 
 
+# ============================================================================
+# Folder Management Endpoints
+# ============================================================================
+
+class CreateFolderRequest(BaseModel):
+    """Request model for creating a folder."""
+    name: str
+    description: Optional[str] = None
+    color: str = "#667eea"
+    icon: str = "📁"
+    parent_folder_id: Optional[str] = None
+
+
+class UpdateFolderRequest(BaseModel):
+    """Request model for updating a folder."""
+    name: Optional[str] = None
+    description: Optional[str] = None
+    color: Optional[str] = None
+    icon: Optional[str] = None
+    parent_folder_id: Optional[str] = None
+    sort_order: Optional[int] = None
+
+
+@api_router.get("/users/me/folders")
+async def list_user_folders(
+    user: AuthenticatedUser = Depends(get_current_user)
+):
+    """List all folders owned by the current user."""
+    from .database import get_db_pool
+    import uuid
+
+    logger.info("Listing user folders", user_id=user.user_id)
+
+    try:
+        pool = await get_db_pool()
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(
+                """SELECT folder_id, name, description, color, icon, parent_folder_id, sort_order,
+                          created_at, updated_at
+                   FROM folders
+                   WHERE owner_id = $1
+                   ORDER BY sort_order ASC, created_at ASC""",
+                user.user_id
+            )
+
+        folders = [
+            {
+                "folder_id": row["folder_id"],
+                "name": row["name"],
+                "description": row["description"],
+                "color": row["color"],
+                "icon": row["icon"],
+                "parent_folder_id": row["parent_folder_id"],
+                "sort_order": row["sort_order"],
+                "created_at": row["created_at"].isoformat() if row["created_at"] else None,
+                "updated_at": row["updated_at"].isoformat() if row["updated_at"] else None,
+            }
+            for row in rows
+        ]
+
+        logger.info("User folders listed", user_id=user.user_id, count=len(folders))
+
+        return {
+            "success": True,
+            "folders": folders,
+            "total": len(folders)
+        }
+
+    except Exception as e:
+        logger.error("Failed to list user folders", error=str(e))
+        raise HTTPException(status_code=500, detail=f"Failed to list folders: {str(e)}")
+
+
+@api_router.post("/users/me/folders")
+async def create_user_folder(
+    request: CreateFolderRequest,
+    user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Create a new folder for the current user."""
+    from .database import get_db_pool
+    import uuid
+
+    logger.info("Creating user folder", user_id=user.user_id, name=request.name)
+
+    # Validate folder name
+    if not request.name.strip():
+        raise HTTPException(status_code=400, detail="Folder name cannot be empty")
+
+    if len(request.name) > 100:
+        raise HTTPException(status_code=400, detail="Folder name too long (max 100 characters)")
+
+    # Generate unique folder ID
+    folder_id = f"folder_{uuid.uuid4().hex[:12]}"
+
+    try:
+        pool = await get_db_pool()
+        async with pool.acquire() as conn:
+            # Check if parent folder exists (if specified)
+            if request.parent_folder_id:
+                parent_folder = await conn.fetchrow(
+                    "SELECT folder_id FROM folders WHERE folder_id = $1 AND owner_id = $2",
+                    request.parent_folder_id, user.user_id
+                )
+                if not parent_folder:
+                    raise HTTPException(
+                        status_code=404,
+                        detail="Parent folder not found or not owned by user"
+                    )
+
+            # Create folder
+            result = await conn.fetchrow(
+                """INSERT INTO folders (folder_id, owner_id, name, description, color, icon, parent_folder_id)
+                   VALUES ($1, $2, $3, $4, $5, $6, $7)
+                   RETURNING folder_id, name, created_at""",
+                folder_id, user.user_id, request.name.strip(), request.description,
+                request.color, request.icon, request.parent_folder_id
+            )
+
+        logger.info("User folder created", folder_id=folder_id, user_id=user.user_id)
+
+        return {
+            "success": True,
+            "folder_id": folder_id,
+            "name": result["name"],
+            "message": "Folder created successfully",
+            "created_at": result["created_at"].isoformat() if result["created_at"] else None
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to create user folder", error=str(e))
+        raise HTTPException(status_code=500, detail=f"Failed to create folder: {str(e)}")
+
+
+@api_router.put("/users/me/folders/{folder_id}")
+async def update_user_folder(
+    folder_id: str,
+    request: UpdateFolderRequest,
+    user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Update a folder owned by the current user."""
+    from .database import get_db_pool
+
+    logger.info("Updating user folder", folder_id=folder_id, user_id=user.user_id)
+
+    try:
+        pool = await get_db_pool()
+        async with pool.acquire() as conn:
+            # Check ownership
+            folder = await conn.fetchrow(
+                "SELECT owner_id, name FROM folders WHERE folder_id = $1",
+                folder_id
+            )
+
+            if not folder:
+                raise HTTPException(status_code=404, detail="Folder not found")
+
+            if folder["owner_id"] != user.user_id:
+                raise HTTPException(status_code=403, detail="Not authorized to update this folder")
+
+            # Build update query dynamically
+            update_fields = {}
+            if request.name is not None:
+                if not request.name.strip():
+                    raise HTTPException(status_code=400, detail="Folder name cannot be empty")
+                if len(request.name) > 100:
+                    raise HTTPException(status_code=400, detail="Folder name too long (max 100 characters)")
+                update_fields["name"] = request.name.strip()
+
+            if request.description is not None:
+                update_fields["description"] = request.description
+
+            if request.color is not None:
+                update_fields["color"] = request.color
+
+            if request.icon is not None:
+                update_fields["icon"] = request.icon
+
+            if request.parent_folder_id is not None:
+                # Validate parent folder exists and is owned by user
+                if request.parent_folder_id:
+                    parent_folder = await conn.fetchrow(
+                        "SELECT folder_id FROM folders WHERE folder_id = $1 AND owner_id = $2",
+                        request.parent_folder_id, user.user_id
+                    )
+                    if not parent_folder:
+                        raise HTTPException(
+                            status_code=404,
+                            detail="Parent folder not found or not owned by user"
+                        )
+                update_fields["parent_folder_id"] = request.parent_folder_id
+
+            if request.sort_order is not None:
+                update_fields["sort_order"] = request.sort_order
+
+            if not update_fields:
+                raise HTTPException(status_code=400, detail="No fields to update")
+
+            # Build and execute update query
+            set_clause = ", ".join([f"{k} = ${i+2}" for i, k in enumerate(update_fields.keys())])
+            query = f"UPDATE folders SET {set_clause}, updated_at = NOW() WHERE folder_id = $1"
+            params = [folder_id] + list(update_fields.values())
+
+            await conn.execute(query, *params)
+
+        logger.info("User folder updated", folder_id=folder_id, user_id=user.user_id)
+
+        return {
+            "success": True,
+            "message": "Folder updated successfully"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to update user folder", error=str(e))
+        raise HTTPException(status_code=500, detail=f"Failed to update folder: {str(e)}")
+
+
+@api_router.delete("/users/me/folders/{folder_id}")
+async def delete_user_folder(
+    folder_id: str,
+    user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Delete a folder owned by the current user."""
+    from .database import get_db_pool
+
+    logger.info("Deleting user folder", folder_id=folder_id, user_id=user.user_id)
+
+    try:
+        pool = await get_db_pool()
+        async with pool.acquire() as conn:
+            # Check ownership
+            folder = await conn.fetchrow(
+                "SELECT owner_id, name FROM folders WHERE folder_id = $1",
+                folder_id
+            )
+
+            if not folder:
+                raise HTTPException(status_code=404, detail="Folder not found")
+
+            if folder["owner_id"] != user.user_id:
+                raise HTTPException(status_code=403, detail="Not authorized to delete this folder")
+
+            # Check for child folders
+            child_folders = await conn.fetch(
+                "SELECT folder_id FROM folders WHERE parent_folder_id = $1",
+                folder_id
+            )
+
+            if child_folders:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Cannot delete folder with {len(child_folders)} child folders. Delete child folders first."
+                )
+
+            # Delete folder (this will set folder_id to NULL for any associated user_flashcards due to ON DELETE SET NULL)
+            await conn.execute(
+                "DELETE FROM folders WHERE folder_id = $1",
+                folder_id
+            )
+
+        logger.info("User folder deleted", folder_id=folder_id, user_id=user.user_id)
+
+        return {
+            "success": True,
+            "message": "Folder deleted successfully"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to delete user folder", error=str(e))
+        raise HTTPException(status_code=500, detail=f"Failed to delete folder: {str(e)}")
+
+
+@api_router.put("/users/me/flashcards/{flashcard_id}/folder")
+async def assign_flashcard_to_folder(
+    flashcard_id: str,
+    folder_id: Optional[str] = Query(None, description="Folder ID to assign flashcard to, or null to remove from folder"),
+    user: AuthenticatedUser = Depends(get_current_user)
+):
+    """Assign or remove a user flashcard to/from a folder."""
+    from .database import get_db_pool
+    from .storage import is_user_flashcard
+
+    logger.info("Assigning flashcard to folder", flashcard_id=flashcard_id, folder_id=folder_id, user_id=user.user_id)
+
+    # Verify it's a user flashcard
+    if not is_user_flashcard(flashcard_id):
+        raise HTTPException(status_code=400, detail="Not a user-generated flashcard")
+
+    try:
+        pool = await get_db_pool()
+        async with pool.acquire() as conn:
+            # Check flashcard ownership
+            flashcard_row = await conn.fetchrow(
+                "SELECT owner_id FROM user_flashcards WHERE flashcard_id = $1",
+                flashcard_id
+            )
+
+            if not flashcard_row:
+                raise HTTPException(status_code=404, detail="Flashcard not found")
+
+            if flashcard_row["owner_id"] != user.user_id:
+                raise HTTPException(status_code=403, detail="Not authorized to modify this flashcard")
+
+            # Validate folder if provided
+            if folder_id:
+                folder = await conn.fetchrow(
+                    "SELECT owner_id FROM folders WHERE folder_id = $1",
+                    folder_id
+                )
+                if not folder:
+                    raise HTTPException(status_code=404, detail="Folder not found")
+                if folder["owner_id"] != user.user_id:
+                    raise HTTPException(status_code=403, detail="Not authorized to use this folder")
+
+            # Update flashcard folder assignment
+            await conn.execute(
+                "UPDATE user_flashcards SET folder_id = $1 WHERE flashcard_id = $2",
+                folder_id, flashcard_id
+            )
+
+        action = "assigned to folder" if folder_id else "removed from folder"
+        logger.info("Flashcard folder assignment updated", flashcard_id=flashcard_id, folder_id=folder_id, action=action)
+
+        return {
+            "success": True,
+            "message": f"Flashcard {action} successfully"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to assign flashcard to folder", error=str(e))
+        raise HTTPException(status_code=500, detail=f"Failed to update folder assignment: {str(e)}")
+
 # Include the API router with all endpoints
 app.include_router(api_router)
 

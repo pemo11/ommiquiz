@@ -78,11 +78,43 @@
   padding: 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+  overflow: hidden;
 }
 
 .flashcard-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.flashcard-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #667eea, transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.flashcard-card:hover::before {
+  opacity: 1;
+}
+
+.flashcard-card[draggable="true"] {
+  cursor: move;
+}
+
+.flashcard-card[draggable="true"]:hover {
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.flashcard-card.dragging {
+  opacity: 0.5;
+  transform: rotate(5deg);
 }
 
 .flashcard-card-header {
@@ -262,6 +294,18 @@
   color: #007bff;
   border-bottom-color: #007bff;
   background-color: #f8f9fa;
+  position: relative;
+}
+
+.tab-button.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 1px;
 }
 
 /* Flashcard badges container */
@@ -326,22 +370,205 @@
   margin-top: 20px;
 }
 
-/* Responsive design */
-@media (max-width: 768px) {
-  .flashcards-grid {
-    grid-template-columns: 1fr;
-  }
+/* Layout for folder sidebar integration */
+.my-flashcards-layout {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
 
+.folder-sidebar {
+  flex: 0 0 300px;
+  min-width: 300px;
+}
+
+.main-content {
+  flex: 1;
+  min-width: 0; /* Allows flexbox to shrink below content size */
+}
+
+.main-content.with-sidebar {
+  max-width: calc(100% - 320px);
+}
+
+.main-content.full-width {
+  max-width: 100%;
+}
+
+/* Header actions styling */
+.header-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.toggle-folders-button {
+  padding: 10px 16px;
+  font-size: 14px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  background-color: #6f42c1;
+  color: white;
+}
+
+.toggle-folders-button:hover {
+  background-color: #5a359a;
+}
+
+/* Folder info bar */
+.folder-info-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.clear-filter-button {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+.clear-filter-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Folder indicator badge */
+.folder-indicator {
+  background-color: #e8f4fd;
+  color: #0066cc;
+  padding: 3px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: bold;
+  margin-left: 4px;
+}
+
+/* Remove from folder button */
+.remove-folder-button {
+  background-color: #fd7e14;
+  color: white;
+  font-weight: 500;
+}
+
+.remove-folder-button:hover {
+  background-color: #e8590c;
+}
+
+/* Responsive design */
+@media (max-width: 1024px) {
+  .my-flashcards-layout {
+    flex-direction: column;
+  }
+  
+  .folder-sidebar {
+    flex: none;
+    min-width: 100%;
+    order: -1;
+  }
+  
+  .main-content.with-sidebar,
+  .main-content.full-width {
+    max-width: 100%;
+  }
+  
+  .header-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .toggle-folders-button,
+  .create-button {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .my-flashcards-container {
+    padding: 10px;
+  }
+  
   .my-flashcards-header {
     flex-direction: column;
+    gap: 15px;
   }
 
   .my-flashcards-header h2 {
     text-align: center;
     width: 100%;
+    margin-bottom: 10px;
+  }
+
+  .header-actions {
+    width: 100%;
+  }
+
+  .flashcards-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
   }
 
   .action-button {
     min-width: 80px;
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+  
+  .folder-info-bar {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+  
+  .clear-filter-button {
+    align-self: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .flashcard-actions {
+    flex-direction: column;
+  }
+  
+  .action-button {
+    min-width: 100%;
+    margin-bottom: 5px;
+  }
+  
+  .delete-confirm {
+    flex-direction: column;
+  }
+  
+  .tabs-container {
+    flex-direction: column;
+    border-bottom: none;
+  }
+  
+  .tab-button {
+    border-bottom: 1px solid #e9ecef;
+    border-radius: 4px;
+    margin-bottom: 5px;
+  }
+  
+  .tab-button.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+  
+  .tab-button.active::after {
+    display: none;
   }
 }
