@@ -310,6 +310,7 @@
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
 }
 
@@ -931,6 +932,7 @@
 
 .correct-answer-checkbox span {
   font-size: 0.9rem;
+  -webkit-user-select: none;
   user-select: none;
 }
 
@@ -2058,6 +2060,7 @@
 }
 
 .radio-option span {
+  -webkit-user-select: none;
   user-select: none;
   font-size: 1rem;
 }
