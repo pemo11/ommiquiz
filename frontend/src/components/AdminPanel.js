@@ -2529,7 +2529,7 @@ function AdminPanel({ onBack }) {
                   className="keyword-filter-select"
                   value={keywordFilter}
                   onChange={(e) => setKeywordFilter(e.target.value)}
-                  disabled={availableKeywords.length === 0}
+                  disabled={loading || flashcards.length === 0}
                 >
                   <option value="all">All keywords ({flashcards.length})</option>
                   {availableKeywords.map((keyword) => (
@@ -2540,6 +2540,7 @@ function AdminPanel({ onBack }) {
                 </select>
                 <span className="filter-summary">
                   Showing {filteredFlashcards.length} of {flashcards.length}
+                  {availableKeywords.length === 0 && flashcards.length > 0 && " (No keywords defined in flashcards)"}
                 </span>
               </div>
               {filteredFlashcards.length === 0 ? (
