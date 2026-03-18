@@ -2012,3 +2012,54 @@
   font-weight: 500;
   color: #666;
 }
+
+/* True/False Selector */
+.truefalse-selector {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.75rem 1.25rem;
+  border: 2px solid #dee2e6;
+  border-radius: 8px;
+  background-color: #f8f9fa;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  min-width: 100px;
+  justify-content: center;
+}
+
+.radio-option:hover {
+  border-color: #667eea;
+  background-color: #f0f3ff;
+}
+
+.radio-option input[type="radio"] {
+  margin: 0;
+  cursor: pointer;
+  transform: scale(1.2);
+}
+
+.radio-option input[type="radio"]:checked + span {
+  color: #667eea;
+  font-weight: 600;
+}
+
+.radio-option:has(input[type="radio"]:checked) {
+  border-color: #667eea;
+  background-color: #e8f0fe;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+}
+
+.radio-option span {
+  user-select: none;
+  font-size: 1rem;
+}
+
+/* Rating Statistics Section */

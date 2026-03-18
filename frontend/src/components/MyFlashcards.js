@@ -545,10 +545,6 @@ function MyFlashcards({ apiUrl, accessToken, onBack, onSelectFavorite = () => {}
               Favorites ({favorites.length})
             </button>
           </div>
-        <button className="create-button" onClick={handleCreateNew}>
-          + Create New
-        </button>
-      </div>
 
           {loading && <div className="loading">Loading your flashcards...</div>}
           {error && <div className="error-message">Error: {error}</div>}
@@ -591,22 +587,6 @@ function MyFlashcards({ apiUrl, accessToken, onBack, onSelectFavorite = () => {}
                   )}
                 </div>
               )}
-      {!loading && !error && (
-        <>
-          {/* Created Flashcards Section */}
-          <div className="flashcards-section">
-            <h3 className="section-title">Created</h3>
-            {flashcards.length === 0 ? (
-              <div className="empty-state">
-                <p>You haven't created any flashcards yet.</p>
-                <p>Click "Create New" to get started!</p>
-              </div>
-            ) : (
-              <div className="flashcards-grid">
-                {flashcards.map(renderCreatedFlashcard)}
-              </div>
-            )}
-          </div>
 
               {/* Favorites Tab */}
               {activeTab === 'favorites' && (
@@ -636,31 +616,6 @@ function MyFlashcards({ apiUrl, accessToken, onBack, onSelectFavorite = () => {}
           )}
         </div>
       </div>
-          {/* Favorites Section */}
-          <div className="flashcards-section">
-            <h3 className="section-title">Favorites</h3>
-            {favorites.length === 0 ? (
-              <div className="empty-state">
-                <p>You haven't favorited any flashcards yet.</p>
-                <p>Browse the flashcard catalog and star your favorites!</p>
-              </div>
-            ) : (
-              <div className="flashcards-grid">
-                {favorites.map(favorite => {
-                  const details = favoriteDetails.get(favorite.flashcard_id) || {
-                    id: favorite.flashcard_id,
-                    title: favorite.flashcard_id,
-                    description: 'Loading details...',
-                    favorited_at: favorite.created_at,
-                    isFavorite: true
-                  };
-                  return renderFavoriteFlashcard(favorite.flashcard_id, details);
-                })}
-              </div>
-            )}
-          </div>
-        </>
-      )}
     </div>
   );
 }

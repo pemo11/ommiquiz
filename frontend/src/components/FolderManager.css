@@ -1,0 +1,201 @@
+.folder-manager {
+  width: 100%;
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.folder-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.folder-header h3 {
+  margin: 0;
+  color: #495057;
+  font-size: 16px;
+}
+
+.create-folder-button {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: #007bff;
+  color: white;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.create-folder-button:hover {
+  background: #0056b3;
+}
+
+.create-folder-form {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: white;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.folder-name-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.folder-name-input:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.form-actions button {
+  padding: 6px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.form-actions button[type="submit"] {
+  background: #28a745;
+  color: white;
+  border-color: #28a745;
+}
+
+.form-actions button[type="submit"]:hover:not(:disabled) {
+  background: #218838;
+}
+
+.form-actions button[type="submit"]:disabled {
+  background: #6c757d;
+  border-color: #6c757d;
+  cursor: not-allowed;
+}
+
+.form-actions button[type="button"] {
+  background: #6c757d;
+  color: white;
+  border-color: #6c757d;
+}
+
+.form-actions button[type="button"]:hover {
+  background: #545b62;
+}
+
+.folders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.folder-item {
+  display: flex;
+  align-items: center;
+  padding: 12px;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+  position: relative;
+}
+
+.folder-item:hover {
+  background: #e9ecef;
+}
+
+.folder-item.selected {
+  background: #e3f2fd;
+  border-color: #007bff;
+}
+
+.folder-item[draggable="true"]:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.folder-icon {
+  margin-right: 12px;
+  font-size: 16px;
+}
+
+.folder-name {
+  flex: 1;
+  font-weight: 500;
+  color: #495057;
+  font-size: 14px;
+}
+
+.folder-count {
+  font-size: 12px;
+  color: #6c757d;
+  margin-left: 8px;
+}
+
+.delete-folder-button {
+  width: 20px;
+  height: 20px;
+  border: none;
+  background: #dc3545;
+  color: white;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 12px;
+  margin-left: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.folder-item:hover .delete-folder-button {
+  opacity: 1;
+}
+
+.delete-folder-button:hover {
+  background: #c82333;
+}
+
+.empty-folders {
+  text-align: center;
+  padding: 24px 12px;
+  color: #6c757d;
+}
+
+.empty-folders p {
+  margin: 4px 0;
+  font-size: 14px;
+}
+
+/* Drag and drop styles */
+.folder-item.drag-over {
+  border-color: #007bff;
+  background: #e3f2fd;
+}
+
+.folder-item.drag-target {
+  border-style: dashed;
+  border-color: #007bff;
+}

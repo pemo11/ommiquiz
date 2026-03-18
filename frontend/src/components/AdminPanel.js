@@ -177,15 +177,23 @@ function AdminPanel({ onBack }) {
   }, [availableKeywords, keywordFilter]);
 
   const filteredFlashcards = useMemo(() => {
+    let filtered;
     if (keywordFilter === 'all') {
-      return flashcards;
+      filtered = flashcards;
+    } else {
+      const needle = keywordFilter.toLowerCase();
+      filtered = flashcards.filter((flashcard) =>
+        Array.isArray(flashcard.keywords) &&
+        flashcard.keywords.some((keyword) => (keyword || '').toLowerCase() === needle)
+      );
     }
 
-    const needle = keywordFilter.toLowerCase();
-    return flashcards.filter((flashcard) =>
-      Array.isArray(flashcard.keywords) &&
-      flashcard.keywords.some((keyword) => (keyword || '').toLowerCase() === needle)
-    );
+    // Sort alphabetically by title
+    return filtered.sort((a, b) => {
+      const titleA = (a.title || a.id || '').toLowerCase();
+      const titleB = (b.title || b.id || '').toLowerCase();
+      return titleA.localeCompare(titleB);
+    });
   }, [flashcards, keywordFilter]);
 
   const loadCatalogData = async () => {
@@ -871,20 +879,34 @@ function AdminPanel({ onBack }) {
       
       const data = await response.json();
 
-      // Normalize flashcard data: ensure each card has a type field
+      // Normalize flashcard data: ensure each card has a type field and preserve existing IDs
       if (data.flashcards && Array.isArray(data.flashcards)) {
-        data.flashcards = data.flashcards.map(card => {
+        data.flashcards = data.flashcards.map((card, index) => {
           // If type is missing or undefined, infer it from the card structure
           if (!card.type) {
             if (card.answers && Array.isArray(card.answers)) {
               card.type = 'multiple';
             } else if (card.answer !== undefined) {
-              card.type = 'single';
+              // Check if it's a true/false card
+              if (card.answer === 'true' || card.answer === 'false') {
+                card.type = 'truefalse';
+              } else {
+                card.type = 'single';
+              }
             } else {
               // Default to single if we can't infer
               card.type = 'single';
             }
           }
+
+          // Ensure card has an ID, preserve existing one or generate if missing
+          if (!card.id) {
+            const cardsetId = data.id || 'flashcard';
+            const prefix = cardsetId.replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toLowerCase().padEnd(3, 'x');
+            const cardNumber = (index + 1).toString().padStart(3, '0');
+            card.id = `${prefix}${cardNumber}`;
+          }
+
           return card;
         });
       }
@@ -1455,6 +1477,8 @@ function AdminPanel({ onBack }) {
       }
 
       if (cardType === 'single') {
+        yamlLines.push(`    answer: "${escapeQuotes(card.answer || '')}"`);
+      } else if (cardType === 'truefalse') {
         yamlLines.push(`    answer: "${escapeQuotes(card.answer || '')}"`);
       } else {
         const answers = toArray(card.answers);
@@ -2899,6 +2923,12 @@ flashcards:
                             updateCardField(cardIndex, 'type', newType);
                             updateCardField(cardIndex, 'answer', card.answers ? card.answers[0] || '' : '');
                             updateCardField(cardIndex, 'answers', undefined);
+                            updateCardField(cardIndex, 'correctAnswers', undefined);
+                          } else if (newType === 'truefalse') {
+                            updateCardField(cardIndex, 'type', newType);
+                            updateCardField(cardIndex, 'answer', card.answer || 'true');
+                            updateCardField(cardIndex, 'answers', undefined);
+                            updateCardField(cardIndex, 'correctAnswers', undefined);
                           } else {
                             updateCardField(cardIndex, 'type', newType);
                             updateCardField(cardIndex, 'answers', card.answer ? [card.answer] : ['']);
@@ -2909,6 +2939,7 @@ flashcards:
                       >
                         <option value="single">Single Answer</option>
                         <option value="multiple">Multiple Answers</option>
+                        <option value="truefalse">True/False</option>
                       </select>
                     </div>
 
@@ -2920,6 +2951,33 @@ flashcards:
                           onChange={(e) => updateCardField(cardIndex, 'answer', e.target.value)}
                           rows="2"
                         />
+                      </div>
+                    ) : card.type === 'truefalse' ? (
+                      <div className="form-row">
+                        <label>Correct Answer:</label>
+                        <div className="truefalse-selector">
+                          <label className="radio-option">
+                            <input
+                              type="radio"
+                              name={`truefalse-${cardIndex}`}
+                              value="true"
+                              checked={card.answer === 'true'}
+                              onChange={(e) => updateCardField(cardIndex, 'answer', e.target.value)}
+                            />
+                            <span>True</span>
+                          </label>
+                          <label className="radio-option">
+                            <input
+                              type="radio"
+                              name={`truefalse-${cardIndex}`}
+                              value="false"
+                              checked={card.answer === 'false'}
+                              onChange={(e) => updateCardField(cardIndex, 'answer', e.target.value)}
+                            />
+                            <span>False</span>
+                          </label>
+                        </div>
+                        <small>Select whether the statement is true or false.</small>
                       </div>
                     ) : (
                       <div className="answers-section">
