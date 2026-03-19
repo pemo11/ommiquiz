@@ -54,9 +54,11 @@ properties:
 
   institution:
     type: string
+    description: "z.B. HS Emden Leer"
 
   studycourse:
     type: string
+    description: "z.B. Medieninformatik"
 
   topics:
     type: array
@@ -108,7 +110,7 @@ definitions:
         type: string
         enum:
           - single
-          - multi
+          - multiple
           - truefalse
           - cloze
         description: |
